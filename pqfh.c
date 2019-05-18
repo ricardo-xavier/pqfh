@@ -11,7 +11,7 @@
 PGconn *conn=NULL;
 int dbg=-1;
 
-#define VERSAO "v1.0.0 13/05/2019"
+#define VERSAO "v1.1.0 18/05/2019"
 
 void EXTFH(unsigned char *opcode, fcd_t *fcd) {
 
@@ -80,6 +80,14 @@ void EXTFH(unsigned char *opcode, fcd_t *fcd) {
 
         case OP_REWRITE:
             op_rewrite(conn, fcd);
+            break;
+
+        case OP_WRITE:
+            op_write(conn, fcd);
+            break;
+
+        case OP_DELETE:
+            op_delete(conn, fcd);
             break;
 
         default:

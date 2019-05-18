@@ -15,9 +15,12 @@
 typedef struct {
     char    name[MAX_NAME_LEN+1];
     list2_t *columns;
+    list2_t *keys;
     short   key_read;
     bool    read_prepared;
     bool    upd_prepared;
+    bool    ins_prepared;
+    bool    del_prepared;
     short   key_start;
     char    buf_start[MAX_KEY_LEN+1];
     char    *bufs[256];
@@ -28,7 +31,16 @@ typedef struct {
     char tp;
     int len;
     int dec;
+    int offset;
 } column_t;
+
+typedef struct {
+    int id;
+    int len;
+    int ncomps;
+    int ncols;
+    column_t *columns[16];
+} _key_t;
 
 typedef struct {
     unsigned char status[2];        /* 00 */
@@ -70,13 +82,16 @@ typedef struct {
 #define OP_START_GT      0xfaea
 #define OP_READ_NEXT     0xfaf5
 #define OP_READ_RANDOM   0xfaf6
+#define OP_DELETE        0xfaf7
 
 #define ST_OK             "00"
 #define ST_FILE_NOT_FOUND "35"
 #define ST_EOF            "10"
 #define ST_REC_NOT_FOUND  "23"
+#define ST_DUPL_KEY       "22"
+#define ST_ERROR          "99"
 
-bool table_info(PGconn *conn, table_t *table, unsigned short reclen);
+bool table_info(PGconn *conn, table_t *table, fcd_t *fcd);
 char *get_schema(char *table);
 column_t *get_col_at(table_t *table, unsigned int offset);
 
@@ -88,6 +103,7 @@ void putint(unsigned char *s, unsigned int n);
 void pq2cob(table_t *tab, PGresult *res, unsigned char *record, unsigned short reclen);
 
 void kdb(fcd_t *fcd, unsigned int *offset, unsigned int *len);
+void getkeys(fcd_t *fcd, table_t *tab);
 
 void op_open(PGconn *conn, fcd_t *fcd, unsigned short opcode);
 void op_close(PGconn *conn, fcd_t *fcd);
@@ -95,5 +111,7 @@ void op_start_gt(PGconn *conn, fcd_t *fcd);
 void op_read_next(PGconn *conn, fcd_t *fcd);
 void op_read_random(PGconn *conn, fcd_t *fcd);
 void op_rewrite(PGconn *conn, fcd_t *fcd);
+void op_write(PGconn *conn, fcd_t *fcd);
+void op_delete(PGconn *conn, fcd_t *fcd);
 
 #endif

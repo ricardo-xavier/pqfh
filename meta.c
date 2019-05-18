@@ -4,15 +4,16 @@
 
 extern int dbg;
 
-//TODO preparar
-bool table_info(PGconn *conn, table_t *table, unsigned short reclen) {
+bool table_info(PGconn *conn, table_t *table, fcd_t *fcd) {
 
     PGresult   *res;
     char       sql[4097], aux[33];
     int        i, offset;
     column_t   col;
+    unsigned short reclen;
 
     table->columns = NULL;
+    reclen = getshort(fcd->rec_len);
 
     // declara o cursor
     sprintf(sql, "declare cursor_columns cursor for  \nselect column_name,data_type,character_maximum_length,numeric_precision,numeric_scale\n    from information_schema.columns\n    where table_name = '%s'\n    order by ordinal_position", table->name);
@@ -37,6 +38,7 @@ bool table_info(PGconn *conn, table_t *table, unsigned short reclen) {
         }
 
         strcpy(col.name, PQgetvalue(res, 0, 0));
+        col.offset = offset;
 
         strcpy(aux, PQgetvalue(res, 0, 1));
 
@@ -75,6 +77,9 @@ bool table_info(PGconn *conn, table_t *table, unsigned short reclen) {
     PQclear(res);
 
     table->columns = list2_first(table->columns);
+    
+    getkeys(fcd, table);
+
     return table->columns != NULL ? true : false;
 }
 

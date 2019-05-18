@@ -30,8 +30,10 @@ void op_open(PGconn *conn, fcd_t *fcd, unsigned short opcode) {
     strcpy(tab->name, filename);
     tab->read_prepared = false;
     tab->upd_prepared = false;
+    tab->ins_prepared = false;
+    tab->del_prepared = false;
     tab->key_start = -1;
-    if (table_info(conn, tab, reclen)) {
+    if (table_info(conn, tab, fcd)) {
         memcpy(fcd->status, ST_OK, 2);
     } else {
         memcpy(fcd->status, ST_FILE_NOT_FOUND, 2);
