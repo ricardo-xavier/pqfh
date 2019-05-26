@@ -8,8 +8,6 @@
 // referencias:
 // https://www.postgresql.org/docs/9.1/libpq-example.html
 
-//extern void EXTFH(unsigned char *opcode, fcd_t *fcd);
-
 PGconn *conn=NULL;
 int dbg=-1;
 bool isam=false;
@@ -110,6 +108,24 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
         case OP_OPEN_OUTPUT:
         case OP_OPEN_IO:
             op_open(conn, fcd, op);
+            if (!isam) {
+                break;
+            }
+            if (!memcmp(fcd->status, ST_OK, 2)) {
+                // open com sucesso no banco
+                // executa o open no isam
+                EXTFH(opcode, fcd);
+                if (memcmp(fcd->status, ST_OK, 2)) {
+                    // erro no isam
+                    // fecha e retorna o erro do isam
+                    if (dbg > 0) {
+                        fprintf(stderr, "desfaz open %c%c\n", fcd->status[0], fcd->status[1]);
+                    }
+                    memcpy(st, fcd->status, 2);
+                    op_close(conn, fcd);
+                    memcpy(fcd->status, st, 2);
+                }
+            }
             break;
 
         case OP_CLOSE:
@@ -117,6 +133,10 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
             if (pending_commits > 0) {
                 commit();
             }
+            if (!isam) {
+                break;
+            }
+            EXTFH(opcode, fcd);
             break;
 
         case OP_START_GT:
@@ -137,8 +157,12 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
                 break;
             }
             if (ret && !memcmp(fcd->status, ST_OK, 2)) {
+                // update com sucesso no banco
+                // executa o rewrite no isam
+                // se o update nao foi executado devido a otimizacao entao ret = false e status = OK
                 EXTFH(opcode, fcd);
                 if (memcmp(fcd->status, ST_OK, 2)) {
+                    // erro no isam
                     if (dbg > 0) {
                         fprintf(stderr, "desfaz rewrite %c%c\n", fcd->status[0], fcd->status[1]);
                     }
@@ -158,6 +182,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
                     memcpy(fcd->record, aux, reclen);
                     memcpy(fcd->status, st, 2);
                 } else {
+                    // sucesso no isam
                     if (dbg > 1) {
                         fprintf(stderr, "rewrite confirmado\n");
                     }
@@ -171,13 +196,19 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
                 break;
             }
             if (!memcmp(fcd->status, ST_OK, 2)) {
+                // insert com sucesso no banco
+                // executa o write no isam
                 EXTFH(opcode, fcd);
                 if (memcmp(fcd->status, ST_OK, 2)) {
+                    // erro no isam
                     if (dbg > 0) {
                         fprintf(stderr, "desfaz write %c%c\n", fcd->status[0], fcd->status[1]);
                     }
+                    memcpy(st, fcd->status, 2);
                     op_delete(conn, fcd);
+                    memcpy(fcd->status, st, 2);
                 } else {
+                    // sucesso no isam
                     if (dbg > 1) {
                         fprintf(stderr, "write confirmado\n");
                     }
@@ -191,13 +222,19 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
                 break;
             }
             if (!memcmp(fcd->status, ST_OK, 2)) {
-                if (dbg > 0) {
-                    fprintf(stderr, "desfaz delete %c%c\n", fcd->status[0], fcd->status[1]);
-                }
+                // delete com sucesso no banco
+                // executa o delete no isam
                 EXTFH(opcode, fcd);
                 if (memcmp(fcd->status, ST_OK, 2)) {
+                    // erro no isam
+                    if (dbg > 0) {
+                        fprintf(stderr, "desfaz delete %c%c\n", fcd->status[0], fcd->status[1]);
+                    }
+                    memcpy(st, fcd->status, 2);
                     op_write(conn, fcd);
+                    memcpy(fcd->status, st, 2);
                 } else {
+                    // sucesso no isam
                     if (dbg > 1) {
                         fprintf(stderr, "delete confirmado\n");
                     }
