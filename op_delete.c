@@ -4,6 +4,8 @@
 
 extern int dbg;
 
+extern int pending_commits;
+
 void op_delete(PGconn *conn, fcd_t *fcd) {
 
     unsigned int   fileid, keylen, keyoffset, remainder, offset;
@@ -140,16 +142,11 @@ void op_delete(PGconn *conn, fcd_t *fcd) {
         memcpy(fcd->status, ST_OK, 2);
     }
     PQclear(res);
+    pending_commits++;
 
     if (dbg > 0) {
         fprintf(stderr, "status=%c%c\n\n", fcd->status[0], fcd->status[1]);
     }
     putshort(fcd->key_id, keyid);
-
-    res = PQexec(conn, "COMMIT");
-    PQclear(res);
-
-    res = PQexec(conn, "BEGIN");
-    PQclear(res);
 
 }

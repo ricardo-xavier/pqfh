@@ -1,6 +1,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <pthread.h>
+#include <unistd.h>
 #include "pqfh.h"
 
 // referencias:
@@ -10,14 +12,49 @@
 
 PGconn *conn=NULL;
 int dbg=-1;
+bool isam=false;
 
-#define VERSAO "v1.1.0 18/05/2019"
+int pending_commits = 0;
+pthread_t thread_id;
+pthread_mutex_t lock;
 
-void EXTFH(unsigned char *opcode, fcd_t *fcd) {
+char backup[MAX_REC_LEN+1];
+
+#define VERSAO "v1.3.0 26/05/2019"
+
+void commit() {
+    PGresult *res;
+    fprintf(stderr, "commit %d\n", pending_commits);
+    res = PQexec(conn, "COMMIT");
+    PQclear(res);
+    res = PQexec(conn, "BEGIN");
+    PQclear(res);
+    pending_commits = 0;
+}
+
+void *thread_commit(void *vargp) {
+    while (true) {
+        sleep(1); 
+        fprintf(stderr, "pending_commits %d\n", pending_commits);
+        if (pending_commits > 0) {
+            pthread_mutex_lock(&lock);
+            commit();
+            pthread_mutex_unlock(&lock);
+        }
+    }
+    return NULL; 
+} 
+
+extern void EXTFH(unsigned char *opcode, fcd_t *fcd);
+void pqfh(unsigned char *opcode, fcd_t *fcd) {
 
     char           *conninfo;
     unsigned short op;
     PGresult       *res;
+    bool           ret;
+    char           aux[MAX_REC_LEN+1];
+    short          reclen;
+    char           st[2];
 
     if (dbg == -1) {
         char *env = getenv("PQFH_DBG");
@@ -27,10 +64,19 @@ void EXTFH(unsigned char *opcode, fcd_t *fcd) {
         } else {
             dbg = atoi(env);
         }
+        env = getenv("PQFH_ISAM");
+        if (env == NULL) {
+            isam = false;
+        } else {
+            isam = !strcasecmp(env, "S");
+        }
     }
 
     if (conn == NULL) {
-        conninfo = strdup("dbname=integral user=postgres host=127.0.0.1 port=5432");
+        conninfo = getenv("CONECTA_BD");
+        if (conninfo == NULL) {
+            conninfo = strdup("dbname=integral user=postgres host=127.0.0.1 port=5432");
+        }
 
         if (dbg > 0) {
             fprintf(stderr, "%ld connect [%s]\n", time(NULL), conninfo);
@@ -51,8 +97,12 @@ void EXTFH(unsigned char *opcode, fcd_t *fcd) {
             exit(-1);
         }
         PQclear(res);
+
+        pthread_mutex_init(&lock, NULL);
+        pthread_create(&thread_id, NULL, thread_commit, NULL);
     }
 
+    pthread_mutex_lock(&lock);
     op = getshort(opcode);
     switch (op) {
 
@@ -64,6 +114,9 @@ void EXTFH(unsigned char *opcode, fcd_t *fcd) {
 
         case OP_CLOSE:
             op_close(conn, fcd);
+            if (pending_commits > 0) {
+                commit();
+            }
             break;
 
         case OP_START_GT:
@@ -79,15 +132,77 @@ void EXTFH(unsigned char *opcode, fcd_t *fcd) {
             break;
 
         case OP_REWRITE:
-            op_rewrite(conn, fcd);
+            ret = op_rewrite(conn, fcd);
+            if (!isam) {
+                break;
+            }
+            if (ret && !memcmp(fcd->status, ST_OK, 2)) {
+                EXTFH(opcode, fcd);
+                if (memcmp(fcd->status, ST_OK, 2)) {
+                    if (dbg > 0) {
+                        fprintf(stderr, "desfaz rewrite %c%c\n", fcd->status[0], fcd->status[1]);
+                    }
+
+                    // desfaz a alteracao
+                    reclen = getshort(fcd->rec_len);
+
+                    // salva o registro atual e o status
+                    memcpy(aux, fcd->record, reclen);
+                    memcpy(st, fcd->status, 2);
+
+                    // regrava o registro anterior
+                    memcpy(fcd->record, backup, reclen);
+                    op_rewrite(conn, fcd);
+
+                    // recupera o registro atual e o status
+                    memcpy(fcd->record, aux, reclen);
+                    memcpy(fcd->status, st, 2);
+                } else {
+                    if (dbg > 1) {
+                        fprintf(stderr, "rewrite confirmado\n");
+                    }
+                }
+            }
             break;
 
         case OP_WRITE:
             op_write(conn, fcd);
+            if (!isam) {
+                break;
+            }
+            if (!memcmp(fcd->status, ST_OK, 2)) {
+                EXTFH(opcode, fcd);
+                if (memcmp(fcd->status, ST_OK, 2)) {
+                    if (dbg > 0) {
+                        fprintf(stderr, "desfaz write %c%c\n", fcd->status[0], fcd->status[1]);
+                    }
+                    op_delete(conn, fcd);
+                } else {
+                    if (dbg > 1) {
+                        fprintf(stderr, "write confirmado\n");
+                    }
+                }
+            }
             break;
 
         case OP_DELETE:
             op_delete(conn, fcd);
+            if (!isam) {
+                break;
+            }
+            if (!memcmp(fcd->status, ST_OK, 2)) {
+                if (dbg > 0) {
+                    fprintf(stderr, "desfaz delete %c%c\n", fcd->status[0], fcd->status[1]);
+                }
+                EXTFH(opcode, fcd);
+                if (memcmp(fcd->status, ST_OK, 2)) {
+                    op_write(conn, fcd);
+                } else {
+                    if (dbg > 1) {
+                        fprintf(stderr, "delete confirmado\n");
+                    }
+                }
+            }
             break;
 
         default:
@@ -96,5 +211,6 @@ void EXTFH(unsigned char *opcode, fcd_t *fcd) {
             exit(-1);
 
     }
+    pthread_mutex_unlock(&lock);
 
 }

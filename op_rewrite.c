@@ -3,8 +3,10 @@
 #include "pqfh.h"
 
 extern int dbg;
+extern int pending_commits;
+extern char backup[MAX_REC_LEN+1];
 
-void op_rewrite(PGconn *conn, fcd_t *fcd) {
+bool op_rewrite(PGconn *conn, fcd_t *fcd) {
 
     unsigned int   fileid, keylen, keyoffset, remainder, offset;
     unsigned short reclen, keyid; 
@@ -34,14 +36,19 @@ void op_rewrite(PGconn *conn, fcd_t *fcd) {
     // performance
     // verifica se o registro mudou antes de fazer o update
     op_read_random(conn, fcd);
+    if (memcmp(fcd->status, ST_OK, 2)) {
+        // registro nao encontrado
+        return false;
+    }
     if (!memcmp(record, fcd->record, reclen)) {
         memcpy(fcd->status, ST_OK, 2);
         if (dbg > 0) {
             fprintf(stderr, "status=%c%c\n\n", fcd->status[0], fcd->status[1]);
         }
-        return;
+        return false;
     }
 
+    memcpy(backup, fcd->record, reclen);
     memcpy(fcd->record, record, reclen);
 
     kdb(fcd, &keyoffset, &keylen);
@@ -214,16 +221,12 @@ void op_rewrite(PGconn *conn, fcd_t *fcd) {
         memcpy(fcd->status, ST_OK, 2);
     }
     PQclear(res);
+    pending_commits++;
 
     if (dbg > 0) {
         fprintf(stderr, "status=%c%c\n\n", fcd->status[0], fcd->status[1]);
     }
     putshort(fcd->key_id, keyid);
-
-    res = PQexec(conn, "COMMIT");
-    PQclear(res);
-
-    res = PQexec(conn, "BEGIN");
-    PQclear(res);
+    return true;
 
 }

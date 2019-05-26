@@ -105,12 +105,14 @@ void pq2cob(table_t *tab, PGresult *res, unsigned char *record, unsigned short r
 void kdb(fcd_t *fcd, unsigned int *offset, unsigned int *len);
 void getkeys(fcd_t *fcd, table_t *tab);
 
+void commit();
+
 void op_open(PGconn *conn, fcd_t *fcd, unsigned short opcode);
 void op_close(PGconn *conn, fcd_t *fcd);
 void op_start_gt(PGconn *conn, fcd_t *fcd);
 void op_read_next(PGconn *conn, fcd_t *fcd);
 void op_read_random(PGconn *conn, fcd_t *fcd);
-void op_rewrite(PGconn *conn, fcd_t *fcd);
+bool op_rewrite(PGconn *conn, fcd_t *fcd);
 void op_write(PGconn *conn, fcd_t *fcd);
 void op_delete(PGconn *conn, fcd_t *fcd);
 
