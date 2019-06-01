@@ -3,6 +3,7 @@
 #include "pqfh.h"
 
 extern int dbg;
+char schema[33];
 
 bool table_info(PGconn *conn, table_t *table, fcd_t *fcd) {
 
@@ -65,11 +66,10 @@ bool table_info(PGconn *conn, table_t *table, fcd_t *fcd) {
         }
 
         PQclear(res);
-        table->columns = list2_append(table->columns, &col, sizeof(column_t));
-        offset += col.len;
-        if (offset >= reclen) {
-            break;
+        if (offset < reclen) {
+            table->columns = list2_append(table->columns, &col, sizeof(column_t));
         }
+        offset += col.len;
 
     }
 
@@ -83,17 +83,39 @@ bool table_info(PGconn *conn, table_t *table, fcd_t *fcd) {
     return table->columns != NULL ? true : false;
 }
 
-char *get_schema(char *table) {
-    if (strstr("sp01a03", table) != NULL) {
-        return "basicos";
+char *get_schema(PGconn *conn, char *table) {
+
+    PGresult   *res;
+    char       sql[4097];
+
+    // declara o cursor
+    sprintf(sql, "declare cursor_tables cursor for  \nselect table_schema\n    from information_schema.tables\n    where table_name = '%s'", table);
+    if (dbg > 1) {
+        fprintf(stderr, "%s\n", sql);
     }
-    if (strstr("sp01a04", table) != NULL) {
-        return "materiais";
+    res = PQexec(conn, sql);
+    if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+        fprintf(stderr, "Erro na execucao do comando: %s\n%s\n",
+            PQerrorMessage(conn), sql);
+        PQclear(res);
+        return "";
     }
-    if (strstr("cidades", table) != NULL) {
-        return "basicos";
+    PQclear(res);
+
+    // le o registro do cursor
+    res = PQexec(conn, "fetch next in cursor_tables");
+    if ((PQresultStatus(res) != PGRES_TUPLES_OK) || (PQntuples(res) == 0)) {
+        PQclear(res);
+        res = PQexec(conn, "CLOSE cursor_tables");
+        PQclear(res);
+        return "";
     }
-    return "?";
+
+    strcpy(schema, PQgetvalue(res, 0, 0));
+
+    res = PQexec(conn, "CLOSE cursor_tables");
+    PQclear(res);
+    return schema;
 }
 
 column_t *get_col_at(table_t *table, unsigned int offset) {

@@ -3,6 +3,7 @@
 #include "pqfh.h"
 
 extern int dbg;
+extern bool chaves_concatenadas;
 
 extern int pending_commits;
 
@@ -10,7 +11,7 @@ void op_write(PGconn *conn, fcd_t *fcd) {
 
     unsigned short reclen, keyid; 
     table_t        *tab;
-    char           name[33];
+    char           name[33], prefixo[7];
     unsigned int   fileid, offset;
     column_t       *col;
     char           sql[4097], aux[257];
@@ -47,22 +48,28 @@ void op_write(PGconn *conn, fcd_t *fcd) {
     // prepara o comando se ainda nao tiver preparado
     if (!tab->ins_prepared) {
 
-        sprintf(sql, "insert into %s.%s (", get_schema(tab->name), tab->name);
+        sprintf(sql, "insert into %s.%s (", get_schema(conn, tab->name), tab->name);
         for (ptr=tab->columns; ptr!=NULL; ptr=ptr->next) {
             col = (column_t *) ptr->buf;
+            if (ptr == tab->columns) {
+                memcpy(prefixo, col->name, 6);
+                prefixo[6] = 0;
+            }
             if (ptr != tab->columns) {
                 strcat(sql, ",");
             }
             strcat(sql, col->name);
         }
-        k = 0;
-        for (ptr=tab->keys; ptr!=NULL; ptr=ptr->next) {
-            _key_t *key = (_key_t *) ptr->buf;
-            if (key->ncols > 1) {
-                sprintf(aux, ",k%d", k);
-                strcat(sql, aux);
+        if (chaves_concatenadas) {
+            k = 0;
+            for (ptr=tab->keys; ptr!=NULL; ptr=ptr->next) {
+                _key_t *key = (_key_t *) ptr->buf;
+                if (key->ncols > 1) {
+                    sprintf(aux, ",%skey%d", prefixo, k);
+                    strcat(sql, aux);
+                }
+                k++;
             }
-            k++;
         }
         
         strcat(sql, ")\nvalues (");
@@ -76,12 +83,14 @@ void op_write(PGconn *conn, fcd_t *fcd) {
             sprintf(aux, "$%d", ++p);
             strcat(sql, aux);
         }
-        for (ptr=tab->keys; ptr!=NULL; ptr=ptr->next) {
-            _key_t *key = (_key_t *) ptr->buf;
-            if (key->ncols > 1) {
-                tab->bufs[p] = malloc(key->len+2);
-                sprintf(aux, ",$%d", ++p);
-                strcat(sql, aux);
+        if (chaves_concatenadas) {
+            for (ptr=tab->keys; ptr!=NULL; ptr=ptr->next) {
+                _key_t *key = (_key_t *) ptr->buf;
+                if (key->ncols > 1) {
+                    tab->bufs[p] = malloc(key->len+2);
+                    sprintf(aux, ",$%d", ++p);
+                    strcat(sql, aux);
+                }
             }
         }
         strcat(sql, ")");
@@ -91,7 +100,7 @@ void op_write(PGconn *conn, fcd_t *fcd) {
         }
         tab->ins_prepared = true;
 
-        res = PQprepare(conn, name, sql, 1, NULL);
+        res = PQprepare(conn, name, sql, p, NULL);
         if (PQresultStatus(res) != PGRES_COMMAND_OK) {
             fprintf(stderr, "Erro na execucao do comando: %s\n%s\n",
                 PQerrorMessage(conn), sql);
@@ -106,6 +115,11 @@ void op_write(PGconn *conn, fcd_t *fcd) {
     for (ptr=tab->columns; ptr!=NULL; ptr=ptr->next) {
 
         col = (column_t *) ptr->buf;
+
+        if (ptr == tab->columns) {
+            memcpy(prefixo, col->name, 6);
+            prefixo[6] = 0;
+        }
 
         paramValues[p] = tab->bufs[p];
         paramLengths[p] = col->len;
@@ -142,26 +156,28 @@ void op_write(PGconn *conn, fcd_t *fcd) {
 
     }
 
-    // monta chaves compostas
-    for (ptr=tab->keys, k=0; ptr!=NULL; ptr=ptr->next, k++) {
-        _key_t *key = (_key_t *) ptr->buf;
-        if (key->ncols > 1) {
-            paramValues[p] = tab->bufs[p];
-            paramLengths[p] = col->len;
-            paramFormats[p] = 0;
-            column_t *col;
-            int c;
-            offset = 0;
-            for (c=0; c<key->ncols; c++) {
-                col = key->columns[c];
-                memcpy(tab->bufs[p]+offset, fcd->record+col->offset, col->len);
-                offset += col->len;
+    if (chaves_concatenadas) {
+        // monta chaves compostas
+        for (ptr=tab->keys, k=0; ptr!=NULL; ptr=ptr->next, k++) {
+            _key_t *key = (_key_t *) ptr->buf;
+            if (key->ncols > 1) {
+                paramValues[p] = tab->bufs[p];
+                paramLengths[p] = col->len;
+                paramFormats[p] = 0;
+                column_t *col;
+                int c;
+                offset = 0;
+                for (c=0; c<key->ncols; c++) {
+                    col = key->columns[c];
+                    memcpy(tab->bufs[p]+offset, fcd->record+col->offset, col->len);
+                    offset += col->len;
+                }
+                tab->bufs[p][offset] = 0;
+                if (dbg > 2) {
+                    fprintf(stderr, "    %d %skey%d %d [%s]\n", p, prefixo, k, key->len, tab->bufs[p]);
+                }
+                p++;
             }
-            tab->bufs[p][offset] = 0;
-            if (dbg > 2) {
-                fprintf(stderr, "    %d k%d %d [%s]\n", p, k, key->len, tab->bufs[p]);
-            }
-            p++;
         }
     }
 

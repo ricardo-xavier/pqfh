@@ -11,6 +11,7 @@
 PGconn *conn=NULL;
 int dbg=-1;
 bool isam=false;
+bool chaves_concatenadas=true;
 
 int pending_commits = 0;
 pthread_t thread_id;
@@ -18,11 +19,13 @@ pthread_mutex_t lock;
 
 char backup[MAX_REC_LEN+1];
 
-#define VERSAO "v1.3.0 26/05/2019"
+#define VERSAO "v1.4.0 01/06/2019"
 
 void commit() {
     PGresult *res;
-    fprintf(stderr, "commit %d\n", pending_commits);
+    if (dbg > 0) {
+        fprintf(stderr, "commit %d\n", pending_commits);
+    }
     res = PQexec(conn, "COMMIT");
     PQclear(res);
     res = PQexec(conn, "BEGIN");
@@ -33,7 +36,9 @@ void commit() {
 void *thread_commit(void *vargp) {
     while (true) {
         sleep(1); 
-        fprintf(stderr, "pending_commits %d\n", pending_commits);
+        if (dbg > 1) {
+            fprintf(stderr, "pending_commits %d\n", pending_commits);
+        }
         if (pending_commits > 0) {
             pthread_mutex_lock(&lock);
             commit();
@@ -67,6 +72,12 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
             isam = false;
         } else {
             isam = !strcasecmp(env, "S");
+        }
+        env = getenv("PQFH_CHAVES_CONCATENADAS");
+        if (env == NULL) {
+            chaves_concatenadas = true;
+        } else {
+            chaves_concatenadas = !strcasecmp(env, "S");
         }
     }
 
@@ -140,11 +151,27 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
             break;
 
         case OP_START_GT:
-            op_start_gt(conn, fcd);
+            op_start(conn, fcd, ">");
+            break;
+
+        case OP_START_GE:
+            op_start(conn, fcd, ">=");
+            break;
+
+        case OP_START_LT:
+            op_start(conn, fcd, "<");
+            break;
+
+        case OP_START_LE:
+            op_start(conn, fcd, "<=");
             break;
 
         case OP_READ_NEXT:
-            op_read_next(conn, fcd);
+            op_next_prev(conn, fcd, 'n');
+            break;
+
+        case OP_READ_PREVIOUS:
+            op_next_prev(conn, fcd, 'p');
             break;
 
         case OP_READ_RANDOM:

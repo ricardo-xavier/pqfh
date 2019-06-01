@@ -21,9 +21,14 @@ typedef struct {
     bool    upd_prepared;
     bool    ins_prepared;
     bool    del_prepared;
-    short   key_start;
-    char    buf_start[MAX_KEY_LEN+1];
+    short   key_next;
+    char    buf_next[MAX_KEY_LEN+1];
+    short   key_prev;
+    char    buf_prev[MAX_KEY_LEN+1];
     char    *bufs[256];
+    list2_t *prms;
+    list2_t *prms_rewrite;
+    list2_t *prms_delete;
 } table_t;
 
 typedef struct {
@@ -80,7 +85,11 @@ typedef struct {
 #define OP_REWRITE       0xfaf4
 #define OP_CLOSE         0xfa80
 #define OP_START_GT      0xfaea
+#define OP_START_GE      0xfaeb
+#define OP_START_LT      0xfafe
+#define OP_START_LE      0xfaff
 #define OP_READ_NEXT     0xfaf5
+#define OP_READ_PREVIOUS 0xfaf9
 #define OP_READ_RANDOM   0xfaf6
 #define OP_DELETE        0xfaf7
 
@@ -92,7 +101,7 @@ typedef struct {
 #define ST_ERROR          "99"
 
 bool table_info(PGconn *conn, table_t *table, fcd_t *fcd);
-char *get_schema(char *table);
+char *get_schema(PGconn *conn, char *table);
 column_t *get_col_at(table_t *table, unsigned int offset);
 
 unsigned short getshort(unsigned char *s);
@@ -104,13 +113,15 @@ void pq2cob(table_t *tab, PGresult *res, unsigned char *record, unsigned short r
 
 void kdb(fcd_t *fcd, unsigned int *offset, unsigned int *len);
 void getkeys(fcd_t *fcd, table_t *tab);
+void getwhere(unsigned char *record, table_t *table, int keyid, char *op, char *where, char *order);
+void getwhere_prepared(table_t *table, int keyid, char *where, int ini, char cmd);
 
 void commit();
 
 void op_open(PGconn *conn, fcd_t *fcd, unsigned short opcode);
 void op_close(PGconn *conn, fcd_t *fcd);
-void op_start_gt(PGconn *conn, fcd_t *fcd);
-void op_read_next(PGconn *conn, fcd_t *fcd);
+void op_start(PGconn *conn, fcd_t *fcd, char *op);
+void op_next_prev(PGconn *conn, fcd_t *fcd, char dir);
 void op_read_random(PGconn *conn, fcd_t *fcd);
 bool op_rewrite(PGconn *conn, fcd_t *fcd);
 void op_write(PGconn *conn, fcd_t *fcd);

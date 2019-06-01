@@ -5,6 +5,7 @@
 extern int dbg;
 
 extern int pending_commits;
+extern bool chaves_concatenadas;
 
 void op_delete(PGconn *conn, fcd_t *fcd) {
 
@@ -12,8 +13,8 @@ void op_delete(PGconn *conn, fcd_t *fcd) {
     unsigned short reclen, keyid; 
     table_t        *tab;
     column_t       *pk, *col;
-    char           buf[257], sql[4097], aux[257];
-    int            p;
+    char           buf[257], sql[4097], aux[257], bufs[16][257];
+    int            p, nParams;
     list2_t        *ptr;
     char           name[33];
     PGresult       *res;
@@ -67,33 +68,44 @@ void op_delete(PGconn *conn, fcd_t *fcd) {
     // prepara o comando se ainda nao tiver preparado
     if (!tab->del_prepared) {
 
-        sprintf(sql, "delete from %s.%s\n", get_schema(tab->name), tab->name);
+        sprintf(sql, "delete from %s.%s\n", get_schema(conn, tab->name), tab->name);
 
-        // monta o where com as colunas da pk
-        p = 0;
-        remainder = keylen;
-        for (ptr=tab->columns; (remainder > 0) && (ptr != NULL); ptr=ptr->next) {
+        if (!chaves_concatenadas) {
+            char where[4097];
+            getwhere_prepared(tab, keyid, where, 0, 'd');
+            strcat(sql, "where ");
+            strcat(sql, where);
+            nParams = list2_size(tab->prms_delete);
 
-            col = (column_t *) ptr->buf;
+        } else {
 
-            if (remainder == keylen) {
-                strcat(sql, "  where ");
-            } else {
-                strcat(sql, "    and ");
+            // monta o where com as colunas da pk
+            p = 0;
+            remainder = keylen;
+            for (ptr=tab->columns; (remainder > 0) && (ptr != NULL); ptr=ptr->next) {
+
+                col = (column_t *) ptr->buf;
+
+                if (remainder == keylen) {
+                    strcat(sql, "  where ");
+                } else {
+                    strcat(sql, "    and ");
+                }
+                tab->bufs[p] = malloc(col->len+2);
+                sprintf(aux, "%s = $%d\n", col->name, ++p);
+                strcat(sql, aux);
+    
+                remainder -= col->len;
             }
-            tab->bufs[p] = malloc(col->len+2);
-            sprintf(aux, "%s = $%d\n", col->name, ++p);
-            strcat(sql, aux);
-
-            remainder -= col->len;
-
+            nParams = p;
         }
+
         if (dbg > 1) {
             fprintf(stderr, "%s\n", sql);
         }
         tab->del_prepared = true;
 
-        res = PQprepare(conn, name, sql, 1, NULL);
+        res = PQprepare(conn, name, sql, nParams, NULL);
         if (PQresultStatus(res) != PGRES_COMMAND_OK) {
             fprintf(stderr, "Erro na execucao do comando: %s\n%s\n",
                 PQerrorMessage(conn), sql);
@@ -104,35 +116,56 @@ void op_delete(PGconn *conn, fcd_t *fcd) {
 
     // seta os parametros
     p = 0;
-    remainder = keylen;
-    offset = 0;
-    for (ptr=tab->columns; ptr!=NULL; ptr=ptr->next) {
+    if (!chaves_concatenadas) {
+        list2_t *ptr;
+        column_t *col;
+        int seq=0;
 
-        col = (column_t *) ptr->buf;
-
-        // pk
-        if (remainder > 0) {
-
-            paramValues[p] = tab->bufs[p];
-            paramLengths[p] = col->len;
-            paramFormats[p] = 0;
-
-            remainder -= col->len;
-            memcpy(tab->bufs[p], fcd->record+offset, col->len);
-            tab->bufs[p][col->len] = 0;
-
+        for (ptr=tab->prms_delete; ptr!=NULL; ptr=ptr->next) {
+            col = (column_t *) ptr->buf;
+            memcpy(bufs[seq], fcd->record+col->offset, col->len);
+            bufs[seq][col->len] = 0;
+            paramValues[seq] = bufs[seq];
+            paramLengths[seq] = col->len;
+            paramFormats[seq] = 0;
             if (dbg > 2) {
-                fprintf(stderr, "    %d %s %c %d:%d,%d [%s]\n", p, col->name, col->tp, offset, col->len, col->dec, tab->bufs[p]);
+                fprintf(stderr, "    %d %s %c %d:%d,%d [%s]\n", p, col->name, col->tp, col->offset, col->len, col->dec, bufs[seq]);
             }
-
+            seq++;
             p++;
-            offset += col->len;
         }
+    } else {
 
+        remainder = keylen;
+        offset = 0;
+        for (ptr=tab->columns; ptr!=NULL; ptr=ptr->next) {
+
+            col = (column_t *) ptr->buf;
+
+            // pk
+            if (remainder > 0) {
+
+                paramValues[p] = tab->bufs[p];
+                paramLengths[p] = col->len;
+                paramFormats[p] = 0;
+
+                remainder -= col->len;
+                memcpy(tab->bufs[p], fcd->record+offset, col->len);
+                tab->bufs[p][col->len] = 0;
+
+                if (dbg > 2) {
+                    fprintf(stderr, "    %d %s %c %d:%d,%d [%s]\n", p, col->name, col->tp, offset, col->len, col->dec, tab->bufs[p]);
+                }
+
+                p++;
+                offset += col->len;
+            }
+        }
     }
+    nParams = p;
 
     // executa o comando
-    res =  PQexecPrepared(conn, name, p, paramValues, paramLengths, paramFormats, 0);
+    res =  PQexecPrepared(conn, name, nParams, paramValues, paramLengths, paramFormats, 0);
     if (PQresultStatus(res) != PGRES_COMMAND_OK) {
         memcpy(fcd->status, ST_REC_NOT_FOUND, 2);
         if (dbg > 0) {

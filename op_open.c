@@ -32,7 +32,9 @@ void op_open(PGconn *conn, fcd_t *fcd, unsigned short opcode) {
     tab->upd_prepared = false;
     tab->ins_prepared = false;
     tab->del_prepared = false;
-    tab->key_start = -1;
+    tab->key_next = -1;
+    tab->key_prev = -1;
+    tab->prms = NULL;
     if (table_info(conn, tab, fcd)) {
         memcpy(fcd->status, ST_OK, 2);
     } else {

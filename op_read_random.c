@@ -3,15 +3,16 @@
 #include "pqfh.h"
 
 extern int dbg;
+extern bool chaves_concatenadas;
 
 void op_read_random(PGconn *conn, fcd_t *fcd) {
 
     unsigned int   fileid, keyoffset, keylen;
     unsigned short keyid, reclen;
-    char           buf[257], sql[257], name[33];
-    const char     *paramValues[1];
-    int            paramFormats[1] = { 0 };
-    int            paramLengths[1];
+    char           buf[257], sql[257], name[33], kname[33], bufs[16][257];
+    const char     *paramValues[16];
+    int            paramFormats[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+    int            paramLengths[16], nParams;
     table_t        *tab;
     column_t       *col;
     PGresult       *res;
@@ -49,16 +50,29 @@ void op_read_random(PGconn *conn, fcd_t *fcd) {
     // prepara o comando se ainda nao tiver preparado
     if (!tab->read_prepared) {
 
-        if (col->len == keylen) {
-            sprintf(sql, "select * from %s.%s where %s = $1", get_schema(tab->name), tab->name, col->name);
+        if (!chaves_concatenadas) {
+            char where[4097];
+            getwhere_prepared(tab, keyid, where, 0, 's');
+            sprintf(sql, "select * from %s.%s where %s", get_schema(conn, tab->name), tab->name, where);
+            nParams = list2_size(tab->prms);
+
         } else {
-            sprintf(sql, "select * from %s.%s where k%d = $1", get_schema(tab->name), tab->name, keyid);
+
+            nParams = 1;
+            if (col->len == keylen) {
+                sprintf(sql, "select * from %s.%s where %s = $1", get_schema(conn, tab->name), tab->name, col->name);
+            } else {
+                memcpy(kname, col->name, 6);
+                sprintf(kname+6, "key%d", keyid);
+                sprintf(sql, "select * from %s.%s where %s = $1", get_schema(conn, tab->name), tab->name, kname);
+            }
         }
+
         if (dbg > 1) {
             fprintf(stderr, "%s\n", sql);
         }
 
-        res = PQprepare(conn, name, sql, 1, NULL);
+        res = PQprepare(conn, name, sql, nParams, NULL);
         if (PQresultStatus(res) != PGRES_COMMAND_OK) {
             fprintf(stderr, "Erro na execucao do comando: %s\n%s\n",
                 PQerrorMessage(conn), sql);
@@ -70,11 +84,30 @@ void op_read_random(PGconn *conn, fcd_t *fcd) {
     }
 
     // seta parametros
-    paramValues[0] = buf;
-    paramLengths[0] = keylen;
+    if (!chaves_concatenadas) {
+        list2_t *ptr;
+        column_t *col;
+        int seq=0;
+
+        for (ptr=tab->prms; ptr!=NULL; ptr=ptr->next) {
+            col = (column_t *) ptr->buf;
+            
+            nParams = list2_size(tab->prms);
+            memcpy(bufs[seq], fcd->record+col->offset, col->len);
+            bufs[seq][col->len] = 0;
+            paramValues[seq] = bufs[seq];
+            paramLengths[seq] = col->len;
+            seq++;
+        }
+
+    } else {
+        nParams = 1;
+        paramValues[0] = buf;
+        paramLengths[0] = keylen;
+    }
 
     // executa o comando
-    res =  PQexecPrepared(conn, name, 1, paramValues, paramLengths, paramFormats, 0);
+    res =  PQexecPrepared(conn, name, nParams, paramValues, paramLengths, paramFormats, 0);
     if ((PQresultStatus(res) != PGRES_TUPLES_OK) || (PQntuples(res) == 0))  {
         memcpy(fcd->status, ST_REC_NOT_FOUND, 2);
         if (dbg > 0) {
