@@ -74,8 +74,9 @@ typedef struct {
     unsigned char filler_8[11];     /* 68 */
     unsigned char file_id[4];       /* 79 */
     unsigned char filler_9[10];     /* 83 */
-    unsigned char ignore_loco;      /* 93 */
-    unsigned char filler_10[6];     /* 94 */
+    unsigned char ignore_lock;      /* 93 */
+    unsigned char filler_10[5];     /* 94 */
+    unsigned char isam;             /* 99 */
 } fcd_t;
 
 #define OP_OPEN_INPUT    0xfa00
@@ -126,5 +127,7 @@ void op_read_random(PGconn *conn, fcd_t *fcd);
 bool op_rewrite(PGconn *conn, fcd_t *fcd);
 void op_write(PGconn *conn, fcd_t *fcd);
 void op_delete(PGconn *conn, fcd_t *fcd);
+
+extern void EXTFH(unsigned char *opcode, fcd_t *fcd);
 
 #endif

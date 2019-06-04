@@ -40,6 +40,9 @@ void op_open(PGconn *conn, fcd_t *fcd, unsigned short opcode) {
     } else {
         memcpy(fcd->status, ST_FILE_NOT_FOUND, 2);
     }
+    if (fcd->isam == 'S') {
+        return;
+    }
 
     if (dbg > 0) {
         fprintf(stderr, "status=%c%c\n\n", fcd->status[0], fcd->status[1]);

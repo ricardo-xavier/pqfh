@@ -5,6 +5,11 @@
 extern int dbg;
 char schema[33];
 
+fcd_t fcd01;
+bool montafcd=true;
+
+bool tabela_convertida(char *tabela);
+
 bool table_info(PGconn *conn, table_t *table, fcd_t *fcd) {
 
     PGresult   *res;
@@ -12,6 +17,13 @@ bool table_info(PGconn *conn, table_t *table, fcd_t *fcd) {
     int        i, offset;
     column_t   col;
     unsigned short reclen;
+    bool convertida;
+
+    convertida = tabela_convertida(table->name);
+    if (!convertida) {
+        fcd->isam = 'S';
+        return false;
+    }
 
     table->columns = NULL;
     reclen = getshort(fcd->rec_len);
@@ -134,3 +146,80 @@ column_t *get_col_at(table_t *table, unsigned int offset) {
     return NULL;
 }
 
+/*
+ * fd pg01a01
+ *    is external
+ *    value of file-id is "../bd/pg01a01".
+ *
+ *    01  pg0101.
+ *      03 pg0101key          pic x(26).
+ *      03 filler redefines pg0101key.
+ *        05 pg0101tabela     pic x(20).
+ *        05 pg0101serie      pic 9(06).
+ *      03 pg0101convertido   pic x. *> S ou N
+ *      03 pg0101so-bd        pic x. *> S = atualizacao somente no banco de dados
+ *      03 pg0101atu-ded      pic x. *> S = atualizacao pelo dedo duro, C = dedo-duro porem somente pelo cron
+ *      03 pg0101atu-unit     pic x. *> S = atualizacao unitaria, nao utiliza bcpava somente o bcprdm
+ *      03 pg0101filler       pic x(226).
+ *
+ *
+ * select pg01a01 assign to disk
+ *        file status is statuspg-a01
+ *        organization is indexed
+ *        access mode is dynamic
+ *        record key is pg0101key
+ *        alternate record key is pg0101key1 = pg0101serie pg0101tabela.
+ *
+ */
+
+bool tabela_convertida(char *tabela) {
+
+    unsigned char opcode[2];
+
+    if (montafcd) {
+        montafcd = false;
+        fcd01.file_name = (unsigned char *) strdup("arq/pg01a01");
+        fcd01.organization = 2;    // indexed
+        fcd01.access_mode = 132;   // random + user file status
+        fcd01.open_mode = 128;     // closed
+        putshort(fcd01.file_name_len, strlen((char *) fcd01.file_name));
+        fcd01.file_format = '4';
+
+        fcd01.record = malloc(257);
+        putshort(fcd01.rec_len, 256);
+
+        fcd01.kdb = malloc(76);
+        memset(fcd01.kdb, 0, 76);
+        putshort(fcd01.kdb+0, 76);
+        putshort(fcd01.kdb+6, 2);
+
+        putshort(fcd01.kdb+14+0, 1);
+        putshort(fcd01.kdb+14+2, 46);
+
+        putshort(fcd01.kdb+14+16+0, 2);
+        putshort(fcd01.kdb+14+16+2, 56);
+
+        putint(fcd01.kdb+46+2, 0);
+        putint(fcd01.kdb+46+6, 26);
+
+        putint(fcd01.kdb+56+2, 20);
+        putint(fcd01.kdb+56+6, 6);
+
+        putint(fcd01.kdb+66+2, 0);
+        putint(fcd01.kdb+66+6, 20);
+
+        putshort(opcode, OP_OPEN_INPUT);
+        EXTFH(opcode, &fcd01);
+    }
+
+    memset(fcd01.record, 0, 256);
+    memcpy(fcd01.record, tabela, strlen(tabela));
+
+    putshort(opcode, OP_START_GE);
+    EXTFH(opcode, &fcd01);
+
+    putshort(opcode, OP_READ_NEXT);
+    EXTFH(opcode, &fcd01);
+
+    return (fcd01.status[0] == '0') && (fcd01.status[1] == '0') && (fcd01.record[26] == 'S');
+}

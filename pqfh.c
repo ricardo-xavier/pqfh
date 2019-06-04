@@ -48,7 +48,6 @@ void *thread_commit(void *vargp) {
     return NULL; 
 } 
 
-extern void EXTFH(unsigned char *opcode, fcd_t *fcd);
 void pqfh(unsigned char *opcode, fcd_t *fcd) {
 
     char           *conninfo;
@@ -111,6 +110,11 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
         pthread_create(&thread_id, NULL, thread_commit, NULL);
     }
 
+    if (fcd->isam == 'S') {
+        EXTFH(opcode, fcd);
+        return;
+    }
+
     pthread_mutex_lock(&lock);
     op = getshort(opcode);
     switch (op) {
@@ -119,6 +123,10 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
         case OP_OPEN_OUTPUT:
         case OP_OPEN_IO:
             op_open(conn, fcd, op);
+            if (fcd->isam == 'S') {
+                EXTFH(opcode, fcd);
+                break;
+            }
             if (!isam) {
                 break;
             }
