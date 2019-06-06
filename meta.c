@@ -6,9 +6,12 @@ extern int dbg;
 char schema[33];
 
 fcd_t fcd01;
-bool montafcd=true;
+fcd_t fcd02;
+bool montafcd01=true;
+bool montafcd02=true;
 
 bool tabela_convertida(char *tabela);
+bool nome_dicionario(char *tabela, char *nome);
 
 bool table_info(PGconn *conn, table_t *table, fcd_t *fcd) {
 
@@ -19,7 +22,8 @@ bool table_info(PGconn *conn, table_t *table, fcd_t *fcd) {
     unsigned short reclen;
     bool convertida;
 
-    convertida = tabela_convertida(table->name);
+    nome_dicionario(table->name, table->dictname);
+    convertida = tabela_convertida(table->dictname);
     if (!convertida) {
         fcd->isam = 'S';
         return false;
@@ -29,7 +33,7 @@ bool table_info(PGconn *conn, table_t *table, fcd_t *fcd) {
     reclen = getshort(fcd->rec_len);
 
     // declara o cursor
-    sprintf(sql, "declare cursor_columns cursor for  \nselect column_name,data_type,character_maximum_length,numeric_precision,numeric_scale\n    from information_schema.columns\n    where table_name = '%s'\n    order by ordinal_position", table->name);
+    sprintf(sql, "declare cursor_columns cursor for  \nselect column_name,data_type,character_maximum_length,numeric_precision,numeric_scale\n    from information_schema.columns\n    where table_name = '%s'\n    order by ordinal_position", table->dictname);
     if (dbg > 1) {
         fprintf(stderr, "%s\n", sql);
     }
@@ -175,10 +179,16 @@ column_t *get_col_at(table_t *table, unsigned int offset) {
 bool tabela_convertida(char *tabela) {
 
     unsigned char opcode[2];
+    char *nomeenv;
 
-    if (montafcd) {
-        montafcd = false;
-        fcd01.file_name = (unsigned char *) strdup("arq/pg01a01");
+    if (montafcd01) {
+        montafcd01 = false;
+        nomeenv = getenv("PQFH_PG01A01");
+        if (nomeenv == NULL) {
+            fcd01.file_name = (unsigned char *) strdup("../bd/pg01a01");
+        } else {
+            fcd01.file_name = (unsigned char *) strdup(nomeenv);
+        }
         fcd01.organization = 2;    // indexed
         fcd01.access_mode = 132;   // random + user file status
         fcd01.open_mode = 128;     // closed
@@ -220,6 +230,95 @@ bool tabela_convertida(char *tabela) {
 
     putshort(opcode, OP_READ_NEXT);
     EXTFH(opcode, &fcd01);
+    if (dbg > 2) {
+        fprintf(stderr, "%s [%s] %c %c [%c]\n", fcd01.file_name, tabela, fcd01.status[0], fcd01.status[1], fcd01.record[26]);
+    }
 
     return (fcd01.status[0] == '0') && (fcd01.status[1] == '0') && (fcd01.record[26] == 'S');
+}
+
+/*
+ * fd  pg01a02
+ *     is external
+ *     value of file-id is "/u/rede/arqp/pg01a02".
+ *
+ * 01  pg0102.
+ *   03 pg0102sigla      pic x(10).
+ *   03 pg0102tabela     pic x(20).
+ *   03 pg0102filler     pic x(226).
+ *                                                 ~                                                                      
+ * select pg01a02 assign to disk
+ *        file status is statuspg-a02
+ *        organization is indexed
+ *        access mode is dynamic
+ *        record key is pg0102sigla
+ *        alternate record key is pg0102tabela.
+ *
+ */
+bool nome_dicionario(char *tabela, char *nome) {
+
+    unsigned char opcode[2];
+    char *nomeenv, *p;
+    bool ret;
+
+    strcpy(nome, tabela);
+    if (montafcd02) {
+        montafcd02 = false;
+        nomeenv = getenv("PQFH_PG01A02");
+        if (nomeenv == NULL) {
+            fcd02.file_name = (unsigned char *) strdup("../bd/pg01a02");
+        } else {
+            fcd02.file_name = (unsigned char *) strdup(nomeenv);
+        }
+        fcd02.organization = 2;    // indexed
+        fcd02.access_mode = 132;   // random + user file status
+        fcd02.open_mode = 128;     // closed
+        putshort(fcd02.file_name_len, strlen((char *) fcd02.file_name));
+        fcd02.file_format = '4';
+
+        fcd02.record = malloc(257);
+        putshort(fcd02.rec_len, 256);
+
+        fcd02.kdb = malloc(66);
+        memset(fcd02.kdb, 0, 66);
+        putshort(fcd02.kdb+0, 66);
+        putshort(fcd02.kdb+6, 2);
+
+        putshort(fcd02.kdb+14+0, 1);
+        putshort(fcd02.kdb+14+2, 46);
+
+        putshort(fcd02.kdb+14+16+0, 1);
+        putshort(fcd02.kdb+14+16+2, 56);
+
+        putint(fcd02.kdb+46+2, 0);
+        putint(fcd02.kdb+46+6, 10);
+
+        putint(fcd02.kdb+56+2, 10);
+        putint(fcd02.kdb+56+6, 20);
+
+        putshort(opcode, OP_OPEN_INPUT);
+        EXTFH(opcode, &fcd02);
+    }
+
+    memset(fcd02.record, 0, 256);
+    memcpy(fcd02.record+10, tabela, strlen(tabela));
+    putshort(fcd02.key_id, 1);
+
+    putshort(opcode, OP_START_GE);
+    EXTFH(opcode, &fcd02);
+
+    putshort(opcode, OP_READ_NEXT);
+    EXTFH(opcode, &fcd02);
+
+    ret = (fcd02.status[0] == '0') && (fcd02.status[1] == '0') && memcmp(fcd02.record, nome, strlen(nome));
+    if (ret) {
+        memcpy(nome, fcd02.record, 10);
+        nome[10] = 0;
+        if ((p = strchr(nome, ' ')) != NULL) *p=0;
+    }
+    if (dbg > 2) {
+        fprintf(stderr, "%s dicionario [%s] %c %c [%s]\n", fcd02.file_name, tabela, fcd02.status[0], fcd02.status[1], nome);
+    }
+    return ret;
+    
 }

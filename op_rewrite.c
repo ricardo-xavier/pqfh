@@ -77,7 +77,7 @@ bool op_rewrite(PGconn *conn, fcd_t *fcd) {
     // prepara o comando se ainda nao tiver preparado
     if (!tab->upd_prepared) {
 
-        sprintf(sql, "update %s.%s\n", get_schema(conn, tab->name), tab->name);
+        sprintf(sql, "update %s.%s\n", get_schema(conn, tab->dictname), tab->name);
 
         p = 0;
         remainder = keylen;

@@ -19,7 +19,7 @@ pthread_mutex_t lock;
 
 char backup[MAX_REC_LEN+1];
 
-#define VERSAO "v1.4.0 01/06/2019"
+#define VERSAO "v1.5.0 04/06/2019"
 
 void commit() {
     PGresult *res;
@@ -172,6 +172,10 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
 
         case OP_START_LE:
             op_start(conn, fcd, "<=");
+            break;
+
+        case OP_START_EQ:
+            op_start(conn, fcd, "=");
             break;
 
         case OP_READ_NEXT:

@@ -48,7 +48,7 @@ void op_write(PGconn *conn, fcd_t *fcd) {
     // prepara o comando se ainda nao tiver preparado
     if (!tab->ins_prepared) {
 
-        sprintf(sql, "insert into %s.%s (", get_schema(conn, tab->name), tab->name);
+        sprintf(sql, "insert into %s.%s (", get_schema(conn, tab->dictname), tab->name);
         for (ptr=tab->columns; ptr!=NULL; ptr=ptr->next) {
             col = (column_t *) ptr->buf;
             if (ptr == tab->columns) {

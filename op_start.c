@@ -33,7 +33,7 @@ void op_start(PGconn *conn, fcd_t *fcd, char *op) {
     // performance
     // se ja foi feito um read next com a mesma chave nao executa novamente
     if (
-            ((op[0] == '>') && (keyid == tab->key_next) && !memcmp(fcd->record+keyoffset, tab->buf_next, keylen)) ||
+            ((op[0] != '<') && (keyid == tab->key_next) && !memcmp(fcd->record+keyoffset, tab->buf_next, keylen)) ||
             ((op[0] == '<') && (keyid == tab->key_prev) && !memcmp(fcd->record+keyoffset, tab->buf_next, keylen))) {
         memcpy(fcd->status, ST_OK, 2);
         if (dbg > 0) {
@@ -48,7 +48,7 @@ void op_start(PGconn *conn, fcd_t *fcd, char *op) {
         fprintf(stderr, "key %d %d:%d [%s]\n", keyid, keyoffset, keylen, buf);
     }
 
-    if (((op[0] == '>') && (tab->key_next != -1)) ||
+    if (((op[0] != '<') && (tab->key_next != -1)) ||
         ((op[0] == '<') && (tab->key_prev != -1))) {
         sprintf(sql, "close cursor_%s", tab->name);
         if (dbg > 1) {
@@ -68,12 +68,12 @@ void op_start(PGconn *conn, fcd_t *fcd, char *op) {
         char where[4097], order[257];
         getwhere(fcd->record, tab, keyid, op, where, order);
         sprintf(sql, "declare cursor_%s cursor with hold for\n  select * from %s.%s\n    where %s order by %s", 
-            tab->name, get_schema(conn, tab->name), tab->name, where, order);
+            tab->name, get_schema(conn, tab->dictname), tab->name, where, order);
     } else {
 
         if (col->len == keylen) {
             sprintf(sql, "declare cursor_%s cursor with hold for\n  select * from %s.%s\n    where %s %s %s%s%s order by %s", 
-                tab->name, get_schema(conn, tab->name), tab->name, col->name, op,
+                tab->name, get_schema(conn, tab->dictname), tab->name, col->name, op,
                 col->tp == 's' ? "'" : "",
                 buf, 
                 col->tp == 's' ? "'" : "",
@@ -83,7 +83,7 @@ void op_start(PGconn *conn, fcd_t *fcd, char *op) {
             memcpy(kname, col->name, 6);
             sprintf(kname+6, "key%d", keyid);
             sprintf(sql, "declare cursor_%s cursor with hold for\n  select * from %s.%s\n    where %s %s '%s' order by %s", 
-                tab->name, get_schema(conn, tab->name), tab->name, kname, op, buf, kname);
+                tab->name, get_schema(conn, tab->dictname), tab->name, kname, op, buf, kname);
         }
     }
 
@@ -100,7 +100,7 @@ void op_start(PGconn *conn, fcd_t *fcd, char *op) {
     }
     PQclear(res);
 
-    if (op[0] == '>') {
+    if (op[0] != '<') {
         tab->key_next = keyid;
     } else {
         tab->key_prev = keyid;

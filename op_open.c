@@ -38,6 +38,9 @@ void op_open(PGconn *conn, fcd_t *fcd, unsigned short opcode) {
     if (table_info(conn, tab, fcd)) {
         memcpy(fcd->status, ST_OK, 2);
     } else {
+        if ((opcode == OP_OPEN_OUTPUT) && strcmp(tab->name, tab->dictname)) {
+            create_table(conn, tab, fcd, opcode);
+        }
         memcpy(fcd->status, ST_FILE_NOT_FOUND, 2);
     }
     if (fcd->isam == 'S') {

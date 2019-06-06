@@ -53,18 +53,18 @@ void op_read_random(PGconn *conn, fcd_t *fcd) {
         if (!chaves_concatenadas) {
             char where[4097];
             getwhere_prepared(tab, keyid, where, 0, 's');
-            sprintf(sql, "select * from %s.%s where %s", get_schema(conn, tab->name), tab->name, where);
+            sprintf(sql, "select * from %s.%s where %s", get_schema(conn, tab->dictname), tab->name, where);
             nParams = list2_size(tab->prms);
 
         } else {
 
             nParams = 1;
             if (col->len == keylen) {
-                sprintf(sql, "select * from %s.%s where %s = $1", get_schema(conn, tab->name), tab->name, col->name);
+                sprintf(sql, "select * from %s.%s where %s = $1", get_schema(conn, tab->dictname), tab->name, col->name);
             } else {
                 memcpy(kname, col->name, 6);
                 sprintf(kname+6, "key%d", keyid);
-                sprintf(sql, "select * from %s.%s where %s = $1", get_schema(conn, tab->name), tab->name, kname);
+                sprintf(sql, "select * from %s.%s where %s = $1", get_schema(conn, tab->dictname), tab->name, kname);
             }
         }
 

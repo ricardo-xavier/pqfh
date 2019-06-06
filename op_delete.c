@@ -68,7 +68,7 @@ void op_delete(PGconn *conn, fcd_t *fcd) {
     // prepara o comando se ainda nao tiver preparado
     if (!tab->del_prepared) {
 
-        sprintf(sql, "delete from %s.%s\n", get_schema(conn, tab->name), tab->name);
+        sprintf(sql, "delete from %s.%s\n", get_schema(conn, tab->dictname), tab->name);
 
         if (!chaves_concatenadas) {
             char where[4097];
