@@ -9,9 +9,9 @@
 // https://www.postgresql.org/docs/9.1/libpq-example.html
 
 PGconn *conn=NULL;
+PGconn *conn2=NULL;
 int dbg=-1;
 bool isam=false;
-bool chaves_concatenadas=true;
 
 int pending_commits = 0;
 pthread_t thread_id;
@@ -19,7 +19,7 @@ pthread_mutex_t lock;
 
 char backup[MAX_REC_LEN+1];
 
-#define VERSAO "v1.5.0 04/06/2019"
+#define VERSAO "v1.6.0 11/06/2019"
 
 void commit() {
     PGresult *res;
@@ -72,12 +72,6 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
         } else {
             isam = !strcasecmp(env, "S");
         }
-        env = getenv("PQFH_CHAVES_CONCATENADAS");
-        if (env == NULL) {
-            chaves_concatenadas = true;
-        } else {
-            chaves_concatenadas = !strcasecmp(env, "S");
-        }
     }
 
     if (conn == NULL) {
@@ -105,6 +99,29 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
             exit(-1);
         }
         PQclear(res);
+
+        conninfo = getenv("REPLICA_BD");
+        if (conninfo != NULL) {
+            if (dbg > 0) {
+                fprintf(stderr, "%ld connect replica [%s]\n", time(NULL), conninfo);
+            }
+            conn2 = PQconnectdb(conninfo);
+            if (PQstatus(conn2) != CONNECTION_OK) {
+                fprintf(stderr, "Erro na conexao com o banco de dados: %s\n%s\n",
+                    PQerrorMessage(conn2), conninfo);
+                exit(-1);
+            }
+
+            res = PQexec(conn2, "BEGIN");
+            if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+                fprintf(stderr, "Erro ao iniciar a transacao: %s\n",
+                    PQerrorMessage(conn2));
+                PQclear(res);
+                PQfinish(conn2);
+                exit(-1);
+            }
+            PQclear(res);
+        }
 
         pthread_mutex_init(&lock, NULL);
         pthread_create(&thread_id, NULL, thread_commit, NULL);

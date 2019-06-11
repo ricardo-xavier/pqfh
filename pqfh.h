@@ -8,9 +8,12 @@
 #define false 0
 #define true 1
 
+#define MAX_COL_LEN  256
 #define MAX_KEY_LEN  256
 #define MAX_NAME_LEN 30
 #define MAX_REC_LEN  4096
+#define MAX_COLS     256
+#define MAX_COMPS    16
 
 typedef struct {
     char    name[MAX_NAME_LEN+1];
@@ -26,11 +29,25 @@ typedef struct {
     char    buf_next[MAX_KEY_LEN+1];
     short   key_prev;
     char    buf_prev[MAX_KEY_LEN+1];
-    char    *bufs[256];
     list2_t *prms;
     list2_t *prms_rewrite;
     list2_t *prms_delete;
+    list2_t *clones;
+    bool    cursor;
+
+    const char *values[MAX_COLS];
+    int        formats[MAX_COLS];
+    int        lengths[MAX_COLS];
+    char       bufs[MAX_COLS][MAX_COL_LEN+1];
 } table_t;
+
+typedef struct {
+    char    schema[MAX_NAME_LEN+1];
+    char    name[MAX_NAME_LEN+1];
+    char    col1[MAX_NAME_LEN+1];
+    char    col2[MAX_NAME_LEN+1];
+    bool    key;
+} clone_t;
 
 typedef struct {
     char name[MAX_NAME_LEN+1];
@@ -38,6 +55,7 @@ typedef struct {
     int len;
     int dec;
     int offset;
+    bool pk;
 } column_t;
 
 typedef struct {
@@ -45,7 +63,7 @@ typedef struct {
     int len;
     int ncomps;
     int ncols;
-    column_t *columns[16];
+    column_t *columns[MAX_COMPS];
 } _key_t;
 
 typedef struct {
@@ -105,7 +123,6 @@ typedef struct {
 
 bool table_info(PGconn *conn, table_t *table, fcd_t *fcd);
 char *get_schema(PGconn *conn, char *table);
-column_t *get_col_at(table_t *table, unsigned int offset);
 
 unsigned short getshort(unsigned char *s);
 unsigned int getint(unsigned char *s);
@@ -114,12 +131,15 @@ void putint(unsigned char *s, unsigned int n);
 
 void pq2cob(table_t *tab, PGresult *res, unsigned char *record, unsigned short reclen);
 
-void kdb(fcd_t *fcd, unsigned int *offset, unsigned int *len);
+char *getkbuf(fcd_t *fcd, unsigned short keyid,  table_t *tab, unsigned short *keylen);
 void getkeys(fcd_t *fcd, table_t *tab);
 void getwhere(unsigned char *record, table_t *table, int keyid, char *op, char *where, char *order);
 void getwhere_prepared(table_t *table, int keyid, char *where, int ini, char cmd);
 
 void commit();
+
+void deallocate(PGconn *conn, table_t *tab);
+void close_cursor(PGconn *conn, table_t *tab);
 
 void op_open(PGconn *conn, fcd_t *fcd, unsigned short opcode);
 void op_close(PGconn *conn, fcd_t *fcd);

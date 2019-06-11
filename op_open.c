@@ -26,15 +26,24 @@ void op_open(PGconn *conn, fcd_t *fcd, unsigned short opcode) {
         fprintf(stderr, "op_open [%s] %04x %ld\n", filename, opcode, time(NULL));
     }
 
+    // aloca e inicializa a tabela
     tab = (table_t *) malloc(sizeof(table_t));
     strcpy(tab->name, filename);
+    tab->columns = NULL;
+    tab->keys = NULL;
+    tab->key_read = -1;
+    tab->key_next = -1;
+    tab->key_prev = -1;
     tab->read_prepared = false;
     tab->upd_prepared = false;
     tab->ins_prepared = false;
     tab->del_prepared = false;
-    tab->key_next = -1;
-    tab->key_prev = -1;
     tab->prms = NULL;
+    tab->prms_rewrite = NULL;
+    tab->prms_delete = NULL;
+    tab->clones = NULL;
+    tab->cursor = false;
+
     if (table_info(conn, tab, fcd)) {
         memcpy(fcd->status, ST_OK, 2);
     } else {

@@ -5,31 +5,6 @@
 
 extern int dbg;
 
-void kdb(fcd_t *fcd, unsigned int *offset, unsigned int *len) {
-
-    unsigned short keyid, cdaoffset, c, ncomps;
-    unsigned char  *kda, *cda;
-
-    keyid = getshort(fcd->key_id);
-
-    // key definition area
-    kda = fcd->kdb + 14 + (keyid * 16);
-    ncomps = getshort(kda + 0);
-    cdaoffset = getshort(kda + 2);
-
-    // component definition area 
-    if (ncomps > 1) {
-        fprintf(stderr, "pendente: chave com mais de um componente\n");
-        exit(-1);
-    }
-
-    c = 0;
-    cda = fcd->kdb + cdaoffset + (c * 10);
-
-    *offset = getint(cda + 2);
-    *len = getint(cda + 6);
-}
-
 void getkeys(fcd_t *fcd, table_t *tab) {
 
     unsigned short nkeys;
@@ -67,9 +42,15 @@ void getkeys(fcd_t *fcd, table_t *tab) {
 
             for (ptr=tab->columns; ptr!=NULL; ptr=ptr->next) {
                 col = (column_t *) ptr->buf;
+                if (k == 0) {
+                    col->pk = true;
+                }
                 if (col->offset == offset) {
                     while (len > 0) {
                         col = (column_t *) ptr->buf;
+                        if (k == 0) {
+                            col->pk = true;
+                        }
                         key.columns[key.ncols++] = col;
                         len -= col->len;
                         ptr = ptr->next;
@@ -92,6 +73,9 @@ void getkeys(fcd_t *fcd, table_t *tab) {
                 for (ptr=tab->columns; ptr!=NULL; ptr=ptr->next) {
                     col = (column_t *) ptr->buf;
                     if (col->offset == offset) {
+                        if (k == 0) {
+                            col->pk = true;
+                        }
                         key.columns[key.ncols++] = col;
                         len -= col->len;
                         break;
@@ -269,5 +253,30 @@ void getwhere_prepared(table_t *tab, int keyid, char *where, int ini, char cmd) 
             tab->prms = list2_first(tab->prms);
             break;
     }
+}
+
+static char kbuf[257];
+
+char *getkbuf(fcd_t *fcd, unsigned short keyid,  table_t *tab, unsigned short *keylen) {
+    int      k, c, offset;
+    list2_t  *ptr;
+    _key_t   *key;
+    column_t *col;
+
+    for (ptr=tab->keys, k=0; ptr!=NULL; ptr=ptr->next, k++) {
+        if (k != keyid) {
+            continue;
+        }
+        key = (_key_t *) ptr->buf;
+        offset = 0;
+        for (c=0; c<key->ncols; c++) {
+            col = key->columns[c];
+            memcpy(kbuf+offset, fcd->record+col->offset, col->len);
+            offset += col->len;
+        }
+        kbuf[offset] = 0;
+    }
+    *keylen = offset;
+    return kbuf;
 }
 

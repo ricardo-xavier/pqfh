@@ -83,6 +83,7 @@ bool table_info(PGconn *conn, table_t *table, fcd_t *fcd) {
 
         PQclear(res);
         if (offset < reclen) {
+            col.pk = false;
             table->columns = list2_append(table->columns, &col, sizeof(column_t));
         }
         offset += col.len;
@@ -132,22 +133,6 @@ char *get_schema(PGconn *conn, char *table) {
     res = PQexec(conn, "CLOSE cursor_tables");
     PQclear(res);
     return schema;
-}
-
-column_t *get_col_at(table_t *table, unsigned int offset) {
-
-    list2_t  *ptr;
-    int      o=0;
-    column_t *col;
-
-    for (ptr=table->columns; ptr!=NULL; ptr=ptr->next) {
-        col = (column_t *) ptr->buf;
-        if (o == offset) {
-            return col;
-        }
-        o += col->len;
-    }
-    return NULL;
 }
 
 /*
@@ -310,7 +295,7 @@ bool nome_dicionario(char *tabela, char *nome) {
     putshort(opcode, OP_READ_NEXT);
     EXTFH(opcode, &fcd02);
 
-    ret = (fcd02.status[0] == '0') && (fcd02.status[1] == '0') && memcmp(fcd02.record, nome, strlen(nome));
+    ret = (fcd02.status[0] == '0') && (fcd02.status[1] == '0') && !memcmp(fcd02.record+10, nome, strlen(nome));
     if (ret) {
         memcpy(nome, fcd02.record, 10);
         nome[10] = 0;

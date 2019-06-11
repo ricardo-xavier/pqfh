@@ -6,16 +6,14 @@ extern int dbg;
 
 void op_next_prev(PGconn *conn, fcd_t *fcd, char dir) {
 
-    unsigned int fileid, keyoffset, keylen;
-    unsigned short reclen;
+    unsigned int fileid;
+    unsigned short reclen, keylen;
     table_t      *tab;
-    char         sql[257];
+    char         sql[257], kbuf[MAX_KEY_LEN+1];
     PGresult     *res;
 
     fileid = getint(fcd->file_id);
     reclen = getshort(fcd->rec_len);
-
-    kdb(fcd, &keyoffset, &keylen);
 
     tab = (table_t *) fileid;
 
@@ -53,11 +51,13 @@ void op_next_prev(PGconn *conn, fcd_t *fcd, char dir) {
         PQgetvalue(res, 0, 1));
 */
 
+    unsigned short keyid = getshort(fcd->key_id);
+    strcpy(kbuf, getkbuf(fcd, keyid, tab, &keylen));
     if (dir == 'n') {
-        memcpy(tab->buf_next, fcd->record+keyoffset, keylen);
+        memcpy(tab->buf_next, kbuf, keylen);
         tab->buf_next[keylen] = 0;
     } else {
-        memcpy(tab->buf_prev, fcd->record+keyoffset, keylen);
+        memcpy(tab->buf_prev, kbuf, keylen);
         tab->buf_prev[keylen] = 0;
     }
 }

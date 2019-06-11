@@ -3,16 +3,15 @@
 #include "pqfh.h"
 
 extern int dbg;
-extern bool chaves_concatenadas;
 
 void op_start(PGconn *conn, fcd_t *fcd, char *op) {
 
-    unsigned int   fileid, keyoffset, keylen;
-    unsigned short keyid;
-    char           buf[4097], sql[4097], kname[33];
+    unsigned int   fileid;
+    unsigned short keyid, keylen;
+    char           sql[4097], kbuf[MAX_KEY_LEN+1];
     table_t        *tab;
     PGresult       *res;
-    column_t       *col;
+    char           where[4097], order[257];
 
     fileid = getint(fcd->file_id);
 
@@ -21,31 +20,25 @@ void op_start(PGconn *conn, fcd_t *fcd, char *op) {
         fprintf(stderr, "op_start %s [%s]\n", op, tab->name);
     }
 
-    kdb(fcd, &keyoffset, &keylen);
-
-    col = get_col_at(tab, keyoffset);
-    if (col == NULL) {
-        fprintf(stderr, "coluna nao encontrada %d\n", keyoffset);
-        exit(-1);
+    keyid = getshort(fcd->key_id);
+    strcpy(kbuf, getkbuf(fcd, keyid, tab, &keylen));
+    if (dbg > 1) {
+        fprintf(stderr, "key %d %d [%s]\n", keyid, keylen, kbuf);
     }
 
-    keyid = getshort(fcd->key_id);
     // performance
     // se ja foi feito um read next com a mesma chave nao executa novamente
+    if (dbg > 2) {
+        fprintf(stderr, "op_start verifica se foi feito um read next/prev com a mesma chave\n");
+    }
     if (
-            ((op[0] != '<') && (keyid == tab->key_next) && !memcmp(fcd->record+keyoffset, tab->buf_next, keylen)) ||
-            ((op[0] == '<') && (keyid == tab->key_prev) && !memcmp(fcd->record+keyoffset, tab->buf_next, keylen))) {
+            ((op[0] != '<') && (keyid == tab->key_next) && !memcmp(kbuf, tab->buf_next, keylen)) ||
+            ((op[0] == '<') && (keyid == tab->key_prev) && !memcmp(kbuf, tab->buf_next, keylen))) {
         memcpy(fcd->status, ST_OK, 2);
         if (dbg > 0) {
             fprintf(stderr, "status=%c%c\n\n", fcd->status[0], fcd->status[1]);
         }
         return;
-    }
-
-    memcpy(buf, fcd->record+keyoffset, keylen);
-    buf[keylen] = 0;
-    if (dbg > 1) {
-        fprintf(stderr, "key %d %d:%d [%s]\n", keyid, keyoffset, keylen, buf);
     }
 
     if (((op[0] != '<') && (tab->key_next != -1)) ||
@@ -56,36 +49,19 @@ void op_start(PGconn *conn, fcd_t *fcd, char *op) {
         }
         res = PQexec(conn, sql);
         if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-            fprintf(stderr, "Erro na execucao do comando: %s\n%s\n",
-                PQerrorMessage(conn), sql);
+            fprintf(stderr, "Erro na execucao do comando: %s\n%s\n", PQerrorMessage(conn), sql);
             PQclear(res);
             exit(-1);
         }
         PQclear(res);
     }
 
-    if (!chaves_concatenadas) {
-        char where[4097], order[257];
-        getwhere(fcd->record, tab, keyid, op, where, order);
-        sprintf(sql, "declare cursor_%s cursor with hold for\n  select * from %s.%s\n    where %s order by %s", 
-            tab->name, get_schema(conn, tab->dictname), tab->name, where, order);
-    } else {
+    close_cursor(conn, tab);
+    tab->cursor = true;
 
-        if (col->len == keylen) {
-            sprintf(sql, "declare cursor_%s cursor with hold for\n  select * from %s.%s\n    where %s %s %s%s%s order by %s", 
-                tab->name, get_schema(conn, tab->dictname), tab->name, col->name, op,
-                col->tp == 's' ? "'" : "",
-                buf, 
-                col->tp == 's' ? "'" : "",
-                col->name);
-        } else {
-
-            memcpy(kname, col->name, 6);
-            sprintf(kname+6, "key%d", keyid);
-            sprintf(sql, "declare cursor_%s cursor with hold for\n  select * from %s.%s\n    where %s %s '%s' order by %s", 
-                tab->name, get_schema(conn, tab->dictname), tab->name, kname, op, buf, kname);
-        }
-    }
+    getwhere(fcd->record, tab, keyid, op, where, order);
+    sprintf(sql, "declare cursor_%s cursor with hold for\n  select * from %s.%s\n    where %s order by %s", 
+        tab->name, get_schema(conn, tab->dictname), tab->name, where, order);
 
     if (dbg > 1) {
         fprintf(stderr, "%s\n", sql);
@@ -93,8 +69,7 @@ void op_start(PGconn *conn, fcd_t *fcd, char *op) {
 
     res = PQexec(conn, sql);
     if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-        fprintf(stderr, "Erro na execucao do comando: %s\n%s\n",
-            PQerrorMessage(conn), sql);
+        fprintf(stderr, "Erro na execucao do comando: %s\n%s\n", PQerrorMessage(conn), sql);
         PQclear(res);
         exit(-1);
     }

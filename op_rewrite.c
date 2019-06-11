@@ -3,24 +3,20 @@
 #include "pqfh.h"
 
 extern int dbg;
-extern bool chaves_concatenadas;
 extern int pending_commits;
 extern char backup[MAX_REC_LEN+1];
 
 bool op_rewrite(PGconn *conn, fcd_t *fcd) {
 
-    unsigned int   fileid, keylen, keyoffset, remainder, offset;
-    unsigned short reclen, keyid; 
+    unsigned int   fileid;
+    unsigned short reclen, keyid, keylen; 
     table_t        *tab;
-    column_t       *pk, *col;
-    char           record[MAX_REC_LEN+1], buf[257], sql[4097], aux[257], bufs[16][257];
+    column_t       *col;
+    char           record[MAX_REC_LEN+1], kbuf[MAX_KEY_LEN+1], sql[4097], aux[257];
     int            p, nParams;
     list2_t        *ptr;
-    char           name[33];
     PGresult       *res;
-    const char     *paramValues[256];
-    int            paramFormats[256];
-    int            paramLengths[256];
+    char           where[4097], name[33];
 
     fileid = getint(fcd->file_id);
     reclen = getshort(fcd->rec_len);
@@ -36,10 +32,17 @@ bool op_rewrite(PGconn *conn, fcd_t *fcd) {
 
     // performance
     // verifica se o registro mudou antes de fazer o update
+    if (dbg > 2) {
+        fprintf(stderr, "op_rewrite verifica se o registro existe\n");
+    }
     op_read_random(conn, fcd);
     if (memcmp(fcd->status, ST_OK, 2)) {
         // registro nao encontrado
+        putshort(fcd->key_id, keyid);
         return false;
+    }
+    if (dbg > 2) {
+        fprintf(stderr, "op_rewrite verifica se o registro foi alterado\n");
     }
     if (!memcmp(record, fcd->record, reclen)) {
         memcpy(fcd->status, ST_OK, 2);
@@ -52,25 +55,9 @@ bool op_rewrite(PGconn *conn, fcd_t *fcd) {
     memcpy(backup, fcd->record, reclen);
     memcpy(fcd->record, record, reclen);
 
-    kdb(fcd, &keyoffset, &keylen);
-    pk = get_col_at(tab, keyoffset);
-    if (pk == NULL) {
-        fprintf(stderr, "coluna nao encontrada %d\n", keyoffset);
-        exit(-1);
-    }
-    if (pk->len == keylen) {
-        fprintf(stderr, "rewrite com chave simples nao implementado\n");
-        exit(-1);
-    }
-    if (keyoffset != 0) {
-        fprintf(stderr, "rewrite com keyoffset != 0 nao implementado\n");
-        exit(-1);
-    }
-
-    memcpy(buf, fcd->record+keyoffset, keylen);
-    buf[keylen] = 0;
+    strcpy(kbuf, getkbuf(fcd, 0, tab, &keylen));
     if (dbg > 1) {
-        fprintf(stderr, "key %d %d:%d [%s]\n", 0, keyoffset, keylen, buf);
+        fprintf(stderr, "key %d %d [%s]\n", 0, keylen, kbuf);
     }
     sprintf(name, "%s_upd", tab->name);
 
@@ -80,14 +67,12 @@ bool op_rewrite(PGconn *conn, fcd_t *fcd) {
         sprintf(sql, "update %s.%s\n", get_schema(conn, tab->dictname), tab->name);
 
         p = 0;
-        remainder = keylen;
         for (ptr=tab->columns; ptr!=NULL; ptr=ptr->next) {
 
             col = (column_t *) ptr->buf;
 
             // ignora pk
-            if (remainder > 0) {
-                remainder -= col->len;
+            if (col->pk) {
                 continue;
             }
 
@@ -96,38 +81,14 @@ bool op_rewrite(PGconn *conn, fcd_t *fcd) {
             } else {
                 strcat(sql, "     ,");
             }
-            tab->bufs[p] = malloc(col->len+2);
             sprintf(aux, "%s=$%d\n", col->name, ++p);
             strcat(sql, aux);
         }
 
-        if (!chaves_concatenadas) {
-            char where[4097];
-            getwhere_prepared(tab, keyid, where, p, 'u');
-            strcat(sql, "where ");
-            strcat(sql, where);
-            p += list2_size(tab->prms_rewrite);
-
-        } else {
-            // monta o where com as colunas da pk
-            remainder = keylen;
-            for (ptr=tab->columns; (remainder > 0) && (ptr != NULL); ptr=ptr->next) {
-    
-                col = (column_t *) ptr->buf;
-
-                if (remainder == keylen) {
-                    strcat(sql, "  where ");
-                } else {
-                    strcat(sql, "    and ");
-                }
-                tab->bufs[p] = malloc(col->len+2);
-                sprintf(aux, "%s = $%d\n", col->name, ++p);
-                strcat(sql, aux);
-
-                remainder -= col->len;
-
-            }
-        }
+        getwhere_prepared(tab, keyid, where, p, 'u');
+        strcat(sql, "where ");
+        strcat(sql, where);
+        p += list2_size(tab->prms_rewrite);
 
         nParams = p;
         if (dbg > 1) {
@@ -137,43 +98,41 @@ bool op_rewrite(PGconn *conn, fcd_t *fcd) {
 
         res = PQprepare(conn, name, sql, nParams, NULL);
         if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-            fprintf(stderr, "Erro na execucao do comando: %s\n%s\n",
-                PQerrorMessage(conn), sql);
+            fprintf(stderr, "Erro na execucao do comando: %s\n%s\n", PQerrorMessage(conn), sql);
             exit(-1);
         }
         PQclear(res);
     }
 
     // seta os parametros fora da pk
+    if (dbg > 2) {
+        fprintf(stderr, "op_rewrite seta parametros para o update\n");
+    }
     p = 0;
-    remainder = keylen;
-    offset = 0;
     for (ptr=tab->columns; ptr!=NULL; ptr=ptr->next) {
 
         col = (column_t *) ptr->buf;
 
         // ignora pk
-        if (remainder > 0) {
-            remainder -= col->len;
-            offset += col->len;
+        if (col->pk) {
             continue;
         }
 
-        paramValues[p] = tab->bufs[p];
-        paramLengths[p] = col->len;
-        paramFormats[p] = 0;
+        tab->values[p] = tab->bufs[p];
+        tab->lengths[p] = col->len;
+        tab->formats[p] = 0;
 
         if (col->tp == 'n') {
             if (col->dec > 0) {
-                memcpy(tab->bufs[p], fcd->record + offset, col->len - col->dec);
+                memcpy(tab->bufs[p], fcd->record + col->offset, col->len - col->dec);
                 tab->bufs[p][col->len - col->dec] = '.';
-                memcpy(tab->bufs[p] + col->len - col->dec + 1, fcd->record + offset + col->len - col->dec, col->dec);
+                memcpy(tab->bufs[p] + col->len - col->dec + 1, fcd->record + col->offset + col->len - col->dec, col->dec);
                 tab->bufs[p][col->len + 1] = 0;
             } else {
-                memcpy(tab->bufs[p], fcd->record + offset, col->len);
+                memcpy(tab->bufs[p], fcd->record + col->offset, col->len);
                 tab->bufs[p][col->len] = 0;
             }
-            if ((fcd->record[offset + col->len - 1] & 0x40) == 0x40) {
+            if ((fcd->record[col->offset + col->len - 1] & 0x40) == 0x40) {
                 tab->bufs[p][0] = '-';
                 if (col->dec > 0) {
                     tab->bufs[p][col->len] &= ~0x40;
@@ -182,67 +141,39 @@ bool op_rewrite(PGconn *conn, fcd_t *fcd) {
                 }
             }
         } else {
-            memcpy(tab->bufs[p], fcd->record+offset, col->len);
+            memcpy(tab->bufs[p], fcd->record+col->offset, col->len);
             tab->bufs[p][col->len] = 0;
         }
 
         if (dbg > 2) {
-            fprintf(stderr, "    %d %s %c %d:%d,%d [%s]\n", p, col->name, col->tp, offset, col->len, col->dec, tab->bufs[p]);
+            fprintf(stderr, "    %d %s %c %d:%d,%d [%s]\n", p, col->name, col->tp, col->offset, col->len, col->dec, tab->bufs[p]);
         }
         p++;
-        offset += col->len;
 
     }
 
-    if (!chaves_concatenadas) {
-        int seq=0;
-        for (ptr=tab->prms_rewrite; ptr!=NULL; ptr=ptr->next) {
-            col = (column_t *) ptr->buf;
-            paramValues[p] = bufs[seq];
-            paramLengths[p] = col->len;
-            paramFormats[p] = 0;
+    // pk
+    for (ptr=tab->prms_rewrite; ptr!=NULL; ptr=ptr->next) {
+        col = (column_t *) ptr->buf;
+        tab->values[p] = tab->bufs[p];
+        tab->lengths[p] = col->len;
+        tab->formats[p] = 0;
+        memcpy(tab->bufs[p], fcd->record+col->offset, col->len);
+        tab->bufs[p][col->len] = 0;
 
-            if (dbg > 2) {
-                fprintf(stderr, "    %d %s %c %d:%d,%d [%s]\n", p, col->name, col->tp, col->offset, col->len, col->dec, bufs[seq]);
-            }
-            seq++;
-            p++;
+        if (dbg > 2) {
+            fprintf(stderr, "    %d %s %c %d:%d,%d [%s]\n", p, col->name, col->tp, col->offset, col->len, col->dec, tab->bufs[p]);
         }
-
-    } else {
-
-        // seta os parametros da pk
-        remainder = keylen;
-        offset = 0;
-        for (ptr=tab->columns; ptr!=NULL; ptr=ptr->next) {
-
-            col = (column_t *) ptr->buf;
-
-            // pk
-            if (remainder > 0) {
-
-                paramValues[p] = tab->bufs[p];
-                paramLengths[p] = col->len;
-                paramFormats[p] = 0;
-
-                remainder -= col->len;
-                memcpy(tab->bufs[p], fcd->record+offset, col->len);
-                tab->bufs[p][col->len] = 0;
-
-                if (dbg > 2) {
-                    fprintf(stderr, "    %d %s %c %d:%d,%d [%s]\n", p, col->name, col->tp, offset, col->len, col->dec, tab->bufs[p]);
-                }
-
-                p++;
-                offset += col->len;
-            }
-
-        }
+        p++;
     }
+
     nParams = p;
 
     // executa o comando
-    res =  PQexecPrepared(conn, name, nParams, paramValues, paramLengths, paramFormats, 0);
+    if (dbg > 2) {
+        fprintf(stderr, "op_rewrite executa o update\n");
+    }
+    res =  PQexecPrepared(conn, name, nParams, tab->values, tab->lengths, tab->formats, 0);
     if (PQresultStatus(res) != PGRES_COMMAND_OK) {
         memcpy(fcd->status, ST_REC_NOT_FOUND, 2);
         if (dbg > 0) {
