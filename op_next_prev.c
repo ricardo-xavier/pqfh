@@ -25,7 +25,7 @@ void op_next_prev(PGconn *conn, fcd_t *fcd, char dir) {
         }
     }
 
-    sprintf(sql, "fetch next in cursor_%s", tab->name);
+    sprintf(sql, "fetch next in cursor_%s_%ld", tab->name, tab->timestamp);
     if (dbg > 1) {
         fprintf(stderr, "%s\n", sql);
     }

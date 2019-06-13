@@ -16,7 +16,7 @@ bool op_rewrite(PGconn *conn, fcd_t *fcd) {
     int            p, nParams;
     list2_t        *ptr;
     PGresult       *res;
-    char           where[4097], name[33];
+    char           where[4097], stmt_name[65];
 
     fileid = getint(fcd->file_id);
     reclen = getshort(fcd->rec_len);
@@ -59,7 +59,7 @@ bool op_rewrite(PGconn *conn, fcd_t *fcd) {
     if (dbg > 1) {
         fprintf(stderr, "key %d %d [%s]\n", 0, keylen, kbuf);
     }
-    sprintf(name, "%s_upd", tab->name);
+    sprintf(stmt_name, "%s_%ld_upd", tab->name, tab->timestamp);
 
     // prepara o comando se ainda nao tiver preparado
     if (!tab->upd_prepared) {
@@ -96,7 +96,7 @@ bool op_rewrite(PGconn *conn, fcd_t *fcd) {
         }
         tab->upd_prepared = true;
 
-        res = PQprepare(conn, name, sql, nParams, NULL);
+        res = PQprepare(conn, stmt_name, sql, nParams, NULL);
         if (PQresultStatus(res) != PGRES_COMMAND_OK) {
             fprintf(stderr, "Erro na execucao do comando: %s\n%s\n", PQerrorMessage(conn), sql);
             exit(-1);
@@ -173,7 +173,7 @@ bool op_rewrite(PGconn *conn, fcd_t *fcd) {
     if (dbg > 2) {
         fprintf(stderr, "op_rewrite executa o update\n");
     }
-    res =  PQexecPrepared(conn, name, nParams, tab->values, tab->lengths, tab->formats, 0);
+    res =  PQexecPrepared(conn, stmt_name, nParams, tab->values, tab->lengths, tab->formats, 0);
     if (PQresultStatus(res) != PGRES_COMMAND_OK) {
         memcpy(fcd->status, ST_REC_NOT_FOUND, 2);
         if (dbg > 0) {

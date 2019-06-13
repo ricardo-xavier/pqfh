@@ -3,6 +3,7 @@
 
 #include "list2.h"
 #include <libpq-fe.h>
+#include <time.h>
 
 #define bool unsigned char
 #define false 0
@@ -34,6 +35,7 @@ typedef struct {
     list2_t *prms_delete;
     list2_t *clones;
     bool    cursor;
+    time_t  timestamp;
 
     const char *values[MAX_COLS];
     int        formats[MAX_COLS];

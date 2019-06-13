@@ -10,7 +10,7 @@ void op_write(PGconn *conn, fcd_t *fcd) {
 
     unsigned short reclen, keyid; 
     table_t        *tab;
-    char           name[33], prefixo[7];
+    char           stmt_name[65], prefixo[7];
     unsigned int   fileid;
     column_t       *col;
     char           sql[4097], aux[257];
@@ -43,7 +43,7 @@ void op_write(PGconn *conn, fcd_t *fcd) {
         return;
     }
 
-    sprintf(name, "%s_ins", tab->name);
+    sprintf(stmt_name, "%s_%ld_ins", tab->name, tab->timestamp);
 
     // prepara o comando se ainda nao tiver preparado
     if (!tab->ins_prepared) {
@@ -78,7 +78,7 @@ void op_write(PGconn *conn, fcd_t *fcd) {
         }
         tab->ins_prepared = true;
 
-        res = PQprepare(conn, name, sql, p, NULL);
+        res = PQprepare(conn, stmt_name, sql, p, NULL);
         if (PQresultStatus(res) != PGRES_COMMAND_OK) {
             fprintf(stderr, "Erro na execucao do comando: %s\n%s\n", PQerrorMessage(conn), sql);
             exit(-1);
@@ -138,7 +138,7 @@ void op_write(PGconn *conn, fcd_t *fcd) {
     if (dbg > 2) {
         fprintf(stderr, "op_write executa o insert\n");
     }
-    res =  PQexecPrepared(conn, name, p, tab->values, tab->lengths, tab->formats, 0);
+    res =  PQexecPrepared(conn, stmt_name, p, tab->values, tab->lengths, tab->formats, 0);
     if (PQresultStatus(res) != PGRES_COMMAND_OK) {
         memcpy(fcd->status, ST_ERROR, 2);
         if (dbg > 0) {

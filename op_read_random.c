@@ -8,7 +8,7 @@ void op_read_random(PGconn *conn, fcd_t *fcd) {
 
     unsigned int   fileid ;
     unsigned short keyid, reclen, keylen;
-    char           kbuf[MAX_KEY_LEN+1], sql[257], name[33], where[4097];
+    char           kbuf[MAX_KEY_LEN+1], sql[257], stmt_name[65], where[4097];
     int            nParams, p;
     table_t        *tab;
     column_t       *col;
@@ -28,7 +28,7 @@ void op_read_random(PGconn *conn, fcd_t *fcd) {
     if (dbg > 1) {
         fprintf(stderr, "key %d %d [%s]\n", keyid, keylen, kbuf);
     }
-    sprintf(name, "%s_%d", tab->name, keyid);
+    sprintf(stmt_name, "%s_%ld_%d", tab->name, tab->timestamp, keyid);
 
     // verifica se tem um read preparado com outra chave
     if (tab->read_prepared && (tab->key_read != keyid)) {
@@ -47,7 +47,7 @@ void op_read_random(PGconn *conn, fcd_t *fcd) {
             fprintf(stderr, "%s\n", sql);
         }
 
-        res = PQprepare(conn, name, sql, nParams, NULL);
+        res = PQprepare(conn, stmt_name, sql, nParams, NULL);
         if (PQresultStatus(res) != PGRES_COMMAND_OK) {
             fprintf(stderr, "Erro na execucao do comando: %s\n%s\n", PQerrorMessage(conn), sql);
             exit(-1);
@@ -71,7 +71,7 @@ void op_read_random(PGconn *conn, fcd_t *fcd) {
     nParams = p;
 
     // executa o comando
-    res =  PQexecPrepared(conn, name, nParams, tab->values, tab->lengths, tab->formats, 0);
+    res =  PQexecPrepared(conn, stmt_name, nParams, tab->values, tab->lengths, tab->formats, 0);
     if ((PQresultStatus(res) != PGRES_TUPLES_OK) || (PQntuples(res) == 0))  {
         memcpy(fcd->status, ST_REC_NOT_FOUND, 2);
         if (dbg > 0) {

@@ -1,6 +1,5 @@
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
 #include "pqfh.h"
 
 extern int dbg;
@@ -31,4 +30,5 @@ void op_close(PGconn *conn, fcd_t *fcd) {
     if (dbg > 0) {
         fprintf(stderr, "status=%c%c\n\n", fcd->status[0], fcd->status[1]);
     }
+    free(tab);
 }

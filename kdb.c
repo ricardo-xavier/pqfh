@@ -124,28 +124,21 @@ void adiciona_comp(unsigned char *record, _key_t key, int c, char *op, char *whe
 
     if ((op[0] != '>') && (op[0] != '<')) {
         if (col->tp == 'n') {
-            sprintf(aux, "%s = %s and ", col->name, buf);
+            sprintf(aux, "%s %s %s and ", col->name, op, buf);
         } else {
-            sprintf(aux, "%s = '%s' and ", col->name, buf);
+            sprintf(aux, "%s %s '%s' and ", col->name, op, buf);
         }
         strcat(where, aux);
         strcat(order, col->name);
-        if (op[0] == '<') {
-            strcat(order, " desc");
-        }
         strcat(order, ",");
         adiciona_comp(record, key, c+1, op, where, order);
         return;
     }
 
-    if (c > 0) {
-        strcat(where, " or ");
-    }
-
     if (col->tp == 'n') {
-        sprintf(aux, "%s %c %s or ( %s = %s and ", col->name, op[0], buf, col->name, buf);
+        sprintf(aux, "%s %c %s or ( %s = %s and ( ", col->name, op[0], buf, col->name, buf);
     } else {
-        sprintf(aux, "%s %c '%s' or ( %s = '%s' and ", col->name, op[0], buf, col->name, buf);
+        sprintf(aux, "%s %c '%s' or ( %s = '%s' and ( ", col->name, op[0], buf, col->name, buf);
     }
     strcat(where, aux);
     strcat(order, col->name);
@@ -154,7 +147,7 @@ void adiciona_comp(unsigned char *record, _key_t key, int c, char *op, char *whe
     }
     strcat(order, ",");
     adiciona_comp(record, key, c+1, op, where, order);
-    strcat(where, " ) ");
+    strcat(where, " ) ) ");
 }
 
 void getwhere(unsigned char *record, table_t *table, int keyid, char *op, char *where, char *order) {

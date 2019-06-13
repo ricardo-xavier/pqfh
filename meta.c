@@ -33,7 +33,7 @@ bool table_info(PGconn *conn, table_t *table, fcd_t *fcd) {
     reclen = getshort(fcd->rec_len);
 
     // declara o cursor
-    sprintf(sql, "declare cursor_columns cursor for  \nselect column_name,data_type,character_maximum_length,numeric_precision,numeric_scale\n    from information_schema.columns\n    where table_name = '%s'\n    order by ordinal_position", table->dictname);
+    sprintf(sql, "declare cursor_columns cursor for  \nselect column_name,data_type,character_maximum_length,numeric_precision,numeric_scale\n    from information_schema.columns\n    where table_name = '%s'\n    order by ordinal_position", table->name);
     if (dbg > 1) {
         fprintf(stderr, "%s\n", sql);
     }
@@ -243,7 +243,7 @@ bool tabela_convertida(char *tabela) {
 bool nome_dicionario(char *tabela, char *nome) {
 
     unsigned char opcode[2];
-    char *nomeenv, *p;
+    char *nomeenv, *p, prefixo[33];
     bool ret;
 
     strcpy(nome, tabela);
@@ -285,9 +285,22 @@ bool nome_dicionario(char *tabela, char *nome) {
         EXTFH(opcode, &fcd02);
     }
 
+    strcpy(prefixo, tabela);
+    if (strlen(prefixo) > 4) {
+        for (p=prefixo+4; *p; p++) {
+            if (strchr("0123456789", *p) != NULL) {
+                *p = 0;
+                if (dbg > 2) {
+                    fprintf(stderr, "prefixo [%s]\n", prefixo);
+                }
+                break;
+            }
+        }
+    }
+
     memset(fcd02.record, 0, 256);
-    memcpy(fcd02.record+10, tabela, strlen(tabela));
-    putshort(fcd02.key_id, 1);
+    memcpy(fcd02.record, prefixo, strlen(prefixo));
+    putshort(fcd02.key_id, 0);
 
     putshort(opcode, OP_START_GE);
     EXTFH(opcode, &fcd02);
@@ -295,10 +308,10 @@ bool nome_dicionario(char *tabela, char *nome) {
     putshort(opcode, OP_READ_NEXT);
     EXTFH(opcode, &fcd02);
 
-    ret = (fcd02.status[0] == '0') && (fcd02.status[1] == '0') && !memcmp(fcd02.record+10, nome, strlen(nome));
+    ret = (fcd02.status[0] == '0') && (fcd02.status[1] == '0') && !memcmp(fcd02.record, prefixo, strlen(prefixo));
     if (ret) {
-        memcpy(nome, fcd02.record, 10);
-        nome[10] = 0;
+        memcpy(nome, fcd02.record+10, 20);
+        nome[20] = 0;
         if ((p = strchr(nome, ' ')) != NULL) *p=0;
     }
     if (dbg > 2) {
