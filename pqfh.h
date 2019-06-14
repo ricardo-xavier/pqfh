@@ -26,10 +26,13 @@ typedef struct {
     bool    upd_prepared;
     bool    ins_prepared;
     bool    del_prepared;
+    char    restart;
     short   key_next;
     char    buf_next[MAX_KEY_LEN+1];
+    char    rec_next[MAX_REC_LEN+1];
     short   key_prev;
     char    buf_prev[MAX_KEY_LEN+1];
+    char    rec_prev[MAX_REC_LEN+1];
     list2_t *prms;
     list2_t *prms_rewrite;
     list2_t *prms_delete;

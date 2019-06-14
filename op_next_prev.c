@@ -25,6 +25,24 @@ void op_next_prev(PGconn *conn, fcd_t *fcd, char dir) {
         }
     }
 
+    if (tab->restart == dir) {
+        if (dir == 'n') {
+            memcpy(fcd->record, tab->rec_next, reclen);
+        } else {
+            memcpy(fcd->record, tab->rec_prev, reclen);
+        }
+        memcpy(fcd->status, ST_OK, 2);
+        if (dbg > 0) {
+            if (dbg > 2) {
+                fprintf(stderr, "[%s]\n", fcd->record);
+            }
+            fprintf(stderr, "restart status=%c%c\n\n", fcd->status[0], fcd->status[1]);
+        }
+        tab->restart = 0;
+        return;
+    }
+    tab->restart = 0;
+
     sprintf(sql, "fetch next in cursor_%s_%ld", tab->name, tab->timestamp);
     if (dbg > 1) {
         fprintf(stderr, "%s\n", sql);
@@ -56,8 +74,12 @@ void op_next_prev(PGconn *conn, fcd_t *fcd, char dir) {
     if (dir == 'n') {
         memcpy(tab->buf_next, kbuf, keylen);
         tab->buf_next[keylen] = 0;
+        memcpy(tab->rec_next, fcd->record, reclen);
+        tab->rec_next[reclen] = 0;
     } else {
         memcpy(tab->buf_prev, kbuf, keylen);
         tab->buf_prev[keylen] = 0;
+        memcpy(tab->rec_prev, fcd->record, reclen);
+        tab->rec_prev[reclen] = 0;
     }
 }

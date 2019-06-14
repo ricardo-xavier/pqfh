@@ -251,7 +251,7 @@ bool nome_dicionario(char *tabela, char *nome) {
         montafcd02 = false;
         nomeenv = getenv("PQFH_PG01A02");
         if (nomeenv == NULL) {
-            fcd02.file_name = (unsigned char *) strdup("../bd/pg01a02");
+            fcd02.file_name = (unsigned char *) strdup("/u/rede/arqp/pg01a02");
         } else {
             fcd02.file_name = (unsigned char *) strdup(nomeenv);
         }

@@ -19,7 +19,7 @@ pthread_mutex_t lock;
 
 char backup[MAX_REC_LEN+1];
 
-#define VERSAO "v1.6.2 13/06/2019"
+#define VERSAO "v1.6.3 14/06/2019"
 
 void commit() {
     PGresult *res;
