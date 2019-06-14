@@ -41,21 +41,6 @@ void op_start(PGconn *conn, fcd_t *fcd, char *op) {
         return;
     }
 
-    if (((op[0] != '<') && (tab->key_next != -1)) ||
-        ((op[0] == '<') && (tab->key_prev != -1))) {
-        sprintf(sql, "close cursor_%s_%ld", tab->name, tab->timestamp);
-        if (dbg > 1) {
-            fprintf(stderr, "%s\n", sql);
-        }
-        res = PQexec(conn, sql);
-        if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-            fprintf(stderr, "Erro na execucao do comando: %s\n%s\n", PQerrorMessage(conn), sql);
-            PQclear(res);
-            exit(-1);
-        }
-        PQclear(res);
-    }
-
     close_cursor(conn, tab);
     tab->cursor = true;
 
