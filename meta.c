@@ -97,6 +97,8 @@ bool table_info(PGconn *conn, table_t *table, fcd_t *fcd) {
     
     getkeys(fcd, table);
 
+    strcpy(table->schema, get_schema(conn, table->name));
+
     return table->columns != NULL ? true : false;
 }
 

@@ -44,7 +44,7 @@ void op_delete(PGconn *conn, fcd_t *fcd) {
     // prepara o comando se ainda nao tiver preparado
     if (!tab->del_prepared) {
 
-        sprintf(sql, "delete from %s.%s\n", get_schema(conn, tab->dictname), tab->name);
+        sprintf(sql, "delete from %s.%s\n", tab->schema, tab->name);
 
         getwhere_prepared(tab, 0, where, 0, 'd');
         strcat(sql, "where ");

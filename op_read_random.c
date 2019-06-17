@@ -40,7 +40,7 @@ void op_read_random(PGconn *conn, fcd_t *fcd) {
     if (!tab->read_prepared) {
 
         getwhere_prepared(tab, keyid, where, 0, 's');
-        sprintf(sql, "select * from %s.%s where %s", get_schema(conn, tab->dictname), tab->name, where);
+        sprintf(sql, "select * from %s.%s where %s", tab->schema, tab->name, where);
         nParams = list2_size(tab->prms);
 
         if (dbg > 1) {

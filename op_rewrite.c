@@ -64,7 +64,7 @@ bool op_rewrite(PGconn *conn, fcd_t *fcd) {
     // prepara o comando se ainda nao tiver preparado
     if (!tab->upd_prepared) {
 
-        sprintf(sql, "update %s.%s\n", get_schema(conn, tab->dictname), tab->name);
+        sprintf(sql, "update %s.%s\n", tab->schema, tab->name);
 
         p = 0;
         for (ptr=tab->columns; ptr!=NULL; ptr=ptr->next) {

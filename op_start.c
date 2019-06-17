@@ -49,7 +49,7 @@ void op_start(PGconn *conn, fcd_t *fcd, char *op) {
 
     getwhere(fcd->record, tab, keyid, op, where, order);
     sprintf(sql, "declare cursor_%s_%ld cursor with hold for\n  select * from %s.%s\n    where %s order by %s", 
-        tab->name, tab->timestamp,  get_schema(conn, tab->dictname), tab->name, where, order);
+        tab->name, tab->timestamp,  tab->schema, tab->name, where, order);
 
     if (dbg > 1) {
         fprintf(stderr, "%s\n", sql);

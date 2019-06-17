@@ -3,6 +3,7 @@
 #include <time.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <sys/time.h>
 #include "pqfh.h"
 
 // referencias:
@@ -19,7 +20,7 @@ pthread_mutex_t lock;
 
 char backup[MAX_REC_LEN+1];
 
-#define VERSAO "v1.6.3 14/06/2019"
+#define VERSAO "v1.6.5 16/06/2019"
 
 void commit() {
     PGresult *res;
@@ -48,6 +49,11 @@ void *thread_commit(void *vargp) {
     return NULL; 
 } 
 
+long tempo_total=0, tempo_open=0, tempo_close=0, tempo_start=0, tempo_next_prev=0, tempo_read=0, 
+    tempo_write=0, tempo_rewrite=0, tempo_delete=0, tempo_isam=0;
+int  qtde_total=0, qtde_open=0, qtde_close=0, qtde_start=0, qtde_next_prev=0, qtde_read=0, 
+    qtde_write=0, qtde_rewrite=0, qtde_delete=0, qtde_isam=0;
+
 void pqfh(unsigned char *opcode, fcd_t *fcd) {
 
     char           *conninfo;
@@ -57,7 +63,10 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
     char           aux[MAX_REC_LEN+1];
     short          reclen;
     char           st[2];
+    struct timeval tv1, tv2;
+    long tempo;
 
+    gettimeofday(&tv1, NULL);
     if (dbg == -1) {
         char *env = getenv("PQFH_DBG");
         fprintf(stderr, "pqfh %s\n", VERSAO);
@@ -129,6 +138,12 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
 
     if (fcd->isam == 'S') {
         EXTFH(opcode, fcd);
+        gettimeofday(&tv2, NULL);
+        tempo = ((tv2.tv_sec * 1000000) + tv2.tv_usec) - ((tv1.tv_sec * 1000000) + tv1.tv_usec);
+        tempo_isam += tempo;
+        tempo_total += tempo;
+        qtde_isam++;
+        qtde_total++;
         return;
     }
 
@@ -300,10 +315,76 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
 
         default:
             fprintf(stderr, "Comando nao implementado: %04x\n", op);
-            PQfinish(conn);
-            exit(-1);
+            //PQfinish(conn);
+            //exit(-1);
 
     }
+
+    gettimeofday(&tv2, NULL);
+    tempo = ((tv2.tv_sec * 1000000) + tv2.tv_usec) - ((tv1.tv_sec * 1000000) + tv1.tv_usec);
+    tempo_total += tempo;
+    qtde_total++;
+    switch (op) {
+
+        case OP_OPEN_INPUT:
+        case OP_OPEN_OUTPUT:
+        case OP_OPEN_IO:
+            tempo_open += tempo;
+            qtde_open++;
+            break;
+
+        case OP_CLOSE:
+            tempo_close += tempo;
+            qtde_close++;
+            fprintf(stderr, "tempo_total=%ld %d\n", tempo_total, qtde_total);
+            fprintf(stderr, "tempo_open=%ld %d\n", tempo_open, qtde_open);
+            fprintf(stderr, "tempo_close=%ld %d\n", tempo_close, qtde_close);
+            fprintf(stderr, "tempo_start=%ld %d\n", tempo_start, qtde_start);
+            fprintf(stderr, "tempo_next_prev=%ld %d\n", tempo_next_prev, qtde_next_prev);
+            fprintf(stderr, "tempo_read=%ld %d\n", tempo_read, qtde_read);
+            fprintf(stderr, "tempo_write=%ld %d\n", tempo_write, qtde_write);
+            fprintf(stderr, "tempo_rewrite=%ld %d\n", tempo_rewrite, qtde_rewrite);
+            fprintf(stderr, "tempo_delete=%ld %d\n", tempo_delete, qtde_delete);
+            fprintf(stderr, "tempo_isam=%ld %d\n", tempo_isam, qtde_isam);
+            break;
+
+        case OP_START_GT:
+        case OP_START_GE:
+        case OP_START_LT:
+        case OP_START_LE:
+        case OP_START_EQ:
+            tempo_start += tempo;
+            qtde_start++;
+            break;
+
+        case OP_READ_NEXT:
+        case OP_READ_PREVIOUS:
+            tempo_next_prev += tempo;
+            qtde_next_prev++;
+            break;
+
+        case OP_READ_RANDOM:
+            tempo_read += tempo;
+            qtde_read++;
+            break;
+
+        case OP_REWRITE:
+            tempo_rewrite += tempo;
+            qtde_rewrite++;
+            break;
+
+        case OP_WRITE:
+            tempo_write += tempo;
+            qtde_write++;
+            break;
+
+        case OP_DELETE:
+            tempo_delete += tempo;
+            qtde_delete++;
+            break;
+
+    }
+
     pthread_mutex_unlock(&lock);
 
 }

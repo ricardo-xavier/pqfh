@@ -18,6 +18,7 @@
 
 typedef struct {
     char    name[MAX_NAME_LEN+1];
+    char    schema[MAX_NAME_LEN+1];
     char    dictname[MAX_NAME_LEN+1];
     list2_t *columns;
     list2_t *keys;
