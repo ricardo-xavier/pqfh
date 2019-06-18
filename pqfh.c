@@ -20,12 +20,14 @@ pthread_mutex_t lock;
 
 char backup[MAX_REC_LEN+1];
 
-#define VERSAO "v1.6.5 16/06/2019"
+#define VERSAO "v1.7.0 17/06/2019"
+
+bool in_transaction=false;
 
 void commit() {
     PGresult *res;
     if (dbg > 0) {
-        fprintf(stderr, "commit %d\n", pending_commits);
+        fprintf(stderr, "commit %d %s\n", pending_commits, in_transaction ? "TRANSACAO" : "AUTO_COMMIT");
     }
     res = PQexec(conn, "COMMIT");
     PQclear(res);
@@ -38,9 +40,9 @@ void *thread_commit(void *vargp) {
     while (true) {
         sleep(1); 
         if (dbg > 1) {
-            fprintf(stderr, "pending_commits %d\n", pending_commits);
+            fprintf(stderr, "pending_commits %d %s\n", pending_commits, in_transaction ? "TRANSACAO" : "AUTO_COMMIT");
         }
-        if (pending_commits > 0) {
+        if ((pending_commits > 0) && !in_transaction) {
             pthread_mutex_lock(&lock);
             commit();
             pthread_mutex_unlock(&lock);
@@ -48,6 +50,32 @@ void *thread_commit(void *vargp) {
     }
     return NULL; 
 } 
+
+void pqfh_begin_transaction() {
+    in_transaction = true;
+    pthread_mutex_lock(&lock);
+    commit();
+    pthread_mutex_unlock(&lock);
+}
+
+void pqfh_commit() {
+    in_transaction = false;
+    pthread_mutex_lock(&lock);
+    commit();
+    pthread_mutex_unlock(&lock);
+}
+
+void pqfh_rollback() {
+    PGresult *res;
+    in_transaction = false;
+    pthread_mutex_lock(&lock);
+    if (dbg > 0) {
+        fprintf(stderr, "rollback %d %s\n", pending_commits, in_transaction ? "TRANSACAO" : "AUTO_COMMIT");
+    }
+    res = PQexec(conn, "ROLLBACK");
+    PQclear(res);
+    pthread_mutex_unlock(&lock);
+}
 
 long tempo_total=0, tempo_open=0, tempo_close=0, tempo_start=0, tempo_next_prev=0, tempo_read=0, 
     tempo_write=0, tempo_rewrite=0, tempo_delete=0, tempo_isam=0;

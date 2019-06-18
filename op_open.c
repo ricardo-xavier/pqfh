@@ -9,11 +9,10 @@ void op_open(PGconn *conn, fcd_t *fcd, unsigned short opcode) {
 
     char           filename[257], aux[257], *p;
     table_t        *tab;
-    unsigned short fnlen, reclen;
+    unsigned short fnlen;
     unsigned int   fileid;
 
     fnlen = getshort(fcd->file_name_len);
-    reclen = getshort(fcd->rec_len);
     memcpy(filename, (char *) fcd->file_name, fnlen);
     filename[fnlen] = 0;
     if ((p = strchr(filename, ' ')) != NULL) *p = 0;

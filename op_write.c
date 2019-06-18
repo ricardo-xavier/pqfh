@@ -8,7 +8,7 @@ extern int pending_commits;
 
 void op_write(PGconn *conn, fcd_t *fcd) {
 
-    unsigned short reclen, keyid; 
+    unsigned short keyid; 
     table_t        *tab;
     char           stmt_name[65], prefixo[7];
     unsigned int   fileid;
@@ -19,7 +19,6 @@ void op_write(PGconn *conn, fcd_t *fcd) {
     PGresult       *res;
 
     fileid = getint(fcd->file_id);
-    reclen = getshort(fcd->rec_len);
 
     tab = (table_t *) fileid;
     if (dbg > 0) {

@@ -9,7 +9,7 @@ clean:
 	rm -f pqfh $(OBJS)
 
 pqfh: $(OBJS)
-	$(COB) $(OBJS) -o pqfh -lpq
+	$(COB) $(OBJS) -o pqfh -lpq -lpthread
 
 .c.o: .c
 	$(CC) -c $<

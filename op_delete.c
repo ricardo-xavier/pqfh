@@ -9,7 +9,7 @@ extern int pending_commits;
 void op_delete(PGconn *conn, fcd_t *fcd) {
 
     unsigned int   fileid;
-    unsigned short reclen, keylen; 
+    unsigned short keylen; 
     table_t        *tab;
     column_t       *col;
     char           sql[4097], where[4097], kbuf[MAX_COL_LEN+1], stmt_name[65];
@@ -18,7 +18,6 @@ void op_delete(PGconn *conn, fcd_t *fcd) {
     PGresult       *res;
 
     fileid = getint(fcd->file_id);
-    reclen = getshort(fcd->rec_len);
 
     tab = (table_t *) fileid;
     if (dbg > 0) {
