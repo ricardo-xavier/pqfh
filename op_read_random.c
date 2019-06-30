@@ -1,8 +1,10 @@
 #include <stdlib.h>
 #include <string.h>
+#include <sys/time.h>
 #include "pqfh.h"
 
 extern int dbg;
+extern int dbg_times;
 
 void op_read_random(PGconn *conn, fcd_t *fcd) {
 
@@ -14,6 +16,11 @@ void op_read_random(PGconn *conn, fcd_t *fcd) {
     column_t       *col;
     PGresult       *res;
     list2_t        *ptr;
+    struct timeval tv1, tv2, tv3;
+
+    if (dbg_times > 1) {
+        gettimeofday(&tv1, NULL);
+    }
 
     fileid = getint(fcd->file_id);
     reclen = getshort(fcd->rec_len);
@@ -70,8 +77,20 @@ void op_read_random(PGconn *conn, fcd_t *fcd) {
     }
     nParams = p;
 
+    if (dbg_times > 1) {
+        gettimeofday(&tv2, NULL);
+    }
+
     // executa o comando
     res =  PQexecPrepared(conn, stmt_name, nParams, tab->values, tab->lengths, tab->formats, 0);
+
+    if (dbg_times > 1) {
+        gettimeofday(&tv3, NULL);
+        long tempo1 = ((tv3.tv_sec * 1000000) + tv3.tv_usec) - ((tv1.tv_sec * 1000000) + tv1.tv_usec);
+        long tempo2 = ((tv3.tv_sec * 1000000) + tv3.tv_usec) - ((tv2.tv_sec * 1000000) + tv2.tv_usec);
+        fprintf(stderr, "op_read_random [%s] tempo=%ld %ld\n", tab->name, tempo1, tempo2);
+    }
+
     if ((PQresultStatus(res) != PGRES_TUPLES_OK) || (PQntuples(res) == 0))  {
         memcpy(fcd->status, ST_REC_NOT_FOUND, 2);
         if (dbg > 0) {

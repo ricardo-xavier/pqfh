@@ -1,8 +1,10 @@
 #include <stdlib.h>
 #include <string.h>
+#include <sys/time.h>
 #include "pqfh.h"
 
 extern int dbg;
+extern int dbg_times;
 
 void op_next_prev(PGconn *conn, fcd_t *fcd, char dir) {
 
@@ -11,6 +13,11 @@ void op_next_prev(PGconn *conn, fcd_t *fcd, char dir) {
     table_t      *tab;
     char         sql[257], kbuf[MAX_KEY_LEN+1];
     PGresult     *res;
+    struct timeval tv1, tv2, tv3;
+
+    if (dbg_times > 1) {
+        gettimeofday(&tv1, NULL);
+    }
 
     fileid = getint(fcd->file_id);
     reclen = getshort(fcd->rec_len);
@@ -57,8 +64,19 @@ void op_next_prev(PGconn *conn, fcd_t *fcd, char dir) {
         return;
     }
 
+    if (dbg_times > 1) {
+        gettimeofday(&tv2, NULL);
+    }
+
     pq2cob(tab, res, fcd->record, reclen);
     memcpy(fcd->status, ST_OK, 2);
+
+    if (dbg_times > 1) {
+        gettimeofday(&tv3, NULL);
+        long tempo1 = ((tv3.tv_sec * 1000000) + tv3.tv_usec) - ((tv1.tv_sec * 1000000) + tv1.tv_usec);
+        long tempo2 = ((tv3.tv_sec * 1000000) + tv3.tv_usec) - ((tv2.tv_sec * 1000000) + tv2.tv_usec);
+        fprintf(stderr, "op_next %c [%s] tempo=%ld %ld\n", dir, tab->name, tempo1, tempo2);
+    }
 
     if (dbg > 0) {
         fprintf(stderr, "status=%c%c\n\n", fcd->status[0], fcd->status[1]);

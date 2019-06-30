@@ -12,6 +12,7 @@
 PGconn *conn=NULL;
 PGconn *conn2=NULL;
 int dbg=-1;
+int dbg_times=-1;
 bool isam=false;
 
 int pending_commits = 0;
@@ -20,7 +21,7 @@ pthread_mutex_t lock;
 
 char backup[MAX_REC_LEN+1];
 
-#define VERSAO "v1.7.0 17/06/2019"
+#define VERSAO "v1.8.0 29/06/2019"
 
 bool in_transaction=false;
 
@@ -102,6 +103,12 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
             dbg = 0;
         } else {
             dbg = atoi(env);
+        }
+        env = getenv("PQFH_DBG_TIMES");
+        if (env == NULL) {
+            dbg_times = 0;
+        } else {
+            dbg_times = atoi(env);
         }
         env = getenv("PQFH_ISAM");
         if (env == NULL) {
@@ -364,16 +371,18 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
         case OP_CLOSE:
             tempo_close += tempo;
             qtde_close++;
-            fprintf(stderr, "tempo_total=%ld %d\n", tempo_total, qtde_total);
-            fprintf(stderr, "tempo_open=%ld %d\n", tempo_open, qtde_open);
-            fprintf(stderr, "tempo_close=%ld %d\n", tempo_close, qtde_close);
-            fprintf(stderr, "tempo_start=%ld %d\n", tempo_start, qtde_start);
-            fprintf(stderr, "tempo_next_prev=%ld %d\n", tempo_next_prev, qtde_next_prev);
-            fprintf(stderr, "tempo_read=%ld %d\n", tempo_read, qtde_read);
-            fprintf(stderr, "tempo_write=%ld %d\n", tempo_write, qtde_write);
-            fprintf(stderr, "tempo_rewrite=%ld %d\n", tempo_rewrite, qtde_rewrite);
-            fprintf(stderr, "tempo_delete=%ld %d\n", tempo_delete, qtde_delete);
-            fprintf(stderr, "tempo_isam=%ld %d\n", tempo_isam, qtde_isam);
+            if (dbg_times > 0) {
+                fprintf(stderr, "tempo_total=%ld %d\n", tempo_total, qtde_total);
+                fprintf(stderr, "tempo_open=%ld %d\n", tempo_open, qtde_open);
+                fprintf(stderr, "tempo_close=%ld %d\n", tempo_close, qtde_close);
+                fprintf(stderr, "tempo_start=%ld %d\n", tempo_start, qtde_start);
+                fprintf(stderr, "tempo_next_prev=%ld %d\n", tempo_next_prev, qtde_next_prev);
+                fprintf(stderr, "tempo_read=%ld %d\n", tempo_read, qtde_read);
+                fprintf(stderr, "tempo_write=%ld %d\n", tempo_write, qtde_write);
+                fprintf(stderr, "tempo_rewrite=%ld %d\n", tempo_rewrite, qtde_rewrite);
+                fprintf(stderr, "tempo_delete=%ld %d\n", tempo_delete, qtde_delete);
+                fprintf(stderr, "tempo_isam=%ld %d\n", tempo_isam, qtde_isam);
+            }
             break;
 
         case OP_START_GT:

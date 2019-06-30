@@ -1,8 +1,11 @@
 #include <stdlib.h>
 #include <string.h>
+#include <sys/time.h>
 #include "pqfh.h"
 
 extern int dbg;
+extern int dbg_times;
+bool eof_start=false;
 
 void op_start(PGconn *conn, fcd_t *fcd, char *op) {
 
@@ -12,7 +15,11 @@ void op_start(PGconn *conn, fcd_t *fcd, char *op) {
     table_t        *tab;
     PGresult       *res;
     char           where[4097], order[257];
+    struct timeval tv1, tv2, tv3;
 
+    if (dbg_times > 1) {
+        gettimeofday(&tv1, NULL);
+    }
     fileid = getint(fcd->file_id);
 
     tab = (table_t *) fileid;
@@ -55,6 +62,10 @@ void op_start(PGconn *conn, fcd_t *fcd, char *op) {
         fprintf(stderr, "%s\n", sql);
     }
 
+    if (dbg_times > 1) {
+        gettimeofday(&tv2, NULL);
+    }
+
     res = PQexec(conn, sql);
     if (PQresultStatus(res) != PGRES_COMMAND_OK) {
         fprintf(stderr, "Erro na execucao do comando: %s\n%s\n", PQerrorMessage(conn), sql);
@@ -62,6 +73,13 @@ void op_start(PGconn *conn, fcd_t *fcd, char *op) {
         exit(-1);
     }
     PQclear(res);
+
+    if (dbg_times > 1) {
+        gettimeofday(&tv3, NULL);
+        long tempo1 = ((tv3.tv_sec * 1000000) + tv3.tv_usec) - ((tv1.tv_sec * 1000000) + tv1.tv_usec);
+        long tempo2 = ((tv3.tv_sec * 1000000) + tv3.tv_usec) - ((tv2.tv_sec * 1000000) + tv2.tv_usec);
+        fprintf(stderr, "op_start %s [%s] tempo=%ld %ld\n", op, tab->name, tempo1, tempo2);
+    }
 
     if (op[0] != '<') {
         tab->key_next = keyid;
