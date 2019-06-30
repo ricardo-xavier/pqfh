@@ -126,6 +126,8 @@ typedef struct {
 #define ST_REC_NOT_FOUND  "23"
 #define ST_DUPL_KEY       "22"
 #define ST_ERROR          "99"
+#define ST_ALREADY_OPENED "41"
+#define ST_ALREADY_CLOSED "42"
 
 bool table_info(PGconn *conn, table_t *table, fcd_t *fcd);
 char *get_schema(PGconn *conn, char *table);
