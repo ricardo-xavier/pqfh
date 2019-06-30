@@ -12,7 +12,15 @@ void op_close(PGconn *conn, fcd_t *fcd) {
 
     tab = (table_t *) fileid;
     if (dbg > 0) {
-        fprintf(stderr, "op_close [%s] %ld\n", tab->name, time(NULL));
+        fprintf(stderr, "op_close [%s] %d %ld\n", tab->name, (int) fcd->open_mode, time(NULL));
+    }
+
+    if (fcd->open_mode == 128) {
+        memcpy(fcd->status, ST_ALREADY_CLOSED, 2);
+        if (dbg > 0) {
+            fprintf(stderr, "status=%c%c\n\n", fcd->status[0], fcd->status[1]);
+        }
+        return;
     }
 
     deallocate(conn, tab);
@@ -26,6 +34,7 @@ void op_close(PGconn *conn, fcd_t *fcd) {
     tab->prms_delete = list2_free(tab->prms_delete);
     tab->clones = list2_free(tab->clones);
 
+    fcd->open_mode = 128;
     memcpy(fcd->status, ST_OK, 2);
     if (dbg > 0) {
         fprintf(stderr, "status=%c%c\n\n", fcd->status[0], fcd->status[1]);

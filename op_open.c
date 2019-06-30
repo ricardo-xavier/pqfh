@@ -22,7 +22,15 @@ void op_open(PGconn *conn, fcd_t *fcd, unsigned short opcode) {
     }
     
     if (dbg > 0) {
-        fprintf(stderr, "op_open [%s] %04x %ld\n", filename, opcode, time(NULL));
+        fprintf(stderr, "op_open [%s] %04x %d %ld\n", filename, opcode, (int) fcd->open_mode, time(NULL));
+    }
+
+    if (fcd->open_mode != 128) {
+        memcpy(fcd->status, ST_ALREADY_OPENED, 2);
+        if (dbg > 0) {
+            fprintf(stderr, "status=%c%c\n\n", fcd->status[0], fcd->status[1]);
+        }
+        return;
     }
 
     // aloca e inicializa a tabela
@@ -46,6 +54,7 @@ void op_open(PGconn *conn, fcd_t *fcd, unsigned short opcode) {
     tab->timestamp = time(NULL);
 
     if (table_info(conn, tab, fcd)) {
+        fcd->open_mode = opcode - 0xfa00;
         memcpy(fcd->status, ST_OK, 2);
     } else {
         memcpy(fcd->status, ST_FILE_NOT_FOUND, 2);
