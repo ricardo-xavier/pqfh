@@ -5,6 +5,8 @@
 
 extern int dbg;
 extern int dbg_times;
+
+bool partial=false;
 bool eof_start=false;
 
 void op_start(PGconn *conn, fcd_t *fcd, char *op) {
@@ -27,6 +29,15 @@ void op_start(PGconn *conn, fcd_t *fcd, char *op) {
         fprintf(stderr, "op_start %s [%s]\n", op, tab->name);
     }
 
+    if (fcd->open_mode == 128) {
+        memcpy(fcd->status, ST_NOT_OPENED_READ, 2);
+        if (dbg > 0) {
+            fprintf(stderr, "status=%c%c\n\n", fcd->status[0], fcd->status[1]);
+        }
+        return;
+    }
+
+    eof_start = false;
     keyid = getshort(fcd->key_id);
     strcpy(kbuf, getkbuf(fcd, keyid, tab, &keylen));
     if (dbg > 1) {
@@ -51,10 +62,35 @@ void op_start(PGconn *conn, fcd_t *fcd, char *op) {
         return;
     }
 
+    // se o acesso for feito como entidade fraca faz um read com a chave parcial para ver se exxiste algum registro
+    if (is_weak(tab->name)) {
+        if (dbg > 2) {
+            fprintf(stderr, "op_start verifica se existe algum registro na tabela fraca\n");
+        }
+        partial = true;
+        op_read_random(conn, fcd);
+        if (memcmp(fcd->status, ST_OK, 2)) {
+            memcpy(fcd->status, ST_EOF, 2);
+            eof_start = true;
+            partial = false;
+            if (dbg > 0) {
+                fprintf(stderr, "status=%c%c\n\n", fcd->status[0], fcd->status[1]);
+            }
+            return;
+        }
+        partial = false;
+    }
+
     close_cursor(conn, tab);
     tab->cursor = true;
 
-    getwhere(fcd->record, tab, keyid, op, where, order);
+    if (is_weak(tab->name)) {
+        partial = true;
+        getwhere(fcd->record, tab, keyid, "=", where, order);
+        partial = false;
+    } else {
+        getwhere(fcd->record, tab, keyid, op, where, order);
+    }
     sprintf(sql, "declare cursor_%s_%ld cursor with hold for\n  select * from %s.%s\n    where %s order by %s", 
         tab->name, tab->timestamp,  tab->schema, tab->name, where, order);
 

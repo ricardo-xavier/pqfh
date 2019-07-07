@@ -5,18 +5,21 @@ extern int dbg;
 void deallocate(PGconn *conn, table_t *tab) {
     PGresult *res;
     char     sql[4097];
+    int      k;
 
-    if (tab->read_prepared) {
-        tab->read_prepared = false;
-        sprintf(sql, "deallocate %s_%ld_%d", tab->name, tab->timestamp, tab->key_read);
-        if (dbg > 1) {
-            fprintf(stderr, "%s\n", sql);
+    for (k=0; k<MAX_KEYS; k++) {
+        if (tab->read_prepared[k]) {
+            tab->read_prepared[k] = false;
+            sprintf(sql, "deallocate %s_%ld_%d", tab->name, tab->timestamp, k);
+            if (dbg > 1) {
+                fprintf(stderr, "%s\n", sql);
+            }
+            res = PQexec(conn, sql);
+            if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+                fprintf(stderr, "Erro na execucao do comando: %s\n%s\n", PQerrorMessage(conn), sql);
+            }
+            PQclear(res);
         }
-        res = PQexec(conn, sql);
-        if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-            fprintf(stderr, "Erro na execucao do comando: %s\n%s\n", PQerrorMessage(conn), sql);
-        }
-        PQclear(res);
     }
 
     if (tab->ins_prepared) {

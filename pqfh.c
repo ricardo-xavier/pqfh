@@ -21,7 +21,13 @@ pthread_mutex_t lock;
 
 char backup[MAX_REC_LEN+1];
 
-#define VERSAO "v1.8.0 29/06/2019"
+list2_t *weak=NULL;
+
+#define VERSAO "v1.9.1 06/07/2019"
+
+// 1.9.0 - 30/06 - weak
+// 1.9.1 - 06/07 - verificar se a tabela esta aberta em todas as operacoes
+// 1.9.2 - 06/07 - read random com mais de uma chave
 
 bool in_transaction=false;
 
@@ -424,4 +430,17 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
 
     pthread_mutex_unlock(&lock);
 
+}
+
+bool is_weak(char *table) {
+    list2_t *ptr;
+    char    *tab;
+
+    for (ptr=list2_first(weak); ptr!=NULL; ptr=ptr->next) {
+        tab = (char *) ptr->buf;
+        if (!strcmp(table, tab)) {
+            return true;
+        }    
+    }
+    return false;
 }

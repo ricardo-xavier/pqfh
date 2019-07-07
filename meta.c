@@ -99,6 +99,8 @@ bool table_info(PGconn *conn, table_t *table, fcd_t *fcd) {
 
     strcpy(table->schema, get_schema(conn, table->name));
 
+    table->clones = get_clones(table->name);
+
     return table->columns != NULL ? true : false;
 }
 
@@ -106,6 +108,11 @@ char *get_schema(PGconn *conn, char *table) {
 
     PGresult   *res;
     char       sql[4097];
+
+    if (getenv("PQFH_FORCE_BD") != NULL) {
+        strcpy(schema, "public");
+        return schema;
+    }
 
     // declara o cursor
     sprintf(sql, "declare cursor_tables cursor for  \nselect table_schema\n    from information_schema.tables\n    where table_name = '%s'", table);
@@ -163,10 +170,15 @@ char *get_schema(PGconn *conn, char *table) {
  *
  */
 
+
 bool tabela_convertida(char *tabela) {
 
     unsigned char opcode[2];
     char *nomeenv;
+
+    if (getenv("PQFH_FORCE_BD") != NULL) {
+        return true;
+    }
 
     if (montafcd01) {
         montafcd01 = false;
@@ -249,6 +261,11 @@ bool nome_dicionario(char *tabela, char *nome) {
     bool ret;
 
     strcpy(nome, tabela);
+
+    if (getenv("PQFH_FORCE_BD") != NULL) {
+        return false;
+    }
+
     if (montafcd02) {
         montafcd02 = false;
         nomeenv = getenv("PQFH_PG01A02");

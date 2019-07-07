@@ -3,6 +3,7 @@
 #include "pqfh.h"
 
 extern int dbg;
+list2_t *weak;
 
 void op_close(PGconn *conn, fcd_t *fcd) {
     unsigned int fileid;
@@ -13,6 +14,17 @@ void op_close(PGconn *conn, fcd_t *fcd) {
     tab = (table_t *) fileid;
     if (dbg > 0) {
         fprintf(stderr, "op_close [%s] %d %ld\n", tab->name, (int) fcd->open_mode, time(NULL));
+    }
+
+    if (is_weak(tab->name)) {
+        list2_t *ptr;
+        for (ptr=list2_first(weak); ptr!=NULL; ptr=ptr->next) {
+            char *buf = (char *) ptr->buf;
+            if (!strcmp(buf, tab->name)) {
+                weak = list2_remove(weak, ptr);
+                break;
+            }
+        }
     }
 
     if (fcd->open_mode == 128) {

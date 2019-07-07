@@ -4,6 +4,7 @@
 #include "list2.h"
 
 extern int dbg;
+extern bool partial;
 
 void getkeys(fcd_t *fcd, table_t *tab) {
 
@@ -103,12 +104,19 @@ void adiciona_comp(unsigned char *record, _key_t key, int c, char *op, char *whe
     char aux[257];
     unsigned char  buf[257];
     column_t *col;
+    int last;
 
     col = key.columns[c];
     memcpy(buf, record+col->offset, col->len);
     buf[col->len] = 0;
 
-    if (c == (key.ncols - 1)) {
+    last = key.ncols - 1;
+    if (partial) {
+        last--;
+    }
+    //fprintf(stderr, "getwhere [%s] [%s] %d %d %d\n", where, col->name, partial, c, last);
+
+    if (c == last) {
         if (col->tp == 'n') {
             sprintf(aux, "%s %s %s", col->name, op, buf);
         } else {
@@ -118,6 +126,11 @@ void adiciona_comp(unsigned char *record, _key_t key, int c, char *op, char *whe
         strcat(order, col->name);
         if (op[0] == '<') {
             strcat(order, " desc");
+        }
+        if (partial) {
+            col = key.columns[c+1];
+            strcat(order, ",");
+            strcat(order, col->name);
         }
         return;
     }
@@ -172,10 +185,16 @@ void adiciona_comp_prepared(table_t *tab, _key_t key, int c, char *where, char c
 
     char aux[257];
     column_t *col;
+    int last;
 
     col = key.columns[c];
+    last = key.ncols - 1;
+    if (partial) {
+        last--;
+    }
+    //fprintf(stderr, "getwhereprep [%s] [%s] %d %d %d\n", where, col->name, partial, c, last);
 
-    if (c == (key.ncols - 1)) {
+    if (c == last) {
         sprintf(aux, "%s = $%d", col->name, ++seq);
         strcat(where, aux);
         switch (cmd) {

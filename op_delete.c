@@ -24,6 +24,14 @@ void op_delete(PGconn *conn, fcd_t *fcd) {
         fprintf(stderr, "op_delete [%s]\n", tab->name);
     }
 
+    if (fcd->open_mode == 128) {
+        memcpy(fcd->status, ST_NOT_OPENED_UPDEL, 2);
+        if (dbg > 0) {
+            fprintf(stderr, "status=%c%c\n\n", fcd->status[0], fcd->status[1]);
+        }
+        return;
+    }
+
     // verifica se o registro existe
     op_read_random(conn, fcd);
     if (memcmp(fcd->status, ST_OK, 2)) {

@@ -26,6 +26,14 @@ bool op_rewrite(PGconn *conn, fcd_t *fcd) {
         fprintf(stderr, "op_rewrite [%s]\n", tab->name);
     }
 
+    if (fcd->open_mode == 128) {
+        memcpy(fcd->status, ST_NOT_OPENED_UPDEL, 2);
+        if (dbg > 0) {
+            fprintf(stderr, "status=%c%c\n\n", fcd->status[0], fcd->status[1]);
+        }
+        return false;
+    }
+
     keyid = getshort(fcd->key_id);
     putshort(fcd->key_id, 0);
     memcpy(record, fcd->record, reclen);

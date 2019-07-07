@@ -11,6 +11,7 @@ void op_open(PGconn *conn, fcd_t *fcd, unsigned short opcode) {
     table_t        *tab;
     unsigned short fnlen;
     unsigned int   fileid;
+    int            k;
 
     fnlen = getshort(fcd->file_name_len);
     memcpy(filename, (char *) fcd->file_name, fnlen);
@@ -38,10 +39,11 @@ void op_open(PGconn *conn, fcd_t *fcd, unsigned short opcode) {
     strcpy(tab->name, filename);
     tab->columns = NULL;
     tab->keys = NULL;
-    tab->key_read = -1;
     tab->key_next = -1;
     tab->key_prev = -1;
-    tab->read_prepared = false;
+    for (k=0; k<MAX_KEYS; k++) {
+        tab->read_prepared[k] = false;
+    }
     tab->upd_prepared = false;
     tab->ins_prepared = false;
     tab->del_prepared = false;
@@ -53,17 +55,22 @@ void op_open(PGconn *conn, fcd_t *fcd, unsigned short opcode) {
     tab->cursor = false;
     tab->timestamp = time(NULL);
 
-    if (table_info(conn, tab, fcd)) {
+    if (strcmp(tab->name, "pqfh")) {
+        if (table_info(conn, tab, fcd)) {
+            fcd->open_mode = opcode - 0xfa00;
+            memcpy(fcd->status, ST_OK, 2);
+        } else {
+            memcpy(fcd->status, ST_FILE_NOT_FOUND, 2);
+            if ((opcode == OP_OPEN_OUTPUT) && strcmp(tab->name, tab->dictname)) {
+                create_table(conn, tab, fcd, opcode);
+            } 
+        }
+        if (fcd->isam == 'S') {
+            return;
+        }
+    } else {
         fcd->open_mode = opcode - 0xfa00;
         memcpy(fcd->status, ST_OK, 2);
-    } else {
-        memcpy(fcd->status, ST_FILE_NOT_FOUND, 2);
-        if ((opcode == OP_OPEN_OUTPUT) && strcmp(tab->name, tab->dictname)) {
-            create_table(conn, tab, fcd, opcode);
-        } 
-    }
-    if (fcd->isam == 'S') {
-        return;
     }
 
     if (dbg > 0) {

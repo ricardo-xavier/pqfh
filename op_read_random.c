@@ -5,6 +5,7 @@
 
 extern int dbg;
 extern int dbg_times;
+extern bool partial;
 
 void op_read_random(PGconn *conn, fcd_t *fcd) {
 
@@ -30,6 +31,14 @@ void op_read_random(PGconn *conn, fcd_t *fcd) {
         fprintf(stderr, "op_read_random [%s]\n", tab->name);
     }
 
+    if (fcd->open_mode == 128) {
+        memcpy(fcd->status, ST_NOT_OPENED_READ, 2);
+        if (dbg > 0) {
+            fprintf(stderr, "status=%c%c\n\n", fcd->status[0], fcd->status[1]);
+        }
+        return;
+    }
+
     keyid = getshort(fcd->key_id);
     strcpy(kbuf, getkbuf(fcd, keyid, tab, &keylen));
     if (dbg > 1) {
@@ -37,14 +46,8 @@ void op_read_random(PGconn *conn, fcd_t *fcd) {
     }
     sprintf(stmt_name, "%s_%ld_%d", tab->name, tab->timestamp, keyid);
 
-    // verifica se tem um read preparado com outra chave
-    if (tab->read_prepared && (tab->key_read != keyid)) {
-        fprintf(stderr, "read troca de chave nao implementada: %d\n", tab->key_read);
-        exit(-1);
-    }
-
     // prepara o comando se ainda nao tiver preparado
-    if (!tab->read_prepared) {
+    if (!tab->read_prepared[keyid]) {
 
         getwhere_prepared(tab, keyid, where, 0, 's');
         sprintf(sql, "select * from %s.%s where %s", tab->schema, tab->name, where);
@@ -60,8 +63,7 @@ void op_read_random(PGconn *conn, fcd_t *fcd) {
             exit(-1);
         }
         PQclear(res);
-        tab->read_prepared = true;
-        tab->key_read = keyid;
+        tab->read_prepared[keyid] = true;
     }
 
     // seta parametros
@@ -97,7 +99,9 @@ void op_read_random(PGconn *conn, fcd_t *fcd) {
             fprintf(stderr, "%s\n", PQerrorMessage(conn));
         }
     } else {
-        pq2cob(tab, res, fcd->record, reclen);
+        if (!partial) {
+            pq2cob(tab, res, fcd->record, reclen);
+        }
         memcpy(fcd->status, ST_OK, 2);
     }
     PQclear(res);

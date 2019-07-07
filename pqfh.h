@@ -14,6 +14,7 @@
 #define MAX_NAME_LEN 30
 #define MAX_REC_LEN  4096
 #define MAX_COLS     256
+#define MAX_KEYS     16
 #define MAX_COMPS    16
 
 typedef struct {
@@ -22,8 +23,7 @@ typedef struct {
     char    dictname[MAX_NAME_LEN+1];
     list2_t *columns;
     list2_t *keys;
-    short   key_read;
-    bool    read_prepared;
+    bool    read_prepared[MAX_KEYS];
     bool    upd_prepared;
     bool    ins_prepared;
     bool    del_prepared;
@@ -53,6 +53,7 @@ typedef struct {
     char    col1[MAX_NAME_LEN+1];
     char    col2[MAX_NAME_LEN+1];
     bool    key;
+    bool    concat;
 } clone_t;
 
 typedef struct {
@@ -120,14 +121,17 @@ typedef struct {
 #define OP_READ_RANDOM   0xfaf6
 #define OP_DELETE        0xfaf7
 
-#define ST_OK             "00"
-#define ST_FILE_NOT_FOUND "35"
-#define ST_EOF            "10"
-#define ST_REC_NOT_FOUND  "23"
-#define ST_DUPL_KEY       "22"
-#define ST_ERROR          "99"
-#define ST_ALREADY_OPENED "41"
-#define ST_ALREADY_CLOSED "42"
+#define ST_OK                "00"
+#define ST_FILE_NOT_FOUND    "35"
+#define ST_EOF               "10"
+#define ST_REC_NOT_FOUND     "23"
+#define ST_DUPL_KEY          "22"
+#define ST_ERROR             "99"
+#define ST_ALREADY_OPENED    "41"
+#define ST_ALREADY_CLOSED    "42"
+#define ST_NOT_OPENED_READ   "47"
+#define ST_NOT_OPENED_WRITE  "48"
+#define ST_NOT_OPENED_UPDEL  "49"
 
 bool table_info(PGconn *conn, table_t *table, fcd_t *fcd);
 char *get_schema(PGconn *conn, char *table);
@@ -144,7 +148,12 @@ void getkeys(fcd_t *fcd, table_t *tab);
 void getwhere(unsigned char *record, table_t *table, int keyid, char *op, char *where, char *order);
 void getwhere_prepared(table_t *table, int keyid, char *where, int ini, char cmd);
 
+list2_t *get_clones(char *tabela);
+void replica_prepare_write(table_t *tab);
+
 void commit();
+bool is_weak(char *table);
+void command(PGconn *conn, table_t *tab, fcd_t *fcd);
 
 void deallocate(PGconn *conn, table_t *tab);
 void close_cursor(PGconn *conn, table_t *tab);

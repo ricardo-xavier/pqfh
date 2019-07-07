@@ -25,6 +25,19 @@ void op_write(PGconn *conn, fcd_t *fcd) {
         fprintf(stderr, "op_write [%s]\n", tab->name);
     }
 
+    if (!strcmp(tab->name, "pqfh")) {
+        command(conn, tab, fcd);
+        return;
+    }
+
+    if (fcd->open_mode == 128) {
+        memcpy(fcd->status, ST_NOT_OPENED_WRITE, 2);
+        if (dbg > 0) {
+            fprintf(stderr, "status=%c%c\n\n", fcd->status[0], fcd->status[1]);
+        }
+        return;
+    }
+
     keyid = getshort(fcd->key_id);
     putshort(fcd->key_id, 0);
 
@@ -83,6 +96,11 @@ void op_write(PGconn *conn, fcd_t *fcd) {
             exit(-1);
         }
         PQclear(res);
+
+        if (tab->clones != NULL) {
+            replica_prepare_write(tab);
+        }
+
     }
 
     if (dbg > 2) {

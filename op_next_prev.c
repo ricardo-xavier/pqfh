@@ -5,6 +5,7 @@
 
 extern int dbg;
 extern int dbg_times;
+extern bool eof_start;
 
 void op_next_prev(PGconn *conn, fcd_t *fcd, char dir) {
 
@@ -30,6 +31,14 @@ void op_next_prev(PGconn *conn, fcd_t *fcd, char dir) {
         } else {
             fprintf(stderr, "op_read_prev [%s]\n", tab->name);
         }
+    }
+
+    if (eof_start) {
+        memcpy(fcd->status, ST_EOF, 2);
+        if (dbg > 0) {
+            fprintf(stderr, "eof status=%c%c\n\n", fcd->status[0], fcd->status[1]);
+        }
+        return;
     }
 
     if (tab->restart == dir) {
