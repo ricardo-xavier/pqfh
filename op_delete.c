@@ -78,6 +78,7 @@ void op_delete(PGconn *conn, fcd_t *fcd) {
     p = 0;
     for (ptr=tab->prms_delete; ptr!=NULL; ptr=ptr->next) {
         col = (column_t *) ptr->buf;
+        col->p = p;
         memcpy(tab->bufs[p], fcd->record+col->offset, col->len);
         tab->bufs[p][col->len] = 0;
         tab->values[p] = tab->bufs[p];
@@ -101,6 +102,9 @@ void op_delete(PGconn *conn, fcd_t *fcd) {
             fprintf(stderr, "%s\n", PQerrorMessage(conn));
         }
     } else {
+        if (tab->clones != NULL) {
+            replica_delete(tab);
+        }
         memcpy(fcd->status, ST_OK, 2);
     }
     PQclear(res);

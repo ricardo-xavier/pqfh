@@ -84,6 +84,7 @@ bool op_rewrite(PGconn *conn, fcd_t *fcd) {
                 continue;
             }
 
+            col->p = p;
             if (p == 0) {
                 strcat(sql, "  set ");
             } else {
@@ -188,6 +189,9 @@ bool op_rewrite(PGconn *conn, fcd_t *fcd) {
             fprintf(stderr, "%s\n", PQerrorMessage(conn));
         }
     } else {
+        if (tab->clones != NULL) {
+            replica_rewrite(tab);
+        }
         memcpy(fcd->status, ST_OK, 2);
     }
     PQclear(res);

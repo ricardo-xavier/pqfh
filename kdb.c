@@ -188,6 +188,7 @@ void adiciona_comp_prepared(table_t *tab, _key_t key, int c, char *where, char c
     int last;
 
     col = key.columns[c];
+    col->p = seq;
     last = key.ncols - 1;
     if (partial) {
         last--;

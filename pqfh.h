@@ -63,6 +63,7 @@ typedef struct {
     int dec;
     int offset;
     bool pk;
+    int p;
 } column_t;
 
 typedef struct {
@@ -149,7 +150,11 @@ void getwhere(unsigned char *record, table_t *table, int keyid, char *op, char *
 void getwhere_prepared(table_t *table, int keyid, char *where, int ini, char cmd);
 
 list2_t *get_clones(char *tabela);
-void replica_prepare_write(table_t *tab);
+void replica_write(table_t *tab);
+void replica_rewrite(table_t *tab);
+void replica_delete(table_t *tab);
+void replica_commit();
+void replica_rollback();
 
 void commit();
 bool is_weak(char *table);

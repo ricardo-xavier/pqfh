@@ -97,10 +97,6 @@ void op_write(PGconn *conn, fcd_t *fcd) {
         }
         PQclear(res);
 
-        if (tab->clones != NULL) {
-            replica_prepare_write(tab);
-        }
-
     }
 
     if (dbg > 2) {
@@ -111,6 +107,7 @@ void op_write(PGconn *conn, fcd_t *fcd) {
     for (ptr=tab->columns; ptr!=NULL; ptr=ptr->next) {
 
         col = (column_t *) ptr->buf;
+        col->p = p;
 
         if (ptr == tab->columns) {
             memcpy(prefixo, col->name, 6);
@@ -162,6 +159,9 @@ void op_write(PGconn *conn, fcd_t *fcd) {
             fprintf(stderr, "%s\n", PQerrorMessage(conn));
         }
     } else {
+        if (tab->clones != NULL) {
+            replica_write(tab);
+        }
         memcpy(fcd->status, ST_OK, 2);
     }
     PQclear(res);

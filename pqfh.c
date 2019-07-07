@@ -22,12 +22,14 @@ pthread_mutex_t lock;
 char backup[MAX_REC_LEN+1];
 
 list2_t *weak=NULL;
+extern bool replica_in_transaction;
 
-#define VERSAO "v1.9.1 06/07/2019"
+#define VERSAO "v1.10.0 07/07/2019"
 
-// 1.9.0 - 30/06 - weak
-// 1.9.1 - 06/07 - verificar se a tabela esta aberta em todas as operacoes
-// 1.9.2 - 06/07 - read random com mais de uma chave
+// 1.9.0  - 30/06 - weak
+// 1.9.1  - 06/07 - verificar se a tabela esta aberta em todas as operacoes
+// 1.9.2  - 06/07 - read random com mais de uma chave
+// 1.10.0 - 07/07 - preparacao dos comandos de replicacao
 
 bool in_transaction=false;
 
@@ -293,10 +295,16 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
                     // recupera o registro atual e o status
                     memcpy(fcd->record, aux, reclen);
                     memcpy(fcd->status, st, 2);
+                    if (replica_in_transaction) {
+                        replica_rollback();
+                    }
                 } else {
                     // sucesso no isam
                     if (dbg > 1) {
                         fprintf(stderr, "rewrite confirmado\n");
+                    }
+                    if (replica_in_transaction) {
+                        replica_commit();
                     }
                 }
             }
@@ -319,10 +327,16 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
                     memcpy(st, fcd->status, 2);
                     op_delete(conn, fcd);
                     memcpy(fcd->status, st, 2);
+                    if (replica_in_transaction) {
+                        replica_rollback();
+                    }
                 } else {
                     // sucesso no isam
                     if (dbg > 1) {
                         fprintf(stderr, "write confirmado\n");
+                    }
+                    if (replica_in_transaction) {
+                        replica_commit();
                     }
                 }
             }
@@ -345,10 +359,16 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
                     memcpy(st, fcd->status, 2);
                     op_write(conn, fcd);
                     memcpy(fcd->status, st, 2);
+                    if (replica_in_transaction) {
+                        replica_rollback();
+                    }
                 } else {
                     // sucesso no isam
                     if (dbg > 1) {
                         fprintf(stderr, "delete confirmado\n");
+                    }
+                    if (replica_in_transaction) {
+                        replica_commit();
                     }
                 }
             }

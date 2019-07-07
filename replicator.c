@@ -3,8 +3,10 @@
 #include "pqfh.h"
 
 extern bool dbg;
+extern PGconn *conn2;
 fcd_t fcd;
 bool buildfcd=true;
+bool replica_in_transaction;
 
 list2_t *get_clones(char *tabname) {
 
@@ -13,6 +15,10 @@ list2_t *get_clones(char *tabname) {
     clone_t clone;
     int pos;
     list2_t *clones=NULL;
+
+    if (conn2 == NULL) {
+        return NULL;
+    }
 
     if (buildfcd) {
         buildfcd = false;
@@ -48,6 +54,13 @@ list2_t *get_clones(char *tabname) {
         if (dbg > 2) {
             fprintf(stderr, "replica open %c%c %d\n", fcd.status[0], fcd.status[1], fcd.status[1]);
         }
+        if (!memcmp(fcd.status, ST_OK, 2)) {
+            fcd.open_mode = 0;
+        }
+    }
+
+    if (fcd.open_mode == 128) {
+        return NULL;
     }
 
     memset(fcd.record, 0, 156);
@@ -99,11 +112,13 @@ list2_t *get_clones(char *tabname) {
     return list2_first(clones);
 }
 
-void prepare_write_clone(clone_t *clone, list2_t *clones) {
-    list2_t *ptr;
-    char  sql[4097], aux[9];
+void write_clone(table_t *tab, clone_t *clone, list2_t *clones) {
+    list2_t *ptr, *ptrcol;
+    char  sql[4097];
     int   seq=0;
     clone_t *c;
+    column_t *col;
+    PGresult *res;
 
     sprintf(sql, "insert into %s.%s(", clone->schema, clone->name);
 
@@ -126,28 +141,243 @@ void prepare_write_clone(clone_t *clone, list2_t *clones) {
             if (seq > 0) {
                 strcat(sql, ", ");
             }
-            sprintf(aux, "$%d", ++seq);
-            strcat(sql, aux);
+            for (ptrcol=tab->columns; ptrcol!=NULL; ptrcol=ptrcol->next) {
+                col = (column_t *) ptrcol->buf;
+                if (!strcmp(col->name, c->col1)) {
+                    if (col->tp != 'n') {
+                        strcat(sql, "'");
+                    }
+                    strcat(sql, tab->bufs[col->p]);
+                    if (col->tp != 'n') {
+                        strcat(sql, "'");
+                    }
+                    break;
+                }
+            }
+            seq++;
         }
     }
     strcat(sql, ")");
 
-    fprintf(stderr, "%s\n", sql);
+/*
+    res = PQexec(conn2, "BEGIN");
+    PQclear(res);
+*/
+    replica_in_transaction = true;
+
+    if (dbg > 1) {
+        fprintf(stderr, "%s\n", sql);
+    }
+    res = PQexec(conn2, sql);
+    if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+        fprintf(stderr, "Erro na execucao do comando: %s\n%s\n", PQerrorMessage(conn2), sql);
+        exit(-1);
+    }
+    PQclear(res);
 }
 
-void replica_prepare_write(table_t *tab) {
+void rewrite_clone(table_t *tab, clone_t *clone, list2_t *clones) {
+    list2_t *ptr, *ptrcol;
+    char  sql[4097];
+    int   seq=0, seq2=0;
+    clone_t *c;
+    column_t *col;
+    PGresult *res;
+
+    sprintf(sql, "update %s.%s set ", clone->schema, clone->name);
+
+    for (ptr=clones; ptr!=NULL; ptr=ptr->next) {
+        c = (clone_t *) ptr->buf;
+        if (!strcmp(c->name, clone->name) && (c->key == 'N')) {
+            if (seq > 0) {
+                strcat(sql, ", ");
+            }
+            strcat(sql, c->col2);
+            strcat(sql, "=");
+            for (ptrcol=tab->columns; ptrcol!=NULL; ptrcol=ptrcol->next) {
+                col = (column_t *) ptrcol->buf;
+                if (!strcmp(col->name, c->col1)) {
+                    if (col->tp != 'n') {
+                        strcat(sql, "'");
+                    }
+                    strcat(sql, tab->bufs[col->p]);
+                    if (col->tp != 'n') {
+                        strcat(sql, "'");
+                    }
+                    break;
+                }
+            }
+            seq++;
+        }
+    }
+
+    strcat(sql, " where ");
+
+    for (ptr=clones; ptr!=NULL; ptr=ptr->next) {
+        c = (clone_t *) ptr->buf;
+        if (!strcmp(c->name, clone->name) && (c->key == 'S')) {
+            if (seq2 > 0) {
+                strcat(sql, " and ");
+            }
+            strcat(sql, c->col2);
+            strcat(sql, "=");
+            for (ptrcol=tab->columns; ptrcol!=NULL; ptrcol=ptrcol->next) {
+                col = (column_t *) ptrcol->buf;
+                if (!strcmp(col->name, c->col1)) {
+fprintf(stderr, "zzz replica [%s] %c %d\n", col->name, col->tp, col->p);
+                    if (col->tp != 'n') {
+                        strcat(sql, "'");
+                    }
+                    strcat(sql, tab->bufs[col->p]);
+                    if (col->tp != 'n') {
+                        strcat(sql, "'");
+                    }
+                    break;
+                }
+            }
+            seq2++;
+        }
+    }
+
+/*
+    res = PQexec(conn2, "BEGIN");
+    PQclear(res);
+*/
+    replica_in_transaction = true;
+
+    if (dbg > 1) {
+        fprintf(stderr, "%s\n", sql);
+    }
+    res = PQexec(conn2, sql);
+    if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+        fprintf(stderr, "Erro na execucao do comando: %s\n%s\n", PQerrorMessage(conn2), sql);
+        exit(-1);
+    }
+    PQclear(res);
+}
+
+void delete_clone(table_t *tab, clone_t *clone, list2_t *clones) {
+    list2_t *ptr, *ptrcol;
+    char  sql[4097];
+    int   seq=0;
+    clone_t *c;
+    column_t *col;
+    PGresult *res;
+
+    sprintf(sql, "delete from %s.%s where ", clone->schema, clone->name);
+
+    for (ptr=clones; ptr!=NULL; ptr=ptr->next) {
+        c = (clone_t *) ptr->buf;
+        if (!strcmp(c->name, clone->name) && (c->key == 'S')) {
+            if (seq > 0) {
+                strcat(sql, " and ");
+            }
+            strcat(sql, c->col2);
+            strcat(sql, "=");
+            for (ptrcol=tab->columns; ptrcol!=NULL; ptrcol=ptrcol->next) {
+                col = (column_t *) ptrcol->buf;
+                if (!strcmp(col->name, c->col1)) {
+                    if (col->tp != 'n') {
+                        strcat(sql, "'");
+                    }
+                    strcat(sql, tab->bufs[col->p]);
+                    if (col->tp != 'n') {
+                        strcat(sql, "'");
+                    }
+                    break;
+                }
+            }
+            seq++;
+        }
+    }
+
+/*
+    res = PQexec(conn2, "BEGIN");
+    PQclear(res);
+*/
+    replica_in_transaction = true;
+
+    if (dbg > 1) {
+        fprintf(stderr, "%s\n", sql);
+    }
+    res = PQexec(conn2, sql);
+    if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+        fprintf(stderr, "Erro na execucao do comando: %s\n%s\n", PQerrorMessage(conn2), sql);
+        exit(-1);
+    }
+    PQclear(res);
+}
+
+void replica_write(table_t *tab) {
     list2_t *ptr;
     clone_t *clone=NULL, *last=NULL;
 
     for (ptr=tab->clones; ptr!=NULL; ptr=ptr->next) {
         clone = (clone_t *) ptr->buf;
         if ((last != NULL) && strcmp(last->name, clone->name)) {
-            prepare_write_clone(last, tab->clones);
+            write_clone(tab, last, tab->clones);
         }
         last = clone;
     }
 
     if ((last != NULL))  {
-        prepare_write_clone(last, tab->clones);
+        write_clone(tab, last, tab->clones);
+    }
+}
+
+void replica_rewrite(table_t *tab) {
+    list2_t *ptr;
+    clone_t *clone=NULL, *last=NULL;
+
+    for (ptr=tab->clones; ptr!=NULL; ptr=ptr->next) {
+        clone = (clone_t *) ptr->buf;
+        if ((last != NULL) && strcmp(last->name, clone->name)) {
+            rewrite_clone(tab, last, tab->clones);
+        }
+        last = clone;
+    }
+
+    if ((last != NULL))  {
+        rewrite_clone(tab, last, tab->clones);
+    }
+}
+
+void replica_delete(table_t *tab) {
+    list2_t *ptr;
+    clone_t *clone=NULL, *last=NULL;
+
+    for (ptr=tab->clones; ptr!=NULL; ptr=ptr->next) {
+        clone = (clone_t *) ptr->buf;
+        if ((last != NULL) && strcmp(last->name, clone->name)) {
+            delete_clone(tab, last, tab->clones);
+        }
+        last = clone;
+    }
+
+    if ((last != NULL))  {
+        delete_clone(tab, last, tab->clones);
+    }
+}
+void replica_commit() {
+/*
+    PGresult *res;
+    res = PQexec(conn2, "COMMIT");
+    PQclear(res);
+    replica_in_transaction = false;
+*/
+    if (dbg > 1) {
+        fprintf(stderr, "replica commit");
+    }
+}
+
+void replica_rollback() {
+/*
+    PGresult *res;
+    res = PQexec(conn2, "ROLLBACK");
+    PQclear(res);
+    replica_in_transaction = false;
+*/
+    if (dbg > 1) {
+        fprintf(stderr, "replica rollback");
     }
 }
