@@ -230,10 +230,14 @@ bool tabela_convertida(char *tabela) {
     putshort(opcode, OP_READ_NEXT);
     EXTFH(opcode, &fcd01);
     if (dbg > 2) {
-        fprintf(stderr, "%s [%s] %c %c [%c]\n", fcd01.file_name, tabela, fcd01.status[0], fcd01.status[1], fcd01.record[26]);
+        char aux[33];
+        memcpy(aux, fcd01.record, strlen(tabela));
+        aux[strlen(tabela)] = 0;
+        fprintf(stderr, "%s [%s] %c %c [%s] [%c]\n", fcd01.file_name, tabela, fcd01.status[0], fcd01.status[1], aux, fcd01.record[26]);
     }
 
-    return (fcd01.status[0] == '0') && (fcd01.status[1] == '0') && (fcd01.record[26] == 'S');
+    return (fcd01.status[0] == '0') && (fcd01.status[1] == '0') && !memcmp(fcd01.record, tabela, strlen(tabela))
+                && (fcd01.record[26] == 'S');
 }
 
 /*
