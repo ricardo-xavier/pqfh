@@ -51,7 +51,7 @@ void op_start(PGconn *conn, fcd_t *fcd, char *op) {
     }
     if (
             ((op[0] != '<') && (keyid == tab->key_next) && !memcmp(kbuf, tab->buf_next, keylen)) ||
-            ((op[0] == '<') && (keyid == tab->key_prev) && !memcmp(kbuf, tab->buf_next, keylen))) {
+            ((op[0] == '<') && (keyid == tab->key_prev) && !memcmp(kbuf, tab->buf_prev, keylen))) {
         if (op[1] == '=') {
             tab->restart = op[0] == '>' ? 'n' : 'p';
         }
