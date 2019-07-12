@@ -95,5 +95,6 @@ void  create_table(PGconn *conn, table_t *tab, fcd_t *fcd, unsigned short opcode
     res = PQexec(conn, "BEGIN");
     PQclear(res);
 
+    fcd->open_mode = 0;
     memcpy(fcd->status, ST_OK, 2);
 }
