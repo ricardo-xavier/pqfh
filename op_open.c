@@ -48,7 +48,9 @@ void op_open(PGconn *conn, fcd_t *fcd, unsigned short opcode) {
     tab->ins_prepared = false;
     tab->del_prepared = false;
     tab->restart = 0;
-    tab->prms = NULL;
+    for (k=0; k<MAX_KEYS; k++) {
+        tab->prms_random[k] = NULL;
+    }
     tab->prms_rewrite = NULL;
     tab->prms_delete = NULL;
     tab->clones = NULL;

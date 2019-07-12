@@ -8,6 +8,7 @@ list2_t *weak;
 void op_close(PGconn *conn, fcd_t *fcd) {
     unsigned int fileid;
     table_t      *tab;
+    int          k;
 
     fileid = getint(fcd->file_id);
 
@@ -41,7 +42,9 @@ void op_close(PGconn *conn, fcd_t *fcd) {
     // desaloca a tabela
     tab->columns = list2_free(tab->columns);
     tab->keys = list2_free(tab->keys);
-    tab->prms = list2_free(tab->prms);
+    for (k=0; k<MAX_KEYS; k++) {
+        tab->prms_random[k] = list2_free(tab->prms_random[k]);
+    }
     tab->prms_rewrite = list2_free(tab->prms_rewrite);
     tab->prms_delete = list2_free(tab->prms_delete);
     tab->clones = list2_free(tab->clones);

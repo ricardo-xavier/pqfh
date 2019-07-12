@@ -34,7 +34,7 @@ typedef struct {
     short   key_prev;
     char    buf_prev[MAX_KEY_LEN+1];
     char    rec_prev[MAX_REC_LEN+1];
-    list2_t *prms;
+    list2_t *prms_random[MAX_KEYS];
     list2_t *prms_rewrite;
     list2_t *prms_delete;
     list2_t *clones;

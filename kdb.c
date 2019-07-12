@@ -181,7 +181,7 @@ void getwhere(unsigned char *record, table_t *table, int keyid, char *op, char *
 
 int seq;
 
-void adiciona_comp_prepared(table_t *tab, _key_t key, int c, char *where, char cmd) {
+void adiciona_comp_prepared(table_t *tab, _key_t key, int c, char *where, char cmd, int keyid) {
 
     char aux[257];
     column_t *col;
@@ -206,7 +206,7 @@ void adiciona_comp_prepared(table_t *tab, _key_t key, int c, char *where, char c
                 tab->prms_delete = list2_append(tab->prms_delete, col, sizeof(column_t));
                 break;
             default:
-                tab->prms = list2_append(tab->prms, col, sizeof(column_t));
+                tab->prms_random[keyid] = list2_append(tab->prms_random[keyid], col, sizeof(column_t));
                 break;
         }
         return;
@@ -222,10 +222,10 @@ void adiciona_comp_prepared(table_t *tab, _key_t key, int c, char *where, char c
             tab->prms_delete = list2_append(tab->prms_delete, col, sizeof(column_t));
             break;
         default:
-            tab->prms = list2_append(tab->prms, col, sizeof(column_t));
+            tab->prms_random[keyid] = list2_append(tab->prms_random[keyid], col, sizeof(column_t));
             break;
     }
-    adiciona_comp_prepared(tab, key, c+1, where, cmd);
+    adiciona_comp_prepared(tab, key, c+1, where, cmd, keyid);
 
 }
 
@@ -242,7 +242,7 @@ void getwhere_prepared(table_t *tab, int keyid, char *where, int ini, char cmd) 
             tab->prms_delete = list2_free(tab->prms_delete);
             break;
         default:
-            tab->prms = list2_free(tab->prms);
+            tab->prms_random[keyid] = list2_free(tab->prms_random[keyid]);
             break;
     }
     strcpy(where, "");
@@ -250,7 +250,7 @@ void getwhere_prepared(table_t *tab, int keyid, char *where, int ini, char cmd) 
     for (ptr=tab->keys, k=0; ptr!=NULL; ptr=ptr->next, k++) {
         if (k == keyid) {
             key = (_key_t *) ptr->buf;
-            adiciona_comp_prepared(tab, *key, 0, where, cmd);
+            adiciona_comp_prepared(tab, *key, 0, where, cmd, keyid);
             break;
         }
     }
@@ -263,7 +263,7 @@ void getwhere_prepared(table_t *tab, int keyid, char *where, int ini, char cmd) 
             tab->prms_delete = list2_first(tab->prms_delete);
             break;
         default:
-            tab->prms = list2_first(tab->prms);
+            tab->prms_random[keyid] = list2_first(tab->prms_random[keyid]);
             break;
     }
 }

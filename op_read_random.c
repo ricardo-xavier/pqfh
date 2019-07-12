@@ -51,7 +51,7 @@ void op_read_random(PGconn *conn, fcd_t *fcd) {
 
         getwhere_prepared(tab, keyid, where, 0, 's');
         sprintf(sql, "select * from %s.%s where %s", tab->schema, tab->name, where);
-        nParams = list2_size(tab->prms);
+        nParams = list2_size(tab->prms_random[keyid]);
 
         if (dbg > 1) {
             fprintf(stderr, "%s\n", sql);
@@ -68,7 +68,7 @@ void op_read_random(PGconn *conn, fcd_t *fcd) {
 
     // seta parametros
     p = 0;
-    for (ptr=tab->prms; ptr!=NULL; ptr=ptr->next) {
+    for (ptr=tab->prms_random[keyid]; ptr!=NULL; ptr=ptr->next) {
         col = (column_t *) ptr->buf;
         memcpy(tab->bufs[p], fcd->record+col->offset, col->len);
         tab->bufs[p][col->len] = 0;
