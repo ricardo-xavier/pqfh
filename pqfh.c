@@ -24,12 +24,15 @@ char backup[MAX_REC_LEN+1];
 list2_t *weak=NULL;
 extern bool replica_in_transaction;
 
-#define VERSAO "v1.10.0 07/07/2019"
+#define VERSAO "v1.11.0 11/07/2019"
 
 // 1.9.0  - 30/06 - weak
 // 1.9.1  - 06/07 - verificar se a tabela esta aberta em todas as operacoes
 // 1.9.2  - 06/07 - read random com mais de uma chave
 // 1.10.0 - 07/07 - preparacao dos comandos de replicacao
+// 1.10.1 - 08/07 - correcoes dos problemas passados pelo Breno por email
+// 1.11.0 - 11/07 - estava testando o buf_next no start menor
+//                  prepared statement por chave no random
 
 bool in_transaction=false;
 
@@ -179,8 +182,20 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
         pthread_create(&thread_id, NULL, thread_commit, NULL);
     }
 
+    op = getshort(opcode);
+
     if (fcd->isam == 'S') {
+        if (dbg > 0) {
+            short fnlen = getshort(fcd->file_name_len);
+            char aux[257];
+            memcpy(aux, fcd->file_name, fnlen);
+            aux[fnlen] = 0;
+            fprintf(stderr, "EXTFH %04x [%s]\n\n", op, aux);
+        }
         EXTFH(opcode, fcd);
+        if (dbg > 0) {
+            fprintf(stderr, "EXTFH status=%c%c\n\n", fcd->status[0], fcd->status[1]);
+        }
         gettimeofday(&tv2, NULL);
         tempo = ((tv2.tv_sec * 1000000) + tv2.tv_usec) - ((tv1.tv_sec * 1000000) + tv1.tv_usec);
         tempo_isam += tempo;
@@ -191,7 +206,6 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
     }
 
     pthread_mutex_lock(&lock);
-    op = getshort(opcode);
     switch (op) {
 
         case OP_OPEN_INPUT:
@@ -200,6 +214,9 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
             op_open(conn, fcd, op);
             if (fcd->isam == 'S') {
                 EXTFH(opcode, fcd);
+                if (dbg > 0) {
+                    fprintf(stderr, "EXTFH status=%c%c\n\n", fcd->status[0], fcd->status[1]);
+                }
                 break;
             }
             if (!isam) {
