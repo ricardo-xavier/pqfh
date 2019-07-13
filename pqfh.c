@@ -3,6 +3,7 @@
 #include <time.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include <sys/time.h>
 #include "pqfh.h"
 
@@ -13,7 +14,6 @@ PGconn *conn=NULL;
 PGconn *conn2=NULL;
 int dbg=-1;
 int dbg_times=-1;
-bool isam=false;
 
 int pending_commits = 0;
 pthread_t thread_id;
@@ -24,7 +24,7 @@ char backup[MAX_REC_LEN+1];
 list2_t *weak=NULL;
 extern bool replica_in_transaction;
 
-#define VERSAO "v1.11.0 11/07/2019"
+#define VERSAO "v1.11.1 13/07/2019"
 
 // 1.9.0  - 30/06 - weak
 // 1.9.1  - 06/07 - verificar se a tabela esta aberta em todas as operacoes
@@ -33,6 +33,9 @@ extern bool replica_in_transaction;
 // 1.10.1 - 08/07 - correcoes dos problemas passados pelo Breno por email
 // 1.11.0 - 11/07 - estava testando o buf_next no start menor
 //                  prepared statement por chave no random
+//                  comandos copy e truncate
+//                  modo de operacao
+// 1.11.1 - 13/07 - commit no copy
 
 bool in_transaction=false;
 
@@ -94,15 +97,28 @@ long tempo_total=0, tempo_open=0, tempo_close=0, tempo_start=0, tempo_next_prev=
 int  qtde_total=0, qtde_open=0, qtde_close=0, qtde_start=0, qtde_next_prev=0, qtde_read=0, 
     qtde_write=0, qtde_rewrite=0, qtde_delete=0, qtde_isam=0;
 
+char get_mode() {
+    int  fd;
+    char mode='I';
+    if (access(".pqfh", F_OK) == -1) {
+        return 'I';
+    }
+    fd = open(".pqfh", O_RDONLY);
+    read(fd, &mode, 1); 
+    close(fd);
+    return mode;
+}
+
 void pqfh(unsigned char *opcode, fcd_t *fcd) {
 
     char           *conninfo;
     unsigned short op;
+    unsigned char  open_mode;
     PGresult       *res;
     bool           ret;
     char           aux[MAX_REC_LEN+1];
     short          reclen;
-    char           st[2];
+    char           st[2], mode;
     struct timeval tv1, tv2;
     long tempo;
 
@@ -120,12 +136,6 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
             dbg_times = 0;
         } else {
             dbg_times = atoi(env);
-        }
-        env = getenv("PQFH_ISAM");
-        if (env == NULL) {
-            isam = false;
-        } else {
-            isam = !strcasecmp(env, "S");
         }
     }
 
@@ -183,8 +193,9 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
     }
 
     op = getshort(opcode);
+    mode = get_mode();
 
-    if (fcd->isam == 'S') {
+    if ((mode == 'I') || (fcd->isam == 'S')) {
         if (dbg > 0) {
             short fnlen = getshort(fcd->file_name_len);
             char aux[257];
@@ -219,12 +230,13 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
                 }
                 break;
             }
-            if (!isam) {
+            if (mode == 'B') {
                 break;
             }
             if (!memcmp(fcd->status, ST_OK, 2)) {
                 // open com sucesso no banco
                 // executa o open no isam
+                fcd->open_mode = 128;
                 EXTFH(opcode, fcd);
                 if (memcmp(fcd->status, ST_OK, 2)) {
                     // erro no isam
@@ -240,13 +252,15 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
             break;
 
         case OP_CLOSE:
+            open_mode = fcd->open_mode; 
             op_close(conn, fcd);
             if (pending_commits > 0) {
                 commit();
             }
-            if (!isam) {
+            if (mode == 'B') {
                 break;
             }
+            fcd->open_mode = open_mode; 
             EXTFH(opcode, fcd);
             break;
 
@@ -284,7 +298,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
 
         case OP_REWRITE:
             ret = op_rewrite(conn, fcd);
-            if (!isam) {
+            if (mode == 'B') {
                 break;
             }
             if (ret && !memcmp(fcd->status, ST_OK, 2)) {
@@ -328,8 +342,10 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
             break;
 
         case OP_WRITE:
-            op_write(conn, fcd);
-            if (!isam) {
+            if (op_write(conn, fcd)) {
+                break; // command
+            }
+            if (mode == 'B') {
                 break;
             }
             if (!memcmp(fcd->status, ST_OK, 2)) {
@@ -361,7 +377,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
 
         case OP_DELETE:
             op_delete(conn, fcd);
-            if (!isam) {
+            if (mode == 'B') {
                 break;
             }
             if (!memcmp(fcd->status, ST_OK, 2)) {

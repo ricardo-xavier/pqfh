@@ -6,7 +6,7 @@ extern int dbg;
 
 extern int pending_commits;
 
-void op_write(PGconn *conn, fcd_t *fcd) {
+bool op_write(PGconn *conn, fcd_t *fcd) {
 
     unsigned short keyid; 
     table_t        *tab;
@@ -27,7 +27,7 @@ void op_write(PGconn *conn, fcd_t *fcd) {
 
     if (!strcmp(tab->name, "pqfh")) {
         command(conn, tab, fcd);
-        return;
+        return true;
     }
 
     if (fcd->open_mode == 128) {
@@ -35,7 +35,7 @@ void op_write(PGconn *conn, fcd_t *fcd) {
         if (dbg > 0) {
             fprintf(stderr, "status=%c%c\n\n", fcd->status[0], fcd->status[1]);
         }
-        return;
+        return false;
     }
 
     keyid = getshort(fcd->key_id);
@@ -52,7 +52,7 @@ void op_write(PGconn *conn, fcd_t *fcd) {
             fprintf(stderr, "status=%c%c\n\n", fcd->status[0], fcd->status[1]);
         }
         putshort(fcd->key_id, keyid);
-        return;
+        return false;
     }
 
     sprintf(stmt_name, "%s_%ld_ins", tab->name, tab->timestamp);
@@ -171,5 +171,6 @@ void op_write(PGconn *conn, fcd_t *fcd) {
         fprintf(stderr, "status=%c%c\n\n", fcd->status[0], fcd->status[1]);
     }
     putshort(fcd->key_id, keyid);
+    return false;
 
 }

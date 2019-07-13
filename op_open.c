@@ -60,6 +60,9 @@ void op_open(PGconn *conn, fcd_t *fcd, unsigned short opcode) {
     if (strcmp(tab->name, "pqfh")) {
         if (table_info(conn, tab, fcd)) {
             fcd->open_mode = opcode - 0xfa00;
+            if (opcode == OP_OPEN_OUTPUT) {
+                truncate_table(conn, tab->name);
+            }
             memcpy(fcd->status, ST_OK, 2);
         } else {
             memcpy(fcd->status, ST_FILE_NOT_FOUND, 2);
