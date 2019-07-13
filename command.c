@@ -30,6 +30,10 @@ void command(PGconn *conn, table_t *tab, fcd_t *fcd) {
         copy_table(conn, p, q);
     }
 
+    if (!memcmp(fcd->record, "LOAD:", 5)) {
+        load_table(conn);
+    }
+
     memcpy(fcd->status, ST_OK, 2);
     if (dbg > 0) {
         fprintf(stderr, "status=%c%c\n\n", fcd->status[0], fcd->status[1]);

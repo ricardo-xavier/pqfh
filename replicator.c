@@ -224,7 +224,6 @@ void rewrite_clone(table_t *tab, clone_t *clone, list2_t *clones) {
             for (ptrcol=tab->columns; ptrcol!=NULL; ptrcol=ptrcol->next) {
                 col = (column_t *) ptrcol->buf;
                 if (!strcmp(col->name, c->col1)) {
-fprintf(stderr, "zzz replica [%s] %c %d\n", col->name, col->tp, col->p);
                     if (col->tp != 'n') {
                         strcat(sql, "'");
                     }

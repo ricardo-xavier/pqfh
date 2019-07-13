@@ -24,7 +24,7 @@ char backup[MAX_REC_LEN+1];
 list2_t *weak=NULL;
 extern bool replica_in_transaction;
 
-#define VERSAO "v1.11.1 13/07/2019"
+#define VERSAO "v1.12.0 13/07/2019"
 
 // 1.9.0  - 30/06 - weak
 // 1.9.1  - 06/07 - verificar se a tabela esta aberta em todas as operacoes
@@ -36,6 +36,7 @@ extern bool replica_in_transaction;
 //                  comandos copy e truncate
 //                  modo de operacao
 // 1.11.1 - 13/07 - commit no copy
+// 1.12.0 - 13/07 - comando load
 
 bool in_transaction=false;
 
@@ -222,7 +223,9 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
         case OP_OPEN_INPUT:
         case OP_OPEN_OUTPUT:
         case OP_OPEN_IO:
-            op_open(conn, fcd, op);
+            if (op_open(conn, fcd, op)) {
+                break; // command
+            }
             if (fcd->isam == 'S') {
                 EXTFH(opcode, fcd);
                 if (dbg > 0) {

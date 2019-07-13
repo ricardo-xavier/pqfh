@@ -4,8 +4,10 @@
 #include "pqfh.h"
 
 extern int dbg;
+fcd_t *fcd_open;
+table_t *tab_open;
 
-void op_open(PGconn *conn, fcd_t *fcd, unsigned short opcode) {
+bool op_open(PGconn *conn, fcd_t *fcd, unsigned short opcode) {
 
     char           filename[257], aux[257], *p;
     table_t        *tab;
@@ -13,6 +15,7 @@ void op_open(PGconn *conn, fcd_t *fcd, unsigned short opcode) {
     unsigned int   fileid;
     int            k;
 
+    fcd_open = fcd;
     fnlen = getshort(fcd->file_name_len);
     memcpy(filename, (char *) fcd->file_name, fnlen);
     filename[fnlen] = 0;
@@ -31,11 +34,12 @@ void op_open(PGconn *conn, fcd_t *fcd, unsigned short opcode) {
         if (dbg > 0) {
             fprintf(stderr, "status=%c%c\n\n", fcd->status[0], fcd->status[1]);
         }
-        return;
+        return false;
     }
 
     // aloca e inicializa a tabela
     tab = (table_t *) malloc(sizeof(table_t));
+    tab_open = tab;
     strcpy(tab->name, filename);
     tab->columns = NULL;
     tab->keys = NULL;
@@ -71,7 +75,7 @@ void op_open(PGconn *conn, fcd_t *fcd, unsigned short opcode) {
             } 
         }
         if (fcd->isam == 'S') {
-            return;
+            return false;
         }
     } else {
         fcd->open_mode = opcode - 0xfa00;
@@ -84,4 +88,5 @@ void op_open(PGconn *conn, fcd_t *fcd, unsigned short opcode) {
 
     fileid = (int) tab;
     putint(fcd->file_id, fileid);
+    return !strcmp(tab->name, "pqfh");
 }

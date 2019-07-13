@@ -163,7 +163,7 @@ void command(PGconn *conn, table_t *tab, fcd_t *fcd);
 void deallocate(PGconn *conn, table_t *tab);
 void close_cursor(PGconn *conn, table_t *tab);
 
-void op_open(PGconn *conn, fcd_t *fcd, unsigned short opcode);
+bool op_open(PGconn *conn, fcd_t *fcd, unsigned short opcode);
 void op_close(PGconn *conn, fcd_t *fcd);
 void op_start(PGconn *conn, fcd_t *fcd, char *op);
 void op_next_prev(PGconn *conn, fcd_t *fcd, char dir);
@@ -173,6 +173,7 @@ bool op_write(PGconn *conn, fcd_t *fcd);
 void op_delete(PGconn *conn, fcd_t *fcd);
 void create_table(PGconn *conn, table_t *tab, fcd_t *fcd, unsigned short opcode);
 void copy_table(PGconn *conn, char *source, char *dest);
+void load_table(PGconn *conn);
 void truncate_table(PGconn *conn, char *tabname);
 
 extern void EXTFH(unsigned char *opcode, fcd_t *fcd);

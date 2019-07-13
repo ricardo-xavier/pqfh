@@ -109,6 +109,9 @@ void adiciona_comp(unsigned char *record, _key_t key, int c, char *op, char *whe
     col = key.columns[c];
     memcpy(buf, record+col->offset, col->len);
     buf[col->len] = 0;
+    if ((col->tp == 'n') && !buf[0]) {
+        memset(buf, '0', col->len);
+    }
 
     last = key.ncols - 1;
     if (partial) {
