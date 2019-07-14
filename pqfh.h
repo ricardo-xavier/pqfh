@@ -120,7 +120,9 @@ typedef struct {
 #define OP_READ_NEXT     0xfaf5
 #define OP_READ_PREVIOUS 0xfaf9
 #define OP_READ_RANDOM   0xfaf6
+#define OP_READ_LOCK     0xfada
 #define OP_DELETE        0xfaf7
+#define OP_UNLOCK        0xfa0e
 
 #define ST_OK                "00"
 #define ST_FILE_NOT_FOUND    "35"
@@ -133,6 +135,7 @@ typedef struct {
 #define ST_NOT_OPENED_READ   "47"
 #define ST_NOT_OPENED_WRITE  "48"
 #define ST_NOT_OPENED_UPDEL  "49"
+#define ST_LOCKED            "99"
 
 bool table_info(PGconn *conn, table_t *table, fcd_t *fcd);
 char *get_schema(PGconn *conn, char *table);
@@ -159,6 +162,9 @@ void replica_rollback();
 void commit();
 bool is_weak(char *table);
 void command(PGconn *conn, table_t *tab, fcd_t *fcd);
+void pqfh_begin_transaction();
+void pqfh_commit();
+void pqfh_rollback();
 
 void deallocate(PGconn *conn, table_t *tab);
 void close_cursor(PGconn *conn, table_t *tab);
@@ -167,7 +173,7 @@ bool op_open(PGconn *conn, fcd_t *fcd, unsigned short opcode);
 void op_close(PGconn *conn, fcd_t *fcd);
 void op_start(PGconn *conn, fcd_t *fcd, char *op);
 void op_next_prev(PGconn *conn, fcd_t *fcd, char dir);
-void op_read_random(PGconn *conn, fcd_t *fcd);
+void op_read_random(PGconn *conn, fcd_t *fcd, bool with_lock);
 bool op_rewrite(PGconn *conn, fcd_t *fcd);
 bool op_write(PGconn *conn, fcd_t *fcd);
 void op_delete(PGconn *conn, fcd_t *fcd);

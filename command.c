@@ -30,8 +30,20 @@ void command(PGconn *conn, table_t *tab, fcd_t *fcd) {
         copy_table(conn, p, q);
     }
 
-    if (!memcmp(fcd->record, "LOAD:", 5)) {
+    if (!memcmp(fcd->record, "LOAD", 4)) {
         load_table(conn);
+    }
+
+    if (!memcmp(fcd->record, "BEGIN TRANSACTION", 17)) {
+        pqfh_begin_transaction();
+    }
+
+    if (!memcmp(fcd->record, "COMMIT", 6)) {
+        pqfh_commit();
+    }
+
+    if (!memcmp(fcd->record, "ROLLBACK", 8)) {
+        pqfh_rollback();
     }
 
     memcpy(fcd->status, ST_OK, 2);

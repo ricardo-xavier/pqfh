@@ -7,7 +7,7 @@ extern int dbg;
 extern int dbg_times;
 extern bool partial;
 
-void op_read_random(PGconn *conn, fcd_t *fcd) {
+void op_read_random(PGconn *conn, fcd_t *fcd, bool with_lock) {
 
     unsigned int   fileid ;
     unsigned short keyid, reclen, keylen;
@@ -17,6 +17,7 @@ void op_read_random(PGconn *conn, fcd_t *fcd) {
     column_t       *col;
     PGresult       *res;
     list2_t        *ptr;
+    bool           lock, lock_automatic, ignore_lock;
     struct timeval tv1, tv2, tv3;
 
     if (dbg_times > 1) {
@@ -28,7 +29,7 @@ void op_read_random(PGconn *conn, fcd_t *fcd) {
 
     tab = (table_t *) fileid;
     if (dbg > 0) {
-        fprintf(stderr, "op_read_random [%s]\n", tab->name);
+        fprintf(stderr, "op_read_random [%s] lock mode=%d ignore lock=%d\n", tab->name, fcd->lock_mode, fcd->ignore_lock);
     }
 
     if (fcd->open_mode == 128) {
@@ -38,6 +39,11 @@ void op_read_random(PGconn *conn, fcd_t *fcd) {
         }
         return;
     }
+
+/*
+    bool lock_exclusive = (fcd->lock_mode & 0x01) == 0x01;
+    bool lock_manual = (fcd->lock_mode & 0x01) == 0x01;
+*/
 
     keyid = getshort(fcd->key_id);
     strcpy(kbuf, getkbuf(fcd, keyid, tab, &keylen));
@@ -49,8 +55,16 @@ void op_read_random(PGconn *conn, fcd_t *fcd) {
     // prepara o comando se ainda nao tiver preparado
     if (!tab->read_prepared[keyid]) {
 
+        ignore_lock = (fcd->ignore_lock & 0x01) == 0x01;
+        lock_automatic = (fcd->lock_mode & 0x02) == 0x02;
+        lock = (fcd->open_mode > 0) && lock_automatic && !ignore_lock;
+
         getwhere_prepared(tab, keyid, where, 0, 's');
-        sprintf(sql, "select * from %s.%s where %s", tab->schema, tab->name, where);
+        if (lock || with_lock) {
+            sprintf(sql, "select * from %s.%s where %s for update", tab->schema, tab->name, where);
+        } else {
+            sprintf(sql, "select * from %s.%s where %s", tab->schema, tab->name, where);
+        }
         nParams = list2_size(tab->prms_random[keyid]);
 
         if (dbg > 1) {
@@ -95,8 +109,13 @@ void op_read_random(PGconn *conn, fcd_t *fcd) {
 
     if ((PQresultStatus(res) != PGRES_TUPLES_OK) || (PQntuples(res) == 0))  {
         memcpy(fcd->status, ST_REC_NOT_FOUND, 2);
+        if (PQresultStatus(res) == PGRES_FATAL_ERROR) {
+            if (strstr(PQerrorMessage(conn), "lock timeout") != NULL) {
+               memcpy(fcd->status, ST_LOCKED, 2); 
+            }
+        }
         if (dbg > 0) {
-            fprintf(stderr, "%s\n", PQerrorMessage(conn));
+            fprintf(stderr, "%d %s\n", PQresultStatus(res), PQerrorMessage(conn));
         }
     } else {
         if (!partial) {

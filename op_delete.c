@@ -33,7 +33,7 @@ void op_delete(PGconn *conn, fcd_t *fcd) {
     }
 
     // verifica se o registro existe
-    op_read_random(conn, fcd);
+    op_read_random(conn, fcd, false);
     if (memcmp(fcd->status, ST_OK, 2)) {
         memcpy(fcd->status, ST_REC_NOT_FOUND, 2);
         if (dbg > 0) {

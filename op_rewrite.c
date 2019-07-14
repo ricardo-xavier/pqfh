@@ -43,7 +43,7 @@ bool op_rewrite(PGconn *conn, fcd_t *fcd) {
     if (dbg > 2) {
         fprintf(stderr, "op_rewrite verifica se o registro existe\n");
     }
-    op_read_random(conn, fcd);
+    op_read_random(conn, fcd, false);
     if (memcmp(fcd->status, ST_OK, 2)) {
         // registro nao encontrado
         putshort(fcd->key_id, keyid);

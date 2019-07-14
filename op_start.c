@@ -68,7 +68,7 @@ void op_start(PGconn *conn, fcd_t *fcd, char *op) {
             fprintf(stderr, "op_start verifica se existe algum registro na tabela fraca\n");
         }
         partial = true;
-        op_read_random(conn, fcd);
+        op_read_random(conn, fcd, false);
         if (memcmp(fcd->status, ST_OK, 2)) {
             memcpy(fcd->status, ST_EOF, 2);
             eof_start = true;

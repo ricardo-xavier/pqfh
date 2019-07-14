@@ -37,6 +37,7 @@ extern bool replica_in_transaction;
 //                  modo de operacao
 // 1.11.1 - 13/07 - commit no copy
 // 1.12.0 - 13/07 - comando load
+//                  lock de registro
 
 bool in_transaction=false;
 
@@ -48,6 +49,8 @@ void commit() {
     res = PQexec(conn, "COMMIT");
     PQclear(res);
     res = PQexec(conn, "BEGIN");
+    PQclear(res);
+    res = PQexec(conn, "SET LOCAL lock_timeout = '1s'");
     PQclear(res);
     pending_commits = 0;
 }
@@ -164,6 +167,8 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
             PQfinish(conn);
             exit(-1);
         }
+        PQclear(res);
+        res = PQexec(conn, "SET LOCAL lock_timeout = '1s'");
         PQclear(res);
 
         conninfo = getenv("REPLICA_BD");
@@ -295,8 +300,17 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
             op_next_prev(conn, fcd, 'p');
             break;
 
+        case OP_READ_LOCK:
+            op_read_random(conn, fcd, true);
+            break;
+
+        case OP_UNLOCK:
+            pending_commits++;
+            commit();
+            break;
+
         case OP_READ_RANDOM:
-            op_read_random(conn, fcd);
+            op_read_random(conn, fcd, false);
             break;
 
         case OP_REWRITE:

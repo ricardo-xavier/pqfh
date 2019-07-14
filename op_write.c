@@ -45,7 +45,7 @@ bool op_write(PGconn *conn, fcd_t *fcd) {
     if (dbg > 2) {
         fprintf(stderr, "op_write verifica se o registro existe\n");
     }
-    op_read_random(conn, fcd);
+    op_read_random(conn, fcd, false);
     if (!memcmp(fcd->status, ST_OK, 2)) {
         memcpy(fcd->status, ST_DUPL_KEY, 2);
         if (dbg > 0) {
