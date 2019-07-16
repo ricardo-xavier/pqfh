@@ -70,7 +70,7 @@ bool op_open(PGconn *conn, fcd_t *fcd, unsigned short opcode) {
             memcpy(fcd->status, ST_OK, 2);
         } else {
             memcpy(fcd->status, ST_FILE_NOT_FOUND, 2);
-            if ((opcode == OP_OPEN_OUTPUT) && strcmp(tab->name, tab->dictname)) {
+            if ((fcd->isam != 'S') && (opcode != OP_OPEN_INPUT) && strcmp(tab->name, tab->dictname)) {
                 create_table(conn, tab, fcd, opcode);
             } 
         }

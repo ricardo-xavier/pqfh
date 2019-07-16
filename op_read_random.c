@@ -111,7 +111,8 @@ void op_read_random(PGconn *conn, fcd_t *fcd, bool with_lock) {
         memcpy(fcd->status, ST_REC_NOT_FOUND, 2);
         if (PQresultStatus(res) == PGRES_FATAL_ERROR) {
             if (strstr(PQerrorMessage(conn), "lock timeout") != NULL) {
-               memcpy(fcd->status, ST_LOCKED, 2); 
+                memcpy(fcd->status, ST_LOCKED, 2); 
+                pqfh_rollback(); 
             }
         }
         if (dbg > 0) {

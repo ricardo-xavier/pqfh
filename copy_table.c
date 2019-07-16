@@ -6,9 +6,18 @@
 extern int dbg;
 extern int pending_commits;
 
-void  copy_table(PGconn *conn, char *source, char *dest) {
-    char     sql[257], schema[33];
+void  copy_table(PGconn *conn, char *_source, char *_dest) {
+    char     sql[257], schema[33], *source, *dest;
     PGresult *res;
+
+    source = strrchr(_source, '/');
+    if (source == NULL) {
+        source = _source;
+    }
+    dest = strrchr(_dest, '/');
+    if (dest == NULL) {
+        dest = _dest;
+    }
 
     strcpy(schema, get_schema(conn, source));
     sprintf(sql, "create table %s.%s as select * from %s.%s", schema, dest, schema, source);
@@ -26,9 +35,14 @@ void  copy_table(PGconn *conn, char *source, char *dest) {
     commit();
 }
 
-void  truncate_table(PGconn *conn, char *tabname) {
-    char     sql[257], schema[33];
+void  truncate_table(PGconn *conn, char *_tabname) {
+    char     sql[257], schema[33], *tabname;
     PGresult *res;
+
+    tabname = strrchr(_tabname, '/');
+    if (tabname == NULL) {
+        tabname = _tabname;
+    }
 
     strcpy(schema, get_schema(conn, tabname));
     sprintf(sql, "truncate table %s.%s", schema, tabname);

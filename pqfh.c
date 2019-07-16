@@ -24,20 +24,7 @@ char backup[MAX_REC_LEN+1];
 list2_t *weak=NULL;
 extern bool replica_in_transaction;
 
-#define VERSAO "v1.12.0 13/07/2019"
-
-// 1.9.0  - 30/06 - weak
-// 1.9.1  - 06/07 - verificar se a tabela esta aberta em todas as operacoes
-// 1.9.2  - 06/07 - read random com mais de uma chave
-// 1.10.0 - 07/07 - preparacao dos comandos de replicacao
-// 1.10.1 - 08/07 - correcoes dos problemas passados pelo Breno por email
-// 1.11.0 - 11/07 - estava testando o buf_next no start menor
-//                  prepared statement por chave no random
-//                  comandos copy e truncate
-//                  modo de operacao
-// 1.11.1 - 13/07 - commit no copy
-// 1.12.0 - 13/07 - comando load
-//                  lock de registro
+#define VERSAO "v1.12.1 16/07/2019"
 
 bool in_transaction=false;
 
@@ -93,6 +80,11 @@ void pqfh_rollback() {
     }
     res = PQexec(conn, "ROLLBACK");
     PQclear(res);
+    res = PQexec(conn, "BEGIN");
+    PQclear(res);
+    res = PQexec(conn, "SET LOCAL lock_timeout = '1s'");
+    PQclear(res);
+    pending_commits = 0;
     pthread_mutex_unlock(&lock);
 }
 
@@ -514,3 +506,19 @@ bool is_weak(char *table) {
     }
     return false;
 }
+
+// 1.9.0  - 30/06 - weak
+// 1.9.1  - 06/07 - verificar se a tabela esta aberta em todas as operacoes
+// 1.9.2  - 06/07 - read random com mais de uma chave
+// 1.10.0 - 07/07 - preparacao dos comandos de replicacao
+// 1.10.1 - 08/07 - correcoes dos problemas passados pelo Breno por email
+// 1.11.0 - 11/07 - estava testando o buf_next no start menor
+//                  prepared statement por chave no random
+//                  comandos copy e truncate
+//                  modo de operacao
+// 1.11.1 - 13/07 - commit no copy
+// 1.12.0 - 13/07 - comando load
+//                  lock de registro
+// 1.12.1 - 16/07 - correcao no copy table com path
+//                  nao executar create table se for isam
+//                  fazer rollback no lock timeout
