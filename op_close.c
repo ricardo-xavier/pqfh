@@ -5,7 +5,7 @@
 extern int dbg;
 list2_t *weak;
 
-void op_close(PGconn *conn, fcd_t *fcd) {
+bool op_close(PGconn *conn, fcd_t *fcd) {
     unsigned int fileid;
     table_t      *tab;
     int          k;
@@ -15,6 +15,10 @@ void op_close(PGconn *conn, fcd_t *fcd) {
     tab = (table_t *) fileid;
     if (dbg > 0) {
         fprintf(stderr, "op_close [%s] %d %ld\n", tab->name, (int) fcd->open_mode, time(NULL));
+    }
+
+    if (!strcmp(tab->name, "pqfh")) {
+        return true;
     }
 
     if (is_weak(tab->name)) {
@@ -33,7 +37,7 @@ void op_close(PGconn *conn, fcd_t *fcd) {
         if (dbg > 0) {
             fprintf(stderr, "status=%c%c\n\n", fcd->status[0], fcd->status[1]);
         }
-        return;
+        return false;
     }
 
     deallocate(conn, tab);
@@ -55,4 +59,5 @@ void op_close(PGconn *conn, fcd_t *fcd) {
         fprintf(stderr, "status=%c%c\n\n", fcd->status[0], fcd->status[1]);
     }
     free(tab);
+    return false;
 }

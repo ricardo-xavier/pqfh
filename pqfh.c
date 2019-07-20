@@ -24,7 +24,7 @@ char backup[MAX_REC_LEN+1];
 list2_t *weak=NULL;
 extern bool replica_in_transaction;
 
-#define VERSAO "v1.12.1 16/07/2019"
+#define VERSAO "v1.12.3 20/07/2019"
 
 bool in_transaction=false;
 
@@ -253,9 +253,11 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
 
         case OP_CLOSE:
             open_mode = fcd->open_mode; 
-            op_close(conn, fcd);
             if (pending_commits > 0) {
                 commit();
+            }
+            if (op_close(conn, fcd)) {
+                break;
             }
             if (mode == 'B') {
                 break;
@@ -522,3 +524,5 @@ bool is_weak(char *table) {
 // 1.12.1 - 16/07 - correcao no copy table com path
 //                  nao executar create table se for isam
 //                  fazer rollback no lock timeout
+// 1.12.3 - 20/07 - aumento do buffer para 4k no pq2cob
+//                  nao executar close na tabela pqfh
