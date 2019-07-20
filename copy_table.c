@@ -13,11 +13,11 @@ void  copy_table(PGconn *conn, char *_source, char *_dest) {
     source = strrchr(_source, '/');
     if (source == NULL) {
         source = _source;
-    }
+    } else source++;
     dest = strrchr(_dest, '/');
     if (dest == NULL) {
         dest = _dest;
-    }
+    } else dest++;
 
     strcpy(schema, get_schema(conn, source));
     sprintf(sql, "create table %s.%s as select * from %s.%s", schema, dest, schema, source);
@@ -42,7 +42,7 @@ void  truncate_table(PGconn *conn, char *_tabname) {
     tabname = strrchr(_tabname, '/');
     if (tabname == NULL) {
         tabname = _tabname;
-    }
+    } else tabname++;
 
     strcpy(schema, get_schema(conn, tabname));
     sprintf(sql, "truncate table %s.%s", schema, tabname);

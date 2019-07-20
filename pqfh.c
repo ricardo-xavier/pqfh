@@ -526,3 +526,4 @@ bool is_weak(char *table) {
 //                  fazer rollback no lock timeout
 // 1.12.3 - 20/07 - aumento do buffer para 4k no pq2cob
 //                  nao executar close na tabela pqfh
+//                  correcao ao pegar o nome das tabelas no copy
