@@ -24,7 +24,7 @@ char backup[MAX_REC_LEN+1];
 list2_t *weak=NULL;
 extern bool replica_in_transaction;
 
-#define VERSAO "v1.12.3 20/07/2019"
+#define VERSAO "v1.12.4 22/07/2019"
 
 bool in_transaction=false;
 
@@ -527,3 +527,4 @@ bool is_weak(char *table) {
 // 1.12.3 - 20/07 - aumento do buffer para 4k no pq2cob
 //                  nao executar close na tabela pqfh
 //                  correcao ao pegar o nome das tabelas no copy
+// 1.12.4 - 22/07 - tratar chave comp ncomps > 1 e com o ultimo componente concatenado
