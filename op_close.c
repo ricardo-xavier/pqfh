@@ -40,6 +40,10 @@ bool op_close(PGconn *conn, fcd_t *fcd) {
         return false;
     }
 
+    if (tab->for_update) {
+        unlock(fcd);
+    }
+
     deallocate(conn, tab);
     close_cursor(conn, tab);
 

@@ -59,6 +59,7 @@ bool op_open(PGconn *conn, fcd_t *fcd, unsigned short opcode) {
     tab->prms_delete = NULL;
     tab->clones = NULL;
     tab->cursor = false;
+    tab->for_update = false;
     tab->timestamp = time(NULL);
 
     if (strcmp(tab->name, "pqfh")) {

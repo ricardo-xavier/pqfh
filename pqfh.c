@@ -24,7 +24,7 @@ char backup[MAX_REC_LEN+1];
 list2_t *weak=NULL;
 extern bool replica_in_transaction;
 
-#define VERSAO "v1.12.4 22/07/2019"
+#define VERSAO "v1.12.5 23/07/2019"
 
 bool in_transaction=false;
 
@@ -86,6 +86,15 @@ void pqfh_rollback() {
     PQclear(res);
     pending_commits = 0;
     pthread_mutex_unlock(&lock);
+}
+
+void unlock(fcd_t *fcd) {
+    table_t *tab;
+    unsigned int fileid = getint(fcd->file_id);
+    tab = (table_t *) fileid;
+    tab->for_update = false;
+    pending_commits++;
+    commit();
 }
 
 long tempo_total=0, tempo_open=0, tempo_close=0, tempo_start=0, tempo_next_prev=0, tempo_read=0, 
@@ -299,8 +308,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
             break;
 
         case OP_UNLOCK:
-            pending_commits++;
-            commit();
+            unlock(fcd);
             break;
 
         case OP_READ_RANDOM:
@@ -528,3 +536,4 @@ bool is_weak(char *table) {
 //                  nao executar close na tabela pqfh
 //                  correcao ao pegar o nome das tabelas no copy
 // 1.12.4 - 22/07 - tratar chave comp ncomps > 1 e com o ultimo componente concatenado
+// 1.12.5 - 23/07 - flag for_update para desalocar o registro

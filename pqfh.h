@@ -39,6 +39,7 @@ typedef struct {
     list2_t *prms_delete;
     list2_t *clones;
     bool    cursor;
+    bool    for_update;
     time_t  timestamp;
 
     const char *values[MAX_COLS];
@@ -165,6 +166,7 @@ void command(PGconn *conn, table_t *tab, fcd_t *fcd);
 void pqfh_begin_transaction();
 void pqfh_commit();
 void pqfh_rollback();
+void unlock(fcd_t *fcd);
 
 void deallocate(PGconn *conn, table_t *tab);
 void close_cursor(PGconn *conn, table_t *tab);

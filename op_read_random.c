@@ -62,6 +62,7 @@ void op_read_random(PGconn *conn, fcd_t *fcd, bool with_lock) {
         getwhere_prepared(tab, keyid, where, 0, 's');
         if (lock || with_lock) {
             sprintf(sql, "select * from %s.%s where %s for update", tab->schema, tab->name, where);
+            tab->for_update = true;
         } else {
             sprintf(sql, "select * from %s.%s where %s", tab->schema, tab->name, where);
         }

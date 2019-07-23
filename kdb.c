@@ -25,7 +25,7 @@ void getkeys(fcd_t *fcd, table_t *tab) {
         // key definition area
         kda = fcd->kdb + 14 + (k * 16);
         ncomps = getshort(kda + 0);
-fprintf(stderr, "k=%d ncomps=%d\n", k, ncomps);
+//fprintf(stderr, "k=%d ncomps=%d\n", k, ncomps);
         cdaoffset = getshort(kda + 2);
 
         key.id = k;
