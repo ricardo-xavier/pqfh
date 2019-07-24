@@ -24,7 +24,7 @@ char backup[MAX_REC_LEN+1];
 list2_t *weak=NULL;
 extern bool replica_in_transaction;
 
-#define VERSAO "v1.12.5 23/07/2019"
+#define VERSAO "v1.13.0 24/07/2019"
 
 bool in_transaction=false;
 
@@ -114,6 +114,24 @@ char get_mode() {
     return mode;
 }
 
+void get_debug() {
+    char *env = getenv("PQFH_DBG");
+    if (env == NULL) {
+        dbg = 0;
+    } else {
+        dbg = atoi(env);
+    }
+    if (dbg > 0) {
+        fprintf(stderr, "pqfh %s\n", VERSAO);
+    }
+    env = getenv("PQFH_DBG_TIMES");
+    if (env == NULL) {
+        dbg_times = 0;
+    } else {
+        dbg_times = atoi(env);
+    }
+}
+
 void pqfh(unsigned char *opcode, fcd_t *fcd) {
 
     char           *conninfo;
@@ -129,19 +147,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
 
     gettimeofday(&tv1, NULL);
     if (dbg == -1) {
-        char *env = getenv("PQFH_DBG");
-        fprintf(stderr, "pqfh %s\n", VERSAO);
-        if (env == NULL) {
-            dbg = 0;
-        } else {
-            dbg = atoi(env);
-        }
-        env = getenv("PQFH_DBG_TIMES");
-        if (env == NULL) {
-            dbg_times = 0;
-        } else {
-            dbg_times = atoi(env);
-        }
+        get_debug();
     }
 
     if (conn == NULL) {
@@ -536,4 +542,8 @@ bool is_weak(char *table) {
 //                  nao executar close na tabela pqfh
 //                  correcao ao pegar o nome das tabelas no copy
 // 1.12.4 - 22/07 - tratar chave comp ncomps > 1 e com o ultimo componente concatenado
+// 1.12.5 - 23/07 - flag for_update para desalocar o registro
+// 1.12.5 - 23/07 - flag for_update para desalocar o registro
+// 1.13.0 - 24/07 - formatacao no libcobolpost
+// 1.12.5 - 23/07 - flag for_update para desalocar o registro
 // 1.12.5 - 23/07 - flag for_update para desalocar o registro

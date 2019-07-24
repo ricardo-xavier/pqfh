@@ -6,6 +6,10 @@
 #include <stdlib.h>
 #include <libpq-fe.h>
 
+#ifdef PQFH
+void pqfh_executa_sql(PGconn *conn, char *query, char *p_retorno, int *p_registros, char *p_linha);
+void pqfh_sql_next(int *p_registro, char *p_linha);
+#endif
 
 PGconn *conn;
 PGresult *res;
@@ -31,6 +35,11 @@ executa_sql(char *query, char *p_retorno, int *p_registros, char *p_linha) {
 	int  i;
         int  i_r;
         int  i_tamanho;	
+
+#ifdef PQFH
+	pqfh_executa_sql(conn, query, p_retorno, p_registros, p_linha);
+	return;
+#endif
 	res = PQexec(conn, s_query);
         if (!res || PQresultStatus(res) != PGRES_TUPLES_OK)
 	{
@@ -88,6 +97,10 @@ executa_sql_next(int *p_registro, char *p_linha) {
 	int  i;
         int  i_r;
         int  i_tamanho;	        	
+#ifdef PQFH
+	pqfh_sql_next(p_registro, p_linha);
+	return;
+#endif
 	    
 	    i_campos = PQnfields(res);
             s_linha = (char*)malloc( 4000 ); // o 10 é do tamanho da formatacao.. caso ele seja menor que 10 vai estourar     
@@ -186,5 +199,9 @@ conecta_db( char *p_conexao, char *p_retorno) {
 void
 sql_disconnect_db( int *dbhandle ) {
 	PGconn *conn = (PGconn *)*dbhandle;
+	PQfinish(conn);
+}
+
+void fechar_conexao() {
 	PQfinish(conn);
 }

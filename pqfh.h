@@ -167,6 +167,7 @@ void pqfh_begin_transaction();
 void pqfh_commit();
 void pqfh_rollback();
 void unlock(fcd_t *fcd);
+void get_debug();
 
 void deallocate(PGconn *conn, table_t *tab);
 void close_cursor(PGconn *conn, table_t *tab);
