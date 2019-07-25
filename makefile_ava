@@ -1,4 +1,4 @@
-CC = gcc -m32 -I/usr/include/postgresql -Wall -Werror
+CC = gcc -m32 -I/usr/include/postgresql -Wall -Werror -DPQFH
 COB = /u/cobol/bin/cob -m ixfile=pqfh
 COB = /u/cobol/bin/cob
 OBJS = pqfh.o list2.o meta.o fhtypes.o op_open.o op_close.o op_start.o kdb.o op_next_prev.o op_read_random.o pq2cob.o op_rewrite.o op_write.o op_delete.o create_table.o replicator.o utils.o command.o libcobolpost.o javacall.o copy_table.o load_table.o libcobolpost_pqfh.o
