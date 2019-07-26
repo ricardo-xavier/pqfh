@@ -14,7 +14,7 @@ bool op_close(PGconn *conn, fcd_t *fcd) {
 
     tab = (table_t *) fileid;
     if (dbg > 0) {
-        fprintf(stderr, "op_close [%s] %d %ld\n", tab->name, (int) fcd->open_mode, time(NULL));
+        fprintf(stderr, "%ld op_close [%s] %d\n", time(NULL), tab->name, (int) fcd->open_mode);
     }
 
     if (!strcmp(tab->name, "pqfh")) {
@@ -35,7 +35,7 @@ bool op_close(PGconn *conn, fcd_t *fcd) {
     if (fcd->open_mode == 128) {
         memcpy(fcd->status, ST_ALREADY_CLOSED, 2);
         if (dbg > 0) {
-            fprintf(stderr, "status=%c%c\n\n", fcd->status[0], fcd->status[1]);
+            fprintf(stderr, "%ld status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
         }
         return false;
     }
@@ -60,7 +60,7 @@ bool op_close(PGconn *conn, fcd_t *fcd) {
     fcd->open_mode = 128;
     memcpy(fcd->status, ST_OK, 2);
     if (dbg > 0) {
-        fprintf(stderr, "status=%c%c\n\n", fcd->status[0], fcd->status[1]);
+        fprintf(stderr, "%ld status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
     }
     free(tab);
     return false;

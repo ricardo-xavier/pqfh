@@ -30,7 +30,7 @@ void op_read_random(PGconn *conn, fcd_t *fcd, bool with_lock) {
 
     tab = (table_t *) fileid;
     if (dbg > 0) {
-        fprintf(stderr, "op_read_random [%s] lock mode=%d ignore lock=%d\n", tab->name, fcd->lock_mode, fcd->ignore_lock);
+        fprintf(stderr, "%ld op_read_random [%s] lock mode=%d ignore lock=%d\n", time(NULL), tab->name, fcd->lock_mode, fcd->ignore_lock);
     }
 
     if (tab->advisory_lock > 0) {
@@ -40,7 +40,7 @@ void op_read_random(PGconn *conn, fcd_t *fcd, bool with_lock) {
     if (fcd->open_mode == 128) {
         memcpy(fcd->status, ST_NOT_OPENED_READ, 2);
         if (dbg > 0) {
-            fprintf(stderr, "status=%c%c\n\n", fcd->status[0], fcd->status[1]);
+            fprintf(stderr, "%ld status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
         }
         return;
     }
@@ -53,7 +53,7 @@ void op_read_random(PGconn *conn, fcd_t *fcd, bool with_lock) {
     keyid = getshort(fcd->key_id);
     strcpy(kbuf, getkbuf(fcd, keyid, tab, &keylen));
     if (dbg > 1) {
-        fprintf(stderr, "key %d %d [%s]\n", keyid, keylen, kbuf);
+        fprintf(stderr, "%ld key %d %d [%s]\n", time(NULL), keyid, keylen, kbuf);
     }
     sprintf(stmt_name, "%s_%ld_%d", tab->name, tab->timestamp, keyid);
 
@@ -77,13 +77,13 @@ void op_read_random(PGconn *conn, fcd_t *fcd, bool with_lock) {
                 }
                 PQclear(res);
                 if (dbg > 0) {
-                    fprintf(stderr, "advisory_lock(%d,%d)=[%s]\n", tab->oid, atoi(kbuf), result);
+                    fprintf(stderr, "%ld advisory_lock(%d,%d)=[%s]\n", time(NULL), tab->oid, atoi(kbuf), result);
                 }
                 if (result[0] == 'f') {
                     memcpy(fcd->status, ST_LOCKED, 2); 
                     sleep(1);
                     if (dbg > 0) {
-                        fprintf(stderr, "status=%c%c\n\n", fcd->status[0], fcd->status[1]);
+                        fprintf(stderr, "%ld status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
                     }
                     return;
                 }
@@ -94,12 +94,12 @@ void op_read_random(PGconn *conn, fcd_t *fcd, bool with_lock) {
         nParams = list2_size(tab->prms_random[keyid]);
 
         if (dbg > 1) {
-            fprintf(stderr, "%s\n", sql);
+            fprintf(stderr, "%ld %s\n", time(NULL), sql);
         }
 
         res = PQprepare(conn, stmt_name, sql, nParams, NULL);
         if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-            fprintf(stderr, "Erro na execucao do comando: %s\n%s\n", PQerrorMessage(conn), sql);
+            fprintf(stderr, "%ld Erro na execucao do comando: %s\n%s\n", time(NULL), PQerrorMessage(conn), sql);
             exit(-1);
         }
         PQclear(res);
@@ -130,13 +130,13 @@ void op_read_random(PGconn *conn, fcd_t *fcd, bool with_lock) {
         gettimeofday(&tv3, NULL);
         long tempo1 = ((tv3.tv_sec * 1000000) + tv3.tv_usec) - ((tv1.tv_sec * 1000000) + tv1.tv_usec);
         long tempo2 = ((tv3.tv_sec * 1000000) + tv3.tv_usec) - ((tv2.tv_sec * 1000000) + tv2.tv_usec);
-        fprintf(stderr, "op_read_random [%s] tempo=%ld %ld\n", tab->name, tempo1, tempo2);
+        fprintf(stderr, "%ld op_read_random [%s] tempo=%ld %ld\n", time(NULL), tab->name, tempo1, tempo2);
     }
 
     if ((PQresultStatus(res) != PGRES_TUPLES_OK) || (PQntuples(res) == 0))  {
         memcpy(fcd->status, ST_REC_NOT_FOUND, 2);
         if (dbg > 0) {
-            fprintf(stderr, "%d %s\n", PQresultStatus(res), PQerrorMessage(conn));
+            fprintf(stderr, "%ld %d %s\n", time(NULL), PQresultStatus(res), PQerrorMessage(conn));
         }
     } else {
         if (!partial) {
@@ -147,6 +147,6 @@ void op_read_random(PGconn *conn, fcd_t *fcd, bool with_lock) {
     PQclear(res);
 
     if (dbg > 0) {
-        fprintf(stderr, "status=%c%c\n\n", fcd->status[0], fcd->status[1]);
+        fprintf(stderr, "%ld status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
     }
 }

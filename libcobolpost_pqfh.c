@@ -35,13 +35,13 @@ void monta_linha(int linha, char *p_linha) {
         if (dbg > 1) {
             char *nome_campo = PQfname(res, i);
 
-            fprintf(stderr, "%d %s %d:%d [%s] [%s]\n", i, nome_campo, tipo_campo, 
+            fprintf(stderr, "    %d %s %d:%d [%s] [%s]\n", i, nome_campo, tipo_campo, 
                             tam_campo, valor_campo, buf_campo);
         }
     }
 
     if (dbg > 0) {
-        fprintf(stderr, "linha [%s]\n", p_linha);
+        fprintf(stderr, "%ld linha [%s]\n", time(NULL), p_linha);
     }    
 }
 
@@ -53,7 +53,7 @@ void pqfh_executa_sql(PGconn *conn, char *query, char *p_retorno, int *p_registr
 
     strcpy(p_linha, "");
     if (dbg > 0) {
-        fprintf(stderr, "executa_sql [%s]\n", query);
+        fprintf(stderr, "%ld executa_sql [%s]\n", time(NULL), query);
     }    
 
     res = PQexec(conn, query);
@@ -76,7 +76,7 @@ void pqfh_executa_sql(PGconn *conn, char *query, char *p_retorno, int *p_registr
 
 void pqfh_sql_next(int *p_registro, char *p_linha) {
     if (dbg > 0) {
-        fprintf(stderr, "sql_next %d\n", *p_registro);
+        fprintf(stderr, "%ld sql_next %d\n", time(NULL), *p_registro);
     }    
     monta_linha(*p_registro, p_linha);
 }

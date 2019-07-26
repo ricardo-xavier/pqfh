@@ -27,16 +27,16 @@ void op_next_prev(PGconn *conn, fcd_t *fcd, char dir) {
 
     if (dbg > 0) {
         if (dir == 'n') {
-            fprintf(stderr, "op_read_next [%s]\n", tab->name);
+            fprintf(stderr, "%ld op_read_next [%s]\n", time(NULL), tab->name);
         } else {
-            fprintf(stderr, "op_read_prev [%s]\n", tab->name);
+            fprintf(stderr, "%ld op_read_prev [%s]\n", time(NULL), tab->name);
         }
     }
 
     if (eof_start) {
         memcpy(fcd->status, ST_EOF, 2);
         if (dbg > 0) {
-            fprintf(stderr, "eof status=%c%c\n\n", fcd->status[0], fcd->status[1]);
+            fprintf(stderr, "%ld eof status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
         }
         return;
     }
@@ -50,9 +50,9 @@ void op_next_prev(PGconn *conn, fcd_t *fcd, char dir) {
         memcpy(fcd->status, ST_OK, 2);
         if (dbg > 0) {
             if (dbg > 2) {
-                fprintf(stderr, "[%s]\n", fcd->record);
+                fprintf(stderr, "%ld [%s]\n", time(NULL), fcd->record);
             }
-            fprintf(stderr, "restart status=%c%c\n\n", fcd->status[0], fcd->status[1]);
+            fprintf(stderr, "%ld restart status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
         }
         tab->restart = 0;
         return;
@@ -61,14 +61,14 @@ void op_next_prev(PGconn *conn, fcd_t *fcd, char dir) {
 
     sprintf(sql, "fetch next in cursor_%s_%ld", tab->name, tab->timestamp);
     if (dbg > 1) {
-        fprintf(stderr, "%s\n", sql);
+        fprintf(stderr, "%ld %s\n", time(NULL), sql);
     }
     res = PQexec(conn, sql);
     if ((PQresultStatus(res) != PGRES_TUPLES_OK) || (PQntuples(res) == 0)) {
         memcpy(fcd->status, ST_EOF, 2);
         if (dbg > 0) {
-            fprintf(stderr, "%s\n", PQerrorMessage(conn));
-            fprintf(stderr, "status=%c%c\n\n", fcd->status[0], fcd->status[1]);
+            fprintf(stderr, "%ld %s\n", time(NULL), PQerrorMessage(conn));
+            fprintf(stderr, "%ld status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
         }
         return;
     }
@@ -84,11 +84,11 @@ void op_next_prev(PGconn *conn, fcd_t *fcd, char dir) {
         gettimeofday(&tv3, NULL);
         long tempo1 = ((tv3.tv_sec * 1000000) + tv3.tv_usec) - ((tv1.tv_sec * 1000000) + tv1.tv_usec);
         long tempo2 = ((tv3.tv_sec * 1000000) + tv3.tv_usec) - ((tv2.tv_sec * 1000000) + tv2.tv_usec);
-        fprintf(stderr, "op_next %c [%s] tempo=%ld %ld\n", dir, tab->name, tempo1, tempo2);
+        fprintf(stderr, "%ld op_next %c [%s] tempo=%ld %ld\n", time(NULL), dir, tab->name, tempo1, tempo2);
     }
 
     if (dbg > 0) {
-        fprintf(stderr, "status=%c%c\n\n", fcd->status[0], fcd->status[1]);
+        fprintf(stderr, "%ld status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
     }
 /*
     fprintf(stderr, "    [%s] [%s]\n",

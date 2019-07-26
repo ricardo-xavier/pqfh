@@ -24,14 +24,14 @@ char backup[MAX_REC_LEN+1];
 list2_t *weak=NULL;
 extern bool replica_in_transaction;
 
-#define VERSAO "v1.13.2 26/07/2019"
+#define VERSAO "v1.13.4 26/07/2019"
 
 bool in_transaction=false;
 
 void commit() {
     PGresult *res;
     if (dbg > 0) {
-        fprintf(stderr, "commit %d %s\n", pending_commits, in_transaction ? "TRANSACAO" : "AUTO_COMMIT");
+        fprintf(stderr, "%ld commit %d %s\n", time(NULL), pending_commits, in_transaction ? "TRANSACAO" : "AUTO_COMMIT");
     }
     res = PQexec(conn, "COMMIT");
     PQclear(res);
@@ -44,7 +44,7 @@ void *thread_commit(void *vargp) {
     while (true) {
         sleep(1); 
         if (dbg > 1) {
-            fprintf(stderr, "pending_commits %d %s\n", pending_commits, in_transaction ? "TRANSACAO" : "AUTO_COMMIT");
+            fprintf(stderr, "%ld pending_commits %d %s\n", time(NULL), pending_commits, in_transaction ? "TRANSACAO" : "AUTO_COMMIT");
         }
         if ((pending_commits > 0) && !in_transaction) {
             pthread_mutex_lock(&lock);
@@ -74,7 +74,7 @@ void pqfh_rollback() {
     in_transaction = false;
     pthread_mutex_lock(&lock);
     if (dbg > 0) {
-        fprintf(stderr, "rollback %d %s\n", pending_commits, in_transaction ? "TRANSACAO" : "AUTO_COMMIT");
+        fprintf(stderr, "%ld rollback %d %s\n", time(NULL), pending_commits, in_transaction ? "TRANSACAO" : "AUTO_COMMIT");
     }
     res = PQexec(conn, "ROLLBACK");
     PQclear(res);
@@ -91,7 +91,7 @@ void unlock(fcd_t *fcd) {
     unsigned int fileid = getint(fcd->file_id);
     tab = (table_t *) fileid;
     if (dbg > 0) {
-        fprintf(stderr, "unlock [%s] %d %d\n", tab->name, tab->oid, tab->advisory_lock);
+        fprintf(stderr, "%ld unlock [%s] %d %d\n", time(NULL), tab->name, tab->oid, tab->advisory_lock);
     }
     sprintf(sql, "SELECT pg_advisory_unlock(%d, %d)", tab->oid, tab->advisory_lock);
     res = PQexec(conn, sql);
@@ -126,7 +126,7 @@ void get_debug() {
         dbg = atoi(env);
     }
     if (dbg > 0) {
-        fprintf(stderr, "pqfh %s\n", VERSAO);
+        fprintf(stderr, "%ld pqfh %s\n", time(NULL), VERSAO);
     }
     env = getenv("PQFH_DBG_TIMES");
     if (env == NULL) {
@@ -165,15 +165,15 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
         }
         conn = PQconnectdb(conninfo);
         if (PQstatus(conn) != CONNECTION_OK) {
-            fprintf(stderr, "Erro na conexao com o banco de dados: %s\n%s\n",
-                PQerrorMessage(conn), conninfo);
+            fprintf(stderr, "%ld Erro na conexao com o banco de dados: %s\n%s\n",
+                time(NULL), PQerrorMessage(conn), conninfo);
             exit(-1);
         }
 
         res = PQexec(conn, "BEGIN");
         if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-            fprintf(stderr, "Erro ao iniciar a transacao: %s\n",
-                PQerrorMessage(conn));
+            fprintf(stderr, "%ld Erro ao iniciar a transacao: %s\n",
+                time(NULL), PQerrorMessage(conn));
             PQclear(res);
             PQfinish(conn);
             exit(-1);
@@ -187,15 +187,15 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
             }
             conn2 = PQconnectdb(conninfo);
             if (PQstatus(conn2) != CONNECTION_OK) {
-                fprintf(stderr, "Erro na conexao com o banco de dados: %s\n%s\n",
-                    PQerrorMessage(conn2), conninfo);
+                fprintf(stderr, "%ld Erro na conexao com o banco de dados: %s\n%s\n",
+                    time(NULL), PQerrorMessage(conn2), conninfo);
                 exit(-1);
             }
 
             res = PQexec(conn2, "BEGIN");
             if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-                fprintf(stderr, "Erro ao iniciar a transacao: %s\n",
-                    PQerrorMessage(conn2));
+                fprintf(stderr, "%ld Erro ao iniciar a transacao: %s\n",
+                    time(NULL), PQerrorMessage(conn2));
                 PQclear(res);
                 PQfinish(conn2);
                 exit(-1);
@@ -216,11 +216,11 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
             char aux[257];
             memcpy(aux, fcd->file_name, fnlen);
             aux[fnlen] = 0;
-            fprintf(stderr, "EXTFH %04x [%s]\n\n", op, aux);
+            fprintf(stderr, "%ld EXTFH %04x [%s]\n\n", time(NULL), op, aux);
         }
         EXTFH(opcode, fcd);
         if (dbg > 0) {
-            fprintf(stderr, "EXTFH status=%c%c\n\n", fcd->status[0], fcd->status[1]);
+            fprintf(stderr, "%ld EXTFH status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
         }
         gettimeofday(&tv2, NULL);
         tempo = ((tv2.tv_sec * 1000000) + tv2.tv_usec) - ((tv1.tv_sec * 1000000) + tv1.tv_usec);
@@ -243,7 +243,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
             if (fcd->isam == 'S') {
                 EXTFH(opcode, fcd);
                 if (dbg > 0) {
-                    fprintf(stderr, "EXTFH status=%c%c\n\n", fcd->status[0], fcd->status[1]);
+                    fprintf(stderr, "%ld EXTFH status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
                 }
                 break;
             }
@@ -259,7 +259,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
                     // erro no isam
                     // fecha e retorna o erro do isam
                     if (dbg > 0) {
-                        fprintf(stderr, "desfaz open %c%c\n", fcd->status[0], fcd->status[1]);
+                        fprintf(stderr, "%ld desfaz open %c%c\n", time(NULL), fcd->status[0], fcd->status[1]);
                     }
                     memcpy(st, fcd->status, 2);
                     op_close(conn, fcd);
@@ -336,7 +336,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
                 if (memcmp(fcd->status, ST_OK, 2)) {
                     // erro no isam
                     if (dbg > 0) {
-                        fprintf(stderr, "desfaz rewrite %c%c\n", fcd->status[0], fcd->status[1]);
+                        fprintf(stderr, "%ld desfaz rewrite %c%c\n", time(NULL), fcd->status[0], fcd->status[1]);
                     }
 
                     // desfaz a alteracao
@@ -359,7 +359,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
                 } else {
                     // sucesso no isam
                     if (dbg > 1) {
-                        fprintf(stderr, "rewrite confirmado\n");
+                        fprintf(stderr, "%ld rewrite confirmado\n", time(NULL));
                     }
                     if (replica_in_transaction) {
                         replica_commit();
@@ -382,7 +382,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
                 if (memcmp(fcd->status, ST_OK, 2)) {
                     // erro no isam
                     if (dbg > 0) {
-                        fprintf(stderr, "desfaz write %c%c\n", fcd->status[0], fcd->status[1]);
+                        fprintf(stderr, "%ld desfaz write %c%c\n", time(NULL), fcd->status[0], fcd->status[1]);
                     }
                     memcpy(st, fcd->status, 2);
                     op_delete(conn, fcd);
@@ -393,7 +393,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
                 } else {
                     // sucesso no isam
                     if (dbg > 1) {
-                        fprintf(stderr, "write confirmado\n");
+                        fprintf(stderr, "%ld write confirmado\n", time(NULL));
                     }
                     if (replica_in_transaction) {
                         replica_commit();
@@ -414,7 +414,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
                 if (memcmp(fcd->status, ST_OK, 2)) {
                     // erro no isam
                     if (dbg > 0) {
-                        fprintf(stderr, "desfaz delete %c%c\n", fcd->status[0], fcd->status[1]);
+                        fprintf(stderr, "%ld desfaz delete %c%c\n", time(NULL), fcd->status[0], fcd->status[1]);
                     }
                     memcpy(st, fcd->status, 2);
                     op_write(conn, fcd);
@@ -425,7 +425,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
                 } else {
                     // sucesso no isam
                     if (dbg > 1) {
-                        fprintf(stderr, "delete confirmado\n");
+                        fprintf(stderr, "%ld delete confirmado\n", time(NULL));
                     }
                     if (replica_in_transaction) {
                         replica_commit();
@@ -551,3 +551,4 @@ bool is_weak(char *table) {
 // 1.13.0 - 24/07 - formatacao no libcobolpost
 // 1.13.1 - 25/07 - advisory_lock
 // 1.13.2 - 26/07 - fim de string no nome da tabela para o weak
+// 1.13.4 - 26/07 - time no stderr

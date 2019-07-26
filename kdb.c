@@ -104,7 +104,7 @@ void getkeys(fcd_t *fcd, table_t *tab) {
     if (dbg > 2) {
         for (ptr=tab->keys; ptr!=NULL; ptr=ptr->next) {
             _key_t *key = (_key_t *) ptr->buf;
-            fprintf(stderr, "key %d %d %d\n", key->id, key->ncomps, key->ncols);
+            fprintf(stderr, "%ld key %d %d %d\n", time(NULL), key->id, key->ncomps, key->ncols);
             for (c=0; c<key->ncols; c++) {
                 fprintf(stderr, "    %s\n", key->columns[c]->name);
             }

@@ -22,11 +22,11 @@ void  copy_table(PGconn *conn, char *_source, char *_dest) {
     strcpy(schema, get_schema(conn, source));
     sprintf(sql, "create table %s.%s as select * from %s.%s", schema, dest, schema, source);
     if (dbg > 1) {
-        fprintf(stderr, "%s\n", sql);
+        fprintf(stderr, "%ld %s\n", time(NULL), sql);
     }
     res = PQexec(conn, sql);
     if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-        fprintf(stderr, "Erro na execucao do comando: %s\n%s\n", PQerrorMessage(conn), sql);
+        fprintf(stderr, "%ld Erro na execucao do comando: %s\n%s\n", time(NULL), PQerrorMessage(conn), sql);
         PQclear(res);
         return;
     }
@@ -47,11 +47,11 @@ void  truncate_table(PGconn *conn, char *_tabname) {
     strcpy(schema, get_schema(conn, tabname));
     sprintf(sql, "truncate table %s.%s", schema, tabname);
     if (dbg > 1) {
-        fprintf(stderr, "%s\n", sql);
+        fprintf(stderr, "%ld %s\n", time(NULL), sql);
     }
     res = PQexec(conn, sql);
     if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-        fprintf(stderr, "Erro na execucao do comando: %s\n%s\n", PQerrorMessage(conn), sql);
+        fprintf(stderr, "%ld Erro na execucao do comando: %s\n%s\n", time(NULL), PQerrorMessage(conn), sql);
         PQclear(res);
         return;
     }

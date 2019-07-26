@@ -21,7 +21,7 @@ void  load_table(PGconn *conn) {
     tab = tab_open;
 
     if (dbg > 0) {
-        fprintf(stderr, "load [%s] %ld\n", tab->name, time(NULL));
+        fprintf(stderr, "%ld load [%s]\n", time(NULL), tab->name);
     }
 
     truncate_table(conn, tab->name);
@@ -32,26 +32,26 @@ void  load_table(PGconn *conn) {
     putshort(opcode, OP_START_GT);
     EXTFH(opcode, fcd);
     if (dbg > 2) {
-        fprintf(stderr, "load start %c%c %d\n", fcd->status[0], fcd->status[1], fcd->status[1]);
+        fprintf(stderr, "%ld load start %c%c %d\n", time(NULL), fcd->status[0], fcd->status[1], fcd->status[1]);
     }
 
     putshort(opcode, OP_READ_NEXT);
     EXTFH(opcode, fcd);
     if (dbg > 2) {
-        fprintf(stderr, "load next %c%c %d\n", fcd->status[0], fcd->status[1], fcd->status[1]);
+        fprintf(stderr, "%ld load next %c%c %d\n", time(NULL), fcd->status[0], fcd->status[1], fcd->status[1]);
     }
 
     while (fcd->status[0] == '0') {
 
         op_write(conn, fcd);
         if (dbg > 2) {
-            fprintf(stderr, "load write %c%c %d\n", fcd->status[0], fcd->status[1], fcd->status[1]);
+            fprintf(stderr, "%ld load write %c%c %d\n", time(NULL), fcd->status[0], fcd->status[1], fcd->status[1]);
         }
 
         putshort(opcode, OP_READ_NEXT);
         EXTFH(opcode, fcd);
         if (dbg > 2) {
-            fprintf(stderr, "load next %c%c %d\n", fcd->status[0], fcd->status[1], fcd->status[1]);
+            fprintf(stderr, "%ld load next %c%c %d\n", time(NULL), fcd->status[0], fcd->status[1], fcd->status[1]);
         }
 
     }

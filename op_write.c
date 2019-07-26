@@ -22,7 +22,7 @@ bool op_write(PGconn *conn, fcd_t *fcd) {
 
     tab = (table_t *) fileid;
     if (dbg > 0) {
-        fprintf(stderr, "op_write [%s]\n", tab->name);
+        fprintf(stderr, "%ld op_write [%s]\n", time(NULL), tab->name);
     }
 
     if (!strcmp(tab->name, "pqfh")) {
@@ -33,7 +33,7 @@ bool op_write(PGconn *conn, fcd_t *fcd) {
     if (fcd->open_mode == 128) {
         memcpy(fcd->status, ST_NOT_OPENED_WRITE, 2);
         if (dbg > 0) {
-            fprintf(stderr, "status=%c%c\n\n", fcd->status[0], fcd->status[1]);
+            fprintf(stderr, "%ld status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
         }
         return false;
     }
@@ -43,13 +43,13 @@ bool op_write(PGconn *conn, fcd_t *fcd) {
 
     // verifica se o registro ja existe
     if (dbg > 2) {
-        fprintf(stderr, "op_write verifica se o registro existe\n");
+        fprintf(stderr, "%ld op_write verifica se o registro existe\n", time(NULL));
     }
     op_read_random(conn, fcd, false);
     if (!memcmp(fcd->status, ST_OK, 2)) {
         memcpy(fcd->status, ST_DUPL_KEY, 2);
         if (dbg > 0) {
-            fprintf(stderr, "status=%c%c\n\n", fcd->status[0], fcd->status[1]);
+            fprintf(stderr, "%ld status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
         }
         putshort(fcd->key_id, keyid);
         return false;
@@ -86,13 +86,13 @@ bool op_write(PGconn *conn, fcd_t *fcd) {
         strcat(sql, ")");
 
         if (dbg > 1) {
-            fprintf(stderr, "%s\n", sql);
+            fprintf(stderr, "%ld %s\n", time(NULL), sql);
         }
         tab->ins_prepared = true;
 
         res = PQprepare(conn, stmt_name, sql, p, NULL);
         if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-            fprintf(stderr, "Erro na execucao do comando: %s\n%s\n", PQerrorMessage(conn), sql);
+            fprintf(stderr, "%ld Erro na execucao do comando: %s\n%s\n", time(NULL), PQerrorMessage(conn), sql);
             exit(-1);
         }
         PQclear(res);
@@ -100,7 +100,7 @@ bool op_write(PGconn *conn, fcd_t *fcd) {
     }
 
     if (dbg > 2) {
-        fprintf(stderr, "op_write seta parametros para o insert\n");
+        fprintf(stderr, "%ld op_write seta parametros para o insert\n", time(NULL));
     }
     // seta os parametros
     p = 0;
@@ -150,13 +150,13 @@ bool op_write(PGconn *conn, fcd_t *fcd) {
 
     // executa o comando
     if (dbg > 2) {
-        fprintf(stderr, "op_write executa o insert\n");
+        fprintf(stderr, "%ld op_write executa o insert\n", time(NULL));
     }
     res =  PQexecPrepared(conn, stmt_name, p, tab->values, tab->lengths, tab->formats, 0);
     if (PQresultStatus(res) != PGRES_COMMAND_OK) {
         memcpy(fcd->status, ST_ERROR, 2);
         if (dbg > 0) {
-            fprintf(stderr, "%s\n", PQerrorMessage(conn));
+            fprintf(stderr, "%ld %s\n", time(NULL), PQerrorMessage(conn));
         }
     } else {
         if (tab->clones != NULL) {
@@ -168,7 +168,7 @@ bool op_write(PGconn *conn, fcd_t *fcd) {
     pending_commits++;
 
     if (dbg > 0) {
-        fprintf(stderr, "status=%c%c\n\n", fcd->status[0], fcd->status[1]);
+        fprintf(stderr, "%ld status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
     }
     putshort(fcd->key_id, keyid);
     return false;

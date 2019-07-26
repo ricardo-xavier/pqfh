@@ -26,13 +26,13 @@ bool op_open(PGconn *conn, fcd_t *fcd, unsigned short opcode) {
     }
     
     if (dbg > 0) {
-        fprintf(stderr, "op_open [%s] %04x %d %ld\n", filename, opcode, (int) fcd->open_mode, time(NULL));
+        fprintf(stderr, "%ld op_open [%s] %04x %d\n", time(NULL), filename, opcode, (int) fcd->open_mode);
     }
 
     if (fcd->open_mode != 128) {
         memcpy(fcd->status, ST_ALREADY_OPENED, 2);
         if (dbg > 0) {
-            fprintf(stderr, "status=%c%c\n\n", fcd->status[0], fcd->status[1]);
+            fprintf(stderr, "%ld status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
         }
         return false;
     }
@@ -84,7 +84,7 @@ bool op_open(PGconn *conn, fcd_t *fcd, unsigned short opcode) {
     }
 
     if (dbg > 0) {
-        fprintf(stderr, "status=%c%c\n\n", fcd->status[0], fcd->status[1]);
+        fprintf(stderr, "%ld status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
     }
 
     fileid = (int) tab;

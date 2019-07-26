@@ -11,11 +11,16 @@ void pqfh_executa_sql(PGconn *conn, char *query, char *p_retorno, int *p_registr
 void pqfh_sql_next(int *p_registro, char *p_linha);
 #endif
 
+extern int dbg;
+
 PGconn *conn;
 PGresult *res;
 int *qryhandle;
 
 void do_exit(PGconn *conn) {
+    if (dbg > 0) {
+        fprintf(stderr, "%ld cobolpost do_exit\n", time(NULL));
+    }
 	PQfinish(conn);
 	exit(1);
 };
@@ -36,6 +41,9 @@ executa_sql(char *query, char *p_retorno, int *p_registros, char *p_linha) {
         int  i_r;
         int  i_tamanho;	
 
+    if (dbg > 0) {
+        fprintf(stderr, "%ld cobolpost executa_sql [%s]\n", time(NULL), query);
+    }
 #ifdef PQFH
 	pqfh_executa_sql(conn, query, p_retorno, p_registros, p_linha);
 	return;
@@ -97,6 +105,9 @@ executa_sql_next(int *p_registro, char *p_linha) {
 	int  i;
         int  i_r;
         int  i_tamanho;	        	
+    if (dbg > 0) {
+        fprintf(stderr, "%ld cobolpost next %d\n", time(NULL), *p_registro);
+    }
 #ifdef PQFH
 	pqfh_sql_next(p_registro, p_linha);
 	return;
@@ -182,6 +193,9 @@ conecta_db( char *p_conexao, char *p_retorno) {
 	
 	char *conninfo=p_conexao;
 	
+    if (dbg > 0) {
+        fprintf(stderr, "%ld cobolpost conecta [%s]\n", time(NULL), p_conexao);
+    }
 	conn = PQconnectdb(conninfo);
 	if (PQstatus(conn) != CONNECTION_OK)
 	{
@@ -190,6 +204,9 @@ conecta_db( char *p_conexao, char *p_retorno) {
 	else
 	{
 	   conninfo = "CONECTADO";
+        if (dbg > 0) {
+            fprintf(stderr, "%ld cobolpost conectado\n", time(NULL));
+        }
 	};
         while (*conninfo) {
             *p_retorno++ = *conninfo++;
@@ -198,10 +215,16 @@ conecta_db( char *p_conexao, char *p_retorno) {
 
 void
 sql_disconnect_db( int *dbhandle ) {
+    if (dbg > 0) {
+        fprintf(stderr, "%ld cobolpost disconnect\n", time(NULL));
+    }
 	PGconn *conn = (PGconn *)*dbhandle;
 	PQfinish(conn);
 }
 
 void fechar_conexao() {
+    if (dbg > 0) {
+        fprintf(stderr, "%ld cobolpost fechar\n", time(NULL));
+    }
 	PQfinish(conn);
 }

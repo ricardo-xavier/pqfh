@@ -23,13 +23,13 @@ bool op_rewrite(PGconn *conn, fcd_t *fcd) {
 
     tab = (table_t *) fileid;
     if (dbg > 0) {
-        fprintf(stderr, "op_rewrite [%s]\n", tab->name);
+        fprintf(stderr, "%ld op_rewrite [%s]\n", time(NULL), tab->name);
     }
 
     if (fcd->open_mode == 128) {
         memcpy(fcd->status, ST_NOT_OPENED_UPDEL, 2);
         if (dbg > 0) {
-            fprintf(stderr, "status=%c%c\n\n", fcd->status[0], fcd->status[1]);
+            fprintf(stderr, "%ld status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
         }
         return false;
     }
@@ -41,7 +41,7 @@ bool op_rewrite(PGconn *conn, fcd_t *fcd) {
     // performance
     // verifica se o registro mudou antes de fazer o update
     if (dbg > 2) {
-        fprintf(stderr, "op_rewrite verifica se o registro existe\n");
+        fprintf(stderr, "%ld op_rewrite verifica se o registro existe\n", time(NULL));
     }
     op_read_random(conn, fcd, false);
     if (memcmp(fcd->status, ST_OK, 2)) {
@@ -50,12 +50,12 @@ bool op_rewrite(PGconn *conn, fcd_t *fcd) {
         return false;
     }
     if (dbg > 2) {
-        fprintf(stderr, "op_rewrite verifica se o registro foi alterado\n");
+        fprintf(stderr, "%ld op_rewrite verifica se o registro foi alterado\n", time(NULL));
     }
     if (!memcmp(record, fcd->record, reclen)) {
         memcpy(fcd->status, ST_OK, 2);
         if (dbg > 0) {
-            fprintf(stderr, "status=%c%c\n\n", fcd->status[0], fcd->status[1]);
+            fprintf(stderr, "%ld status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
         }
         return false;
     }
@@ -65,7 +65,7 @@ bool op_rewrite(PGconn *conn, fcd_t *fcd) {
 
     strcpy(kbuf, getkbuf(fcd, 0, tab, &keylen));
     if (dbg > 1) {
-        fprintf(stderr, "key %d %d [%s]\n", 0, keylen, kbuf);
+        fprintf(stderr, "%ld key %d %d [%s]\n", time(NULL), 0, keylen, kbuf);
     }
     sprintf(stmt_name, "%s_%ld_upd", tab->name, tab->timestamp);
 
@@ -101,13 +101,13 @@ bool op_rewrite(PGconn *conn, fcd_t *fcd) {
 
         nParams = p;
         if (dbg > 1) {
-            fprintf(stderr, "%s\n", sql);
+            fprintf(stderr, "%ld %s\n", time(NULL), sql);
         }
         tab->upd_prepared = true;
 
         res = PQprepare(conn, stmt_name, sql, nParams, NULL);
         if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-            fprintf(stderr, "Erro na execucao do comando: %s\n%s\n", PQerrorMessage(conn), sql);
+            fprintf(stderr, "%ld Erro na execucao do comando: %s\n%s\n", time(NULL), PQerrorMessage(conn), sql);
             exit(-1);
         }
         PQclear(res);
@@ -115,7 +115,7 @@ bool op_rewrite(PGconn *conn, fcd_t *fcd) {
 
     // seta os parametros fora da pk
     if (dbg > 2) {
-        fprintf(stderr, "op_rewrite seta parametros para o update\n");
+        fprintf(stderr, "%ld op_rewrite seta parametros para o update\n", time(NULL));
     }
     p = 0;
     for (ptr=tab->columns; ptr!=NULL; ptr=ptr->next) {
@@ -180,13 +180,13 @@ bool op_rewrite(PGconn *conn, fcd_t *fcd) {
 
     // executa o comando
     if (dbg > 2) {
-        fprintf(stderr, "op_rewrite executa o update\n");
+        fprintf(stderr, "%ld op_rewrite executa o update\n", time(NULL));
     }
     res =  PQexecPrepared(conn, stmt_name, nParams, tab->values, tab->lengths, tab->formats, 0);
     if (PQresultStatus(res) != PGRES_COMMAND_OK) {
         memcpy(fcd->status, ST_REC_NOT_FOUND, 2);
         if (dbg > 0) {
-            fprintf(stderr, "%s\n", PQerrorMessage(conn));
+            fprintf(stderr, "%ld %s\n", time(NULL), PQerrorMessage(conn));
         }
     } else {
         if (tab->clones != NULL) {
@@ -198,7 +198,7 @@ bool op_rewrite(PGconn *conn, fcd_t *fcd) {
     pending_commits++;
 
     if (dbg > 0) {
-        fprintf(stderr, "status=%c%c\n\n", fcd->status[0], fcd->status[1]);
+        fprintf(stderr, "%ld status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
     }
     putshort(fcd->key_id, keyid);
     return true;

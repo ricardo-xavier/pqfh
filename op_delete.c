@@ -21,13 +21,13 @@ void op_delete(PGconn *conn, fcd_t *fcd) {
 
     tab = (table_t *) fileid;
     if (dbg > 0) {
-        fprintf(stderr, "op_delete [%s]\n", tab->name);
+        fprintf(stderr, "%ld op_delete [%s]\n", time(NULL), tab->name);
     }
 
     if (fcd->open_mode == 128) {
         memcpy(fcd->status, ST_NOT_OPENED_UPDEL, 2);
         if (dbg > 0) {
-            fprintf(stderr, "status=%c%c\n\n", fcd->status[0], fcd->status[1]);
+            fprintf(stderr, "%ld status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
         }
         return;
     }
@@ -37,14 +37,14 @@ void op_delete(PGconn *conn, fcd_t *fcd) {
     if (memcmp(fcd->status, ST_OK, 2)) {
         memcpy(fcd->status, ST_REC_NOT_FOUND, 2);
         if (dbg > 0) {
-            fprintf(stderr, "status=%c%c\n\n", fcd->status[0], fcd->status[1]);
+            fprintf(stderr, "%ld status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
         }
         return;
     }
 
     strcpy(kbuf, getkbuf(fcd, 0, tab, &keylen));
     if (dbg > 1) {
-        fprintf(stderr, "key %d %d [%s]\n", 0, keylen, kbuf);
+        fprintf(stderr, "%ld key %d %d [%s]\n", time(NULL), 0, keylen, kbuf);
     }
     sprintf(stmt_name, "%s_%ld_del", tab->name, tab->timestamp);
 
@@ -59,13 +59,13 @@ void op_delete(PGconn *conn, fcd_t *fcd) {
         nParams = list2_size(tab->prms_delete);
 
         if (dbg > 1) {
-            fprintf(stderr, "%s\n", sql);
+            fprintf(stderr, "%ld %s\n", time(NULL), sql);
         }
         tab->del_prepared = true;
 
         res = PQprepare(conn, stmt_name, sql, nParams, NULL);
         if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-            fprintf(stderr, "Erro na execucao do comando: %s\n%s\n", PQerrorMessage(conn), sql);
+            fprintf(stderr, "%ld Erro na execucao do comando: %s\n%s\n", time(NULL), PQerrorMessage(conn), sql);
             exit(-1);
         }
         PQclear(res);
@@ -73,7 +73,7 @@ void op_delete(PGconn *conn, fcd_t *fcd) {
 
     // seta os parametros
     if (dbg > 2) {
-        fprintf(stderr, "op_delete seta parametros para o delete\n");
+        fprintf(stderr, "%ld op_delete seta parametros para o delete\n", time(NULL));
     }
     p = 0;
     for (ptr=tab->prms_delete; ptr!=NULL; ptr=ptr->next) {
@@ -93,13 +93,13 @@ void op_delete(PGconn *conn, fcd_t *fcd) {
 
     // executa o comando
     if (dbg > 2) {
-        fprintf(stderr, "op_delete executa o delete\n");
+        fprintf(stderr, "%ld op_delete executa o delete\n", time(NULL));
     }
     res =  PQexecPrepared(conn, stmt_name, nParams, tab->values, tab->lengths, tab->formats, 0);
     if (PQresultStatus(res) != PGRES_COMMAND_OK) {
         memcpy(fcd->status, ST_REC_NOT_FOUND, 2);
         if (dbg > 0) {
-            fprintf(stderr, "%s\n", PQerrorMessage(conn));
+            fprintf(stderr, "%ld %s\n", time(NULL), PQerrorMessage(conn));
         }
     } else {
         if (tab->clones != NULL) {
@@ -111,7 +111,7 @@ void op_delete(PGconn *conn, fcd_t *fcd) {
     pending_commits++;
 
     if (dbg > 0) {
-        fprintf(stderr, "status=%c%c\n\n", fcd->status[0], fcd->status[1]);
+        fprintf(stderr, "%ld status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
     }
 
 }
