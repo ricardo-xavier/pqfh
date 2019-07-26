@@ -24,7 +24,7 @@ char backup[MAX_REC_LEN+1];
 list2_t *weak=NULL;
 extern bool replica_in_transaction;
 
-#define VERSAO "v1.13.0 24/07/2019"
+#define VERSAO "v1.13.2 26/07/2019"
 
 bool in_transaction=false;
 
@@ -36,8 +36,6 @@ void commit() {
     res = PQexec(conn, "COMMIT");
     PQclear(res);
     res = PQexec(conn, "BEGIN");
-    PQclear(res);
-    res = PQexec(conn, "SET LOCAL lock_timeout = '1s'");
     PQclear(res);
     pending_commits = 0;
 }
@@ -82,17 +80,23 @@ void pqfh_rollback() {
     PQclear(res);
     res = PQexec(conn, "BEGIN");
     PQclear(res);
-    res = PQexec(conn, "SET LOCAL lock_timeout = '1s'");
-    PQclear(res);
     pending_commits = 0;
     pthread_mutex_unlock(&lock);
 }
 
 void unlock(fcd_t *fcd) {
     table_t *tab;
+    char sql[257];
+    PGresult *res;
     unsigned int fileid = getint(fcd->file_id);
     tab = (table_t *) fileid;
-    tab->for_update = false;
+    if (dbg > 0) {
+        fprintf(stderr, "unlock [%s] %d %d\n", tab->name, tab->oid, tab->advisory_lock);
+    }
+    sprintf(sql, "SELECT pg_advisory_unlock(%d, %d)", tab->oid, tab->advisory_lock);
+    res = PQexec(conn, sql);
+    PQclear(res);
+    tab->advisory_lock = 0;
     pending_commits++;
     commit();
 }
@@ -174,8 +178,6 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
             PQfinish(conn);
             exit(-1);
         }
-        PQclear(res);
-        res = PQexec(conn, "SET LOCAL lock_timeout = '1s'");
         PQclear(res);
 
         conninfo = getenv("REPLICA_BD");
@@ -546,4 +548,6 @@ bool is_weak(char *table) {
 // 1.12.5 - 23/07 - flag for_update para desalocar o registro
 // 1.13.0 - 24/07 - formatacao no libcobolpost
 // 1.12.5 - 23/07 - flag for_update para desalocar o registro
-// 1.12.5 - 23/07 - flag for_update para desalocar o registro
+// 1.13.0 - 24/07 - formatacao no libcobolpost
+// 1.13.1 - 25/07 - advisory_lock
+// 1.13.2 - 26/07 - fim de string no nome da tabela para o weak

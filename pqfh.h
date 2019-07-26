@@ -39,13 +39,15 @@ typedef struct {
     list2_t *prms_delete;
     list2_t *clones;
     bool    cursor;
-    bool    for_update;
+    int     advisory_lock;
     time_t  timestamp;
 
     const char *values[MAX_COLS];
     int        formats[MAX_COLS];
     int        lengths[MAX_COLS];
     char       bufs[MAX_COLS][MAX_COL_LEN+1];
+
+    int oid;
 } table_t;
 
 typedef struct {

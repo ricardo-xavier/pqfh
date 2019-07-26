@@ -17,7 +17,7 @@ bool table_info(PGconn *conn, table_t *table, fcd_t *fcd) {
 
     PGresult   *res;
     char       sql[4097], aux[33];
-    int        i, offset;
+    int        i, offset, oid;
     column_t   col;
     unsigned short reclen;
     bool convertida;
@@ -31,6 +31,16 @@ bool table_info(PGconn *conn, table_t *table, fcd_t *fcd) {
 
     table->columns = NULL;
     reclen = getshort(fcd->rec_len);
+
+    sprintf(sql, "SELECT oid FROM pg_class where relname='%s'", table->name);
+    res = PQexec(conn, sql);
+    if ((PQresultStatus(res) != PGRES_TUPLES_OK) || (PQntuples(res) == 0)) {
+        oid = 0;
+    } else {
+        oid = atoi(PQgetvalue(res, 0, 0));
+    }
+    PQclear(res);
+    table->oid = oid;
 
     // declara o cursor
     sprintf(sql, "declare cursor_columns cursor for  \nselect column_name,data_type,character_maximum_length,numeric_precision,numeric_scale\n    from information_schema.columns\n    where table_name = '%s'\n    order by ordinal_position", table->name);

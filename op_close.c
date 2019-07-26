@@ -40,7 +40,7 @@ bool op_close(PGconn *conn, fcd_t *fcd) {
         return false;
     }
 
-    if (tab->for_update) {
+    if (tab->advisory_lock > 0) {
         unlock(fcd);
     }
 

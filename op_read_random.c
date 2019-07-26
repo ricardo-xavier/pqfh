@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <sys/time.h>
 #include "pqfh.h"
 
@@ -32,6 +33,10 @@ void op_read_random(PGconn *conn, fcd_t *fcd, bool with_lock) {
         fprintf(stderr, "op_read_random [%s] lock mode=%d ignore lock=%d\n", tab->name, fcd->lock_mode, fcd->ignore_lock);
     }
 
+    if (tab->advisory_lock > 0) {
+        unlock(fcd);
+    }
+
     if (fcd->open_mode == 128) {
         memcpy(fcd->status, ST_NOT_OPENED_READ, 2);
         if (dbg > 0) {
@@ -61,11 +66,31 @@ void op_read_random(PGconn *conn, fcd_t *fcd, bool with_lock) {
 
         getwhere_prepared(tab, keyid, where, 0, 's');
         if (lock || with_lock) {
-            sprintf(sql, "select * from %s.%s where %s for update", tab->schema, tab->name, where);
-            tab->for_update = true;
-        } else {
-            sprintf(sql, "select * from %s.%s where %s", tab->schema, tab->name, where);
+            if ((tab->oid > 0) && (atoi(kbuf) > 0)) {
+                char result[9];
+                sprintf(sql, "SELECT pg_try_advisory_lock(%d, %d)", tab->oid, atoi(kbuf));
+                res = PQexec(conn, sql);
+                if ((PQresultStatus(res) != PGRES_TUPLES_OK) || (PQntuples(res) == 0)) {
+                    strcpy(result, "f");
+                } else {
+                    strcpy(result, PQgetvalue(res, 0, 0));
+                }
+                PQclear(res);
+                if (dbg > 0) {
+                    fprintf(stderr, "advisory_lock(%d,%d)=[%s]\n", tab->oid, atoi(kbuf), result);
+                }
+                if (result[0] == 'f') {
+                    memcpy(fcd->status, ST_LOCKED, 2); 
+                    sleep(1);
+                    if (dbg > 0) {
+                        fprintf(stderr, "status=%c%c\n\n", fcd->status[0], fcd->status[1]);
+                    }
+                    return;
+                }
+                tab->advisory_lock = atoi(kbuf);
+            }
         }
+        sprintf(sql, "select * from %s.%s where %s", tab->schema, tab->name, where);
         nParams = list2_size(tab->prms_random[keyid]);
 
         if (dbg > 1) {
@@ -110,12 +135,6 @@ void op_read_random(PGconn *conn, fcd_t *fcd, bool with_lock) {
 
     if ((PQresultStatus(res) != PGRES_TUPLES_OK) || (PQntuples(res) == 0))  {
         memcpy(fcd->status, ST_REC_NOT_FOUND, 2);
-        if (PQresultStatus(res) == PGRES_FATAL_ERROR) {
-            if (strstr(PQerrorMessage(conn), "lock timeout") != NULL) {
-                memcpy(fcd->status, ST_LOCKED, 2); 
-                pqfh_rollback(); 
-            }
-        }
         if (dbg > 0) {
             fprintf(stderr, "%d %s\n", PQresultStatus(res), PQerrorMessage(conn));
         }

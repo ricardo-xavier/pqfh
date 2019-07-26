@@ -16,8 +16,9 @@ void command(PGconn *conn, table_t *tab, fcd_t *fcd) {
     }
 
     if (!memcmp(fcd->record, "WEAK:", 5)) {
-        p = (char *) fcd->record + 5;
-        weak = list2_append(weak, p, strlen(p));
+        strcpy(aux, (char *) fcd->record+5);
+        if ((p = strchr(aux, ' ')) != NULL) *p = 0;
+        weak = list2_append(weak, aux, strlen(aux)+1);
     }
 
     if (!memcmp(fcd->record, "COPY:", 5)) {
