@@ -13,7 +13,7 @@ void pqfh_sql_next(int *p_registro, char *p_linha);
 
 extern int dbg;
 
-PGconn *conn;
+PGconn *conn=NULL;
 PGresult *res;
 int *qryhandle;
 
@@ -200,6 +200,9 @@ conecta_db( char *p_conexao, char *p_retorno) {
 	if (PQstatus(conn) != CONNECTION_OK)
 	{
 	   conninfo = "NAO CONECTADO";
+        fprintf(stderr, "%ld Erro na conexao com o banco de dados: %s\n%s\n",
+            time(NULL), PQerrorMessage(conn), conninfo);
+        conn = NULL;
 	}
 	else
 	{
@@ -226,5 +229,8 @@ void fechar_conexao() {
     if (dbg > 0) {
         fprintf(stderr, "%ld cobolpost fechar\n", time(NULL));
     }
-	PQfinish(conn);
+    if (conn != NULL) {
+	    PQfinish(conn);
+        conn = NULL;
+    }
 }

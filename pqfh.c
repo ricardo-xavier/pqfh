@@ -24,7 +24,7 @@ char backup[MAX_REC_LEN+1];
 list2_t *weak=NULL;
 extern bool replica_in_transaction;
 
-#define VERSAO "v1.13.4 26/07/2019"
+#define VERSAO "v1.13.5 26/07/2019"
 
 bool in_transaction=false;
 
@@ -552,3 +552,4 @@ bool is_weak(char *table) {
 // 1.13.1 - 25/07 - advisory_lock
 // 1.13.2 - 26/07 - fim de string no nome da tabela para o weak
 // 1.13.4 - 26/07 - time no stderr
+// 1.13.5 - 26/07 - ajuste no fechar do cobolpost para nao abortar se nao tiver conexao
