@@ -120,11 +120,6 @@ char *get_schema(PGconn *conn, char *table) {
     PGresult   *res;
     char       sql[4097];
 
-    if (test) {
-        strcpy(schema, "teste");
-        return schema;
-    }
-
     if (force_bd) {
         strcpy(schema, "public");
         return schema;
