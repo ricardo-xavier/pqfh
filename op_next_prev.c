@@ -33,6 +33,15 @@ void op_next_prev(PGconn *conn, fcd_t *fcd, char dir) {
         }
     }
 
+    if (tab->first) {
+        tab->first = false;
+        memcpy(fcd->status, ST_OK, 2);
+        if (dbg > 0) {
+            fprintf(stderr, "%ld first status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
+        }
+        return;
+    }
+
     if (eof_start) {
         memcpy(fcd->status, ST_EOF, 2);
         if (dbg > 0) {

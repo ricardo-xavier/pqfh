@@ -70,7 +70,7 @@ void op_start(PGconn *conn, fcd_t *fcd, char *op) {
         partial = true;
         op_read_random(conn, fcd, false);
         if (memcmp(fcd->status, ST_OK, 2)) {
-            memcpy(fcd->status, ST_EOF, 2);
+            memcpy(fcd->status, ST_REC_NOT_FOUND, 2);
             eof_start = true;
             partial = false;
             if (dbg > 0) {
@@ -119,10 +119,17 @@ void op_start(PGconn *conn, fcd_t *fcd, char *op) {
 
     if (op[0] != '<') {
         tab->key_next = keyid;
+        op_next_prev(conn, fcd, 'p');
+        tab->first = true;
     } else {
         tab->key_prev = keyid;
+        op_next_prev(conn, fcd, 'n');
+        tab->first = true;
     }
-    memcpy(fcd->status, ST_OK, 2);
+    if (!memcmp(fcd->start, ST_EOF, 2)) {
+        memcpy(fcd->status, ST_REC_NOT_FOUND, 2);
+    }
+    //memcpy(fcd->status, ST_OK, 2);
     if (dbg > 0) {
         fprintf(stderr, "%ld status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
     }

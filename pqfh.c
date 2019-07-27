@@ -14,6 +14,7 @@ PGconn *conn=NULL;
 PGconn *conn2=NULL;
 int dbg=-1;
 int dbg_times=-1;
+int dbg_cmp=-1;
 
 int pending_commits = 0;
 pthread_t thread_id;
@@ -24,7 +25,7 @@ char backup[MAX_REC_LEN+1];
 list2_t *weak=NULL;
 extern bool replica_in_transaction;
 
-#define VERSAO "v1.13.5 26/07/2019"
+#define VERSAO "v1.14.1 26/07/2019"
 
 bool in_transaction=false;
 
@@ -125,15 +126,27 @@ void get_debug() {
     } else {
         dbg = atoi(env);
     }
-    if (dbg > 0) {
-        fprintf(stderr, "%ld pqfh %s\n", time(NULL), VERSAO);
-    }
+    fprintf(stderr, "%ld pqfh %s\n", time(NULL), VERSAO);
     env = getenv("PQFH_DBG_TIMES");
     if (env == NULL) {
         dbg_times = 0;
     } else {
         dbg_times = atoi(env);
     }
+    env = getenv("PQFH_DBG_CMP");
+    if (env == NULL) {
+        dbg_cmp = 0;
+    } else {
+        dbg_cmp = atoi(env);
+    }
+}
+
+void dbg_status(fcd_t *fcd) {
+    short reclen = getshort(fcd->rec_len);
+    char aux[8193];
+    memcpy(aux, fcd->record, reclen);
+    aux[reclen] = 0;
+    fprintf(stderr, "%c %c [%s]\n", fcd->status[0], fcd->status[1], aux);
 }
 
 void pqfh(unsigned char *opcode, fcd_t *fcd) {
@@ -210,6 +223,17 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
     op = getshort(opcode);
     mode = get_mode();
 
+    if (dbg_cmp > 0) {
+        short fnlen = getshort(fcd->file_name_len);
+        short reclen = getshort(fcd->rec_len);
+        char aux1[257], aux2[8193];
+        memcpy(aux1, fcd->file_name, fnlen);
+        aux1[fnlen] = 0;
+        memcpy(aux2, fcd->record, reclen);
+        aux2[reclen] = 0;
+        fprintf(stderr, "%04x [%s] [%s]\n", op, aux1, aux2);
+    }
+
     if ((mode == 'I') || (fcd->isam == 'S')) {
         if (dbg > 0) {
             short fnlen = getshort(fcd->file_name_len);
@@ -228,6 +252,9 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
         tempo_total += tempo;
         qtde_isam++;
         qtde_total++;
+        if (dbg_cmp > 0) {
+            dbg_status(fcd);
+        }
         return;
     }
 
@@ -508,6 +535,9 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
 
     }
 
+    if (dbg_cmp > 0) {
+        dbg_status(fcd);
+    }
     pthread_mutex_unlock(&lock);
 
 }
@@ -553,3 +583,5 @@ bool is_weak(char *table) {
 // 1.13.2 - 26/07 - fim de string no nome da tabela para o weak
 // 1.13.4 - 26/07 - time no stderr
 // 1.13.5 - 26/07 - ajuste no fechar do cobolpost para nao abortar se nao tiver conexao
+// 1.14.0 - 26/07 - dbg_cmp
+// 1.14.1 - 26/07 - retornar corretamente o status no start

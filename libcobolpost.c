@@ -13,7 +13,7 @@ void pqfh_sql_next(int *p_registro, char *p_linha);
 
 extern int dbg;
 
-PGconn *conn=NULL;
+static PGconn *conn=NULL;
 PGresult *res;
 int *qryhandle;
 

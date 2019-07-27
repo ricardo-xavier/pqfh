@@ -61,6 +61,7 @@ bool op_open(PGconn *conn, fcd_t *fcd, unsigned short opcode) {
     tab->cursor = false;
     tab->advisory_lock = 0;
     tab->timestamp = time(NULL);
+    tab->first = false;
 
     if (strcmp(tab->name, "pqfh")) {
         if (table_info(conn, tab, fcd)) {

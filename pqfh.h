@@ -48,6 +48,7 @@ typedef struct {
     char       bufs[MAX_COLS][MAX_COL_LEN+1];
 
     int oid;
+    bool first;
 } table_t;
 
 typedef struct {
