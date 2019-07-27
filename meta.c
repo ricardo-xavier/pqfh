@@ -3,6 +3,7 @@
 #include "pqfh.h"
 
 extern int dbg;
+extern bool force_bd;
 char schema[33];
 
 fcd_t fcd01;
@@ -119,7 +120,12 @@ char *get_schema(PGconn *conn, char *table) {
     PGresult   *res;
     char       sql[4097];
 
-    if (getenv("PQFH_FORCE_BD") != NULL) {
+    if (test) {
+        strcpy(schema, "teste");
+        return schema;
+    }
+
+    if (force_bd) {
         strcpy(schema, "public");
         return schema;
     }

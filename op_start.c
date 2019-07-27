@@ -119,11 +119,11 @@ void op_start(PGconn *conn, fcd_t *fcd, char *op) {
 
     if (op[0] != '<') {
         tab->key_next = keyid;
-        op_next_prev(conn, fcd, 'p');
+        op_next_prev(conn, fcd, 'p', true);
         tab->first = true;
     } else {
         tab->key_prev = keyid;
-        op_next_prev(conn, fcd, 'n');
+        op_next_prev(conn, fcd, 'n', true);
         tab->first = true;
     }
     if (!memcmp(fcd->status, ST_EOF, 2)) {
