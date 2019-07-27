@@ -26,8 +26,16 @@ void  load_table(PGconn *conn) {
 
     truncate_table(conn, tab->name);
 
+    fcd->open_mode = 128;
+
     reclen = getshort(fcd->rec_len);
     memset(fcd->record, 0, reclen);
+
+    putshort(opcode, OP_OPEN_INPUT);
+    EXTFH(opcode, fcd);
+    if (dbg > 2) {
+        fprintf(stderr, "%ld load open %c%c %d\n", time(NULL), fcd->status[0], fcd->status[1], fcd->status[1]);
+    }
 
     putshort(opcode, OP_START_GT);
     EXTFH(opcode, fcd);
