@@ -178,7 +178,7 @@ void close_cursor(PGconn *conn, table_t *tab);
 bool op_open(PGconn *conn, fcd_t *fcd, unsigned short opcode);
 bool op_close(PGconn *conn, fcd_t *fcd);
 void op_start(PGconn *conn, fcd_t *fcd, char *op);
-void op_next_prev(PGconn *conn, fcd_t *fcd, char dir, bool start);
+void op_next_prev(PGconn *conn, fcd_t *fcd, char dir);
 void op_read_random(PGconn *conn, fcd_t *fcd, bool with_lock);
 bool op_rewrite(PGconn *conn, fcd_t *fcd);
 bool op_write(PGconn *conn, fcd_t *fcd);

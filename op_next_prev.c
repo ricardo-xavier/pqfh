@@ -7,7 +7,7 @@ extern int dbg;
 extern int dbg_times;
 extern bool eof_start;
 
-void op_next_prev(PGconn *conn, fcd_t *fcd, char dir, bool start) {
+void op_next_prev(PGconn *conn, fcd_t *fcd, char dir) {
 
     unsigned int fileid;
     unsigned short reclen, keylen;
@@ -86,9 +86,7 @@ void op_next_prev(PGconn *conn, fcd_t *fcd, char dir, bool start) {
         gettimeofday(&tv2, NULL);
     }
 
-    if (!start) {
-        pq2cob(tab, res, fcd->record, reclen);
-    }
+    pq2cob(tab, res, fcd->record, reclen);
     memcpy(fcd->status, ST_OK, 2);
 
     if (dbg_times > 1) {

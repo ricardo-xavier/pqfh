@@ -26,7 +26,7 @@ char backup[MAX_REC_LEN+1];
 list2_t *weak=NULL;
 extern bool replica_in_transaction;
 
-#define VERSAO "v1.14.1 27/07/2019"
+#define VERSAO "v1.15.0 27/07/2019"
 
 bool in_transaction=false;
 
@@ -165,8 +165,8 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
     unsigned char  open_mode;
     PGresult       *res;
     bool           ret;
-    char           aux[MAX_REC_LEN+1];
-    short          reclen;
+    char           filename[257], record[8193], undo[8193];
+    short          reclen, fnlen;
     char           st[2], mode;
     struct timeval tv1, tv2;
     long tempo;
@@ -176,7 +176,15 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
         get_debug();
     }
 
+    if (dbg > 0) {
+        // pega o nome do arquivo para gravar no log
+        fnlen = getshort(fcd->file_name_len);
+        memcpy(filename, fcd->file_name, fnlen);
+        filename[fnlen] = 0;
+    }
+
     if (conn == NULL) {
+        // conecta ao banco de dados e configura a conexao
         conninfo = getenv("CONECTA_BD");
         if (conninfo == NULL) {
             conninfo = strdup("dbname=integral user=postgres host=127.0.0.1 port=5432");
@@ -211,6 +219,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
         }
         PQclear(res);
 
+        // conecta ao banco de dados de replicacao
         conninfo = getenv("REPLICA_BD");
         if (conninfo != NULL) {
             if (dbg > 0) {
@@ -240,25 +249,17 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
 
     op = getshort(opcode);
     mode = get_mode();
+    reclen = getshort(fcd->rec_len);
 
     if (dbg_cmp > 0) {
-        short fnlen = getshort(fcd->file_name_len);
-        short reclen = getshort(fcd->rec_len);
-        char aux1[257], aux2[8193];
-        memcpy(aux1, fcd->file_name, fnlen);
-        aux1[fnlen] = 0;
-        memcpy(aux2, fcd->record, reclen);
-        aux2[reclen] = 0;
-        fprintf(stderr, "%ld cmd=%d %04x [%s] [%s]\n", time(NULL), ++cmd, op, aux1, aux2);
+        memcpy(record, fcd->record, reclen);
+        record[reclen] = 0;
+        fprintf(stderr, "%ld cmd=%d %04x [%s] [%s]\n", time(NULL), ++cmd, op, filename, record);
     }
 
     if ((mode == 'I') || (fcd->isam == 'S')) {
         if (dbg > 0) {
-            short fnlen = getshort(fcd->file_name_len);
-            char aux[257];
-            memcpy(aux, fcd->file_name, fnlen);
-            aux[fnlen] = 0;
-            fprintf(stderr, "%ld EXTFH %04x [%s]\n\n", time(NULL), op, aux);
+            fprintf(stderr, "%ld EXTFH %04x [%s]\n\n", time(NULL), op, filename);
         }
         EXTFH(opcode, fcd);
         if (dbg > 0) {
@@ -274,6 +275,58 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
             dbg_status(fcd);
         }
         return;
+    }
+
+    if ((mode == 'A') && (fcd->isam != 'S')
+            && ((op == OP_WRITE) || (op == OP_REWRITE) || (op == OP_DELETE))) {
+
+        if (op != OP_WRITE) {
+
+            // salva o registro anterior para o caso de precisar desfazer
+            putshort(opcode, OP_READ_RANDOM);
+            if (dbg > 0) {
+                fprintf(stderr, "%ld EXTFH %04x [%s]\n\n", time(NULL), OP_READ_RANDOM, filename);
+            }
+            EXTFH(opcode, fcd);
+            if (dbg > 0) {
+                fprintf(stderr, "%ld EXTFH status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
+            }
+            putshort(opcode, op);
+
+            if (memcmp(fcd->status, ST_OK, 2)) {
+                gettimeofday(&tv2, NULL);
+                tempo = ((tv2.tv_sec * 1000000) + tv2.tv_usec) - ((tv1.tv_sec * 1000000) + tv1.tv_usec);
+                tempo_isam += tempo;
+                tempo_total += tempo;
+                qtde_isam++;
+                qtde_total++;
+                return;
+            }
+
+            memcpy(undo, fcd->record, reclen);
+            undo[reclen] = 0;
+
+        }
+
+        // executa primeiro no ISAM
+        if (dbg > 0) {
+            fprintf(stderr, "%ld EXTFH %04x [%s]\n\n", time(NULL), op, filename);
+        }
+        EXTFH(opcode, fcd);
+        if (dbg > 0) {
+            fprintf(stderr, "%ld EXTFH status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
+        }
+        gettimeofday(&tv2, NULL);
+        tempo = ((tv2.tv_sec * 1000000) + tv2.tv_usec) - ((tv1.tv_sec * 1000000) + tv1.tv_usec);
+        tempo_isam += tempo;
+        tempo_total += tempo;
+        qtde_isam++;
+        qtde_total++;
+
+        if (memcmp(fcd->status, ST_OK, 2)) {
+            // se der erro no ISAM nao executa no banco
+            return;
+        }
     }
 
     pthread_mutex_lock(&lock);
@@ -349,11 +402,11 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
             break;
 
         case OP_READ_NEXT:
-            op_next_prev(conn, fcd, 'n', false);
+            op_next_prev(conn, fcd, 'n');
             break;
 
         case OP_READ_PREVIOUS:
-            op_next_prev(conn, fcd, 'p', false);
+            op_next_prev(conn, fcd, 'p');
             break;
 
         case OP_READ_LOCK:
@@ -370,46 +423,30 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
 
         case OP_REWRITE:
             ret = op_rewrite(conn, fcd);
-            if (mode == 'B') {
+            if ((mode != 'B') && (!ret || memcmp(fcd->status, ST_OK, 2))) {
+
+                // erro no update do banco
+                // desfaz o isam
+                if (dbg > 1) {
+                    fprintf(stderr, "%ld desfaz rewrite %c%c\n", time(NULL), fcd->status[0], fcd->status[1]);
+                }
+
+                // salva o registro atual e o status
+                memcpy(record, fcd->record, reclen);
+                memcpy(st, fcd->status, 2);
+
+                // regrava o registro anterior
+                memcpy(fcd->record, undo, reclen);
+                EXTFH(opcode, fcd);
+
+                // restaura o registro atual e o status
+                memcpy(fcd->record, record, reclen);
+                memcpy(fcd->status, st, 2);
+
                 break;
             }
-            if (ret && !memcmp(fcd->status, ST_OK, 2)) {
-                // update com sucesso no banco
-                // executa o rewrite no isam
-                // se o update nao foi executado devido a otimizacao entao ret = false e status = OK
-                EXTFH(opcode, fcd);
-                if (memcmp(fcd->status, ST_OK, 2)) {
-                    // erro no isam
-                    if (dbg > 0) {
-                        fprintf(stderr, "%ld desfaz rewrite %c%c\n", time(NULL), fcd->status[0], fcd->status[1]);
-                    }
-
-                    // desfaz a alteracao
-                    reclen = getshort(fcd->rec_len);
-
-                    // salva o registro atual e o status
-                    memcpy(aux, fcd->record, reclen);
-                    memcpy(st, fcd->status, 2);
-
-                    // regrava o registro anterior
-                    memcpy(fcd->record, backup, reclen);
-                    op_rewrite(conn, fcd);
-
-                    // recupera o registro atual e o status
-                    memcpy(fcd->record, aux, reclen);
-                    memcpy(fcd->status, st, 2);
-                    if (replica_in_transaction) {
-                        replica_rollback();
-                    }
-                } else {
-                    // sucesso no isam
-                    if (dbg > 1) {
-                        fprintf(stderr, "%ld rewrite confirmado\n", time(NULL));
-                    }
-                    if (replica_in_transaction) {
-                        replica_commit();
-                    }
-                }
+            if (replica_in_transaction) {
+                replica_commit();
             }
             break;
 
@@ -417,65 +454,51 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
             if (op_write(conn, fcd)) {
                 break; // command
             }
-            if (mode == 'B') {
+            if ((mode != 'B') && memcmp(fcd->status, ST_OK, 2)) {
+
+                // erro no insert do banco
+                // desfaz o isam
+                if (dbg > 0) {
+                    fprintf(stderr, "%ld desfaz write %c%c\n", time(NULL), fcd->status[0], fcd->status[1]);
+                }
+                memcpy(st, fcd->status, 2);
+                putshort(opcode, OP_DELETE);
+                EXTFH(opcode, fcd);
+                putshort(opcode, OP_WRITE);
+                memcpy(fcd->status, st, 2);
                 break;
             }
-            if (!memcmp(fcd->status, ST_OK, 2)) {
-                // insert com sucesso no banco
-                // executa o write no isam
-                EXTFH(opcode, fcd);
-                if (memcmp(fcd->status, ST_OK, 2)) {
-                    // erro no isam
-                    if (dbg > 0) {
-                        fprintf(stderr, "%ld desfaz write %c%c\n", time(NULL), fcd->status[0], fcd->status[1]);
-                    }
-                    memcpy(st, fcd->status, 2);
-                    op_delete(conn, fcd);
-                    memcpy(fcd->status, st, 2);
-                    if (replica_in_transaction) {
-                        replica_rollback();
-                    }
-                } else {
-                    // sucesso no isam
-                    if (dbg > 1) {
-                        fprintf(stderr, "%ld write confirmado\n", time(NULL));
-                    }
-                    if (replica_in_transaction) {
-                        replica_commit();
-                    }
-                }
+            if (replica_in_transaction) {
+                replica_commit();
             }
             break;
 
         case OP_DELETE:
             op_delete(conn, fcd);
-            if (mode == 'B') {
+            if ((mode != 'B') && memcmp(fcd->status, ST_OK, 2)) {
+
+                // erro no delete do banco
+                // desfaz o isam
+                if (dbg > 0) {
+                    fprintf(stderr, "%ld desfaz delete %c%c\n", time(NULL), fcd->status[0], fcd->status[1]);
+                }
+
+                // salva o registro atual e o status
+                memcpy(record, fcd->record, reclen);
+                memcpy(st, fcd->status, 2);
+
+                // insere o registro novamente no isam
+                putshort(opcode, OP_WRITE);
+                EXTFH(opcode, fcd);
+                putshort(opcode, OP_DELETE);
+
+                // restaura o registro atual e o status
+                memcpy(fcd->record, record, reclen);
+                memcpy(fcd->status, st, 2);
                 break;
             }
-            if (!memcmp(fcd->status, ST_OK, 2)) {
-                // delete com sucesso no banco
-                // executa o delete no isam
-                EXTFH(opcode, fcd);
-                if (memcmp(fcd->status, ST_OK, 2)) {
-                    // erro no isam
-                    if (dbg > 0) {
-                        fprintf(stderr, "%ld desfaz delete %c%c\n", time(NULL), fcd->status[0], fcd->status[1]);
-                    }
-                    memcpy(st, fcd->status, 2);
-                    op_write(conn, fcd);
-                    memcpy(fcd->status, st, 2);
-                    if (replica_in_transaction) {
-                        replica_rollback();
-                    }
-                } else {
-                    // sucesso no isam
-                    if (dbg > 1) {
-                        fprintf(stderr, "%ld delete confirmado\n", time(NULL));
-                    }
-                    if (replica_in_transaction) {
-                        replica_commit();
-                    }
-                }
+            if (replica_in_transaction) {
+                replica_commit();
             }
             break;
 
@@ -602,4 +625,5 @@ bool is_weak(char *table) {
 // 1.13.4 - 26/07 - time no stderr
 // 1.13.5 - 26/07 - ajuste no fechar do cobolpost para nao abortar se nao tiver conexao
 // 1.14.0 - 26/07 - dbg_cmp
-// 1.14.1 - 26/07 - retornar corretamente o status no start
+// 1.14.1 - 27/07 - retornar corretamente o status no start
+// 1.15.0 - 27/07 - isam primeiro
