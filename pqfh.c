@@ -15,6 +15,7 @@ PGconn *conn2=NULL;
 int dbg=-1;
 int dbg_times=-1;
 int dbg_cmp=-1;
+bool force_bd;
 
 int pending_commits = 0;
 pthread_t thread_id;
@@ -25,7 +26,7 @@ char backup[MAX_REC_LEN+1];
 list2_t *weak=NULL;
 extern bool replica_in_transaction;
 
-#define VERSAO "v1.14.1 26/07/2019"
+#define VERSAO "v1.14.1 27/07/2019"
 
 bool in_transaction=false;
 
@@ -139,6 +140,12 @@ void get_debug() {
     } else {
         dbg_cmp = atoi(env);
     }
+    env = getenv("PQFH_FORCE_BD");
+    if (env == NULL) {
+        force_bd = false;
+    } else {
+        force_bd = !strcmp(env, "S");
+    }
 }
 
 void dbg_status(fcd_t *fcd) {
@@ -146,8 +153,10 @@ void dbg_status(fcd_t *fcd) {
     char aux[8193];
     memcpy(aux, fcd->record, reclen);
     aux[reclen] = 0;
-    fprintf(stderr, "%c %c [%s]\n", fcd->status[0], fcd->status[1], aux);
+    fprintf(stderr, "st=%c%c [%s]\n", fcd->status[0], fcd->status[1], aux);
 }
+
+int cmd=0;
 
 void pqfh(unsigned char *opcode, fcd_t *fcd) {
 
@@ -180,6 +189,15 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
         if (PQstatus(conn) != CONNECTION_OK) {
             fprintf(stderr, "%ld Erro na conexao com o banco de dados: %s\n%s\n",
                 time(NULL), PQerrorMessage(conn), conninfo);
+            exit(-1);
+        }
+
+        res = PQexec(conn, "set client_encoding to 'latin1'");
+        if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+            fprintf(stderr, "%ld Erro ao configurar o encoding: %s\n",
+                time(NULL), PQerrorMessage(conn));
+            PQclear(res);
+            PQfinish(conn);
             exit(-1);
         }
 
@@ -231,7 +249,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
         aux1[fnlen] = 0;
         memcpy(aux2, fcd->record, reclen);
         aux2[reclen] = 0;
-        fprintf(stderr, "%04x [%s] [%s]\n", op, aux1, aux2);
+        fprintf(stderr, "%ld cmd=%d %04x [%s] [%s]\n", time(NULL), ++cmd, op, aux1, aux2);
     }
 
     if ((mode == 'I') || (fcd->isam == 'S')) {
@@ -331,11 +349,11 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
             break;
 
         case OP_READ_NEXT:
-            op_next_prev(conn, fcd, 'n');
+            op_next_prev(conn, fcd, 'n', false);
             break;
 
         case OP_READ_PREVIOUS:
-            op_next_prev(conn, fcd, 'p');
+            op_next_prev(conn, fcd, 'p', false);
             break;
 
         case OP_READ_LOCK:

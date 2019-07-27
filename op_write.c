@@ -136,6 +136,9 @@ bool op_write(PGconn *conn, fcd_t *fcd) {
                     tab->bufs[p][col->len - 1] &= ~0x40;
                 }
             }
+            if (!tab->bufs[p][0]) {
+                strcpy(tab->bufs[p], "0");
+            }
         } else {
             memcpy(tab->bufs[p], fcd->record+col->offset, col->len);
             tab->bufs[p][col->len] = 0;
