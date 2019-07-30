@@ -52,7 +52,7 @@ void pqfh_executa_sql(PGconn *conn, char *query, char *p_retorno, int *p_registr
     }
 
     if (!strncasecmp(query, "select", 6)) {
-        strcpy(p_linha, "");
+        strcpy(p_linha, "0000000000");
     }
     if (dbg > 0) {
         fprintf(stderr, "%ld executa_sql [%s]\n", time(NULL), query);
