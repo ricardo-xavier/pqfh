@@ -26,7 +26,7 @@ char backup[MAX_REC_LEN+1];
 list2_t *weak=NULL;
 extern bool replica_in_transaction;
 
-#define VERSAO "v1.15.0 27/07/2019"
+#define VERSAO "v1.15.3 30/07/2019"
 
 bool in_transaction=false;
 
@@ -156,7 +156,7 @@ void dbg_status(fcd_t *fcd) {
     fprintf(stderr, "st=%c%c [%s]\n", fcd->status[0], fcd->status[1], aux);
 }
 
-int cmd=0;
+int seqcmd=0;
 
 void pqfh(unsigned char *opcode, fcd_t *fcd) {
 
@@ -254,7 +254,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
     if (dbg_cmp > 0) {
         memcpy(record, fcd->record, reclen);
         record[reclen] = 0;
-        fprintf(stderr, "%ld cmd=%d %04x [%s] [%s]\n", time(NULL), ++cmd, op, filename, record);
+        fprintf(stderr, "%ld cmd=%d %04x [%s] [%s]\n", time(NULL), ++seqcmd, op, filename, record);
     }
 
     if ((mode == 'I') || (fcd->isam == 'S')) {
@@ -627,3 +627,4 @@ bool is_weak(char *table) {
 // 1.14.0 - 26/07 - dbg_cmp
 // 1.14.1 - 27/07 - retornar corretamente o status no start
 // 1.15.0 - 27/07 - isam primeiro
+// 1.15.3 - 30/07 - nao atualizar p_linha no cobolpost se nao for select

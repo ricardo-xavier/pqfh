@@ -193,6 +193,9 @@ conecta_db( char *p_conexao, char *p_retorno) {
 	
 	char *conninfo=p_conexao;
 	
+    if (dbg == -1) {
+        get_debug();
+    }
     if (dbg > 0) {
         fprintf(stderr, "%ld cobolpost conecta [%s]\n", time(NULL), p_conexao);
     }
@@ -218,6 +221,9 @@ conecta_db( char *p_conexao, char *p_retorno) {
 
 void
 sql_disconnect_db( int *dbhandle ) {
+    if (dbg == -1) {
+        get_debug();
+    }
     if (dbg > 0) {
         fprintf(stderr, "%ld cobolpost disconnect\n", time(NULL));
     }
@@ -226,6 +232,9 @@ sql_disconnect_db( int *dbhandle ) {
 }
 
 void fechar_conexao() {
+    if (dbg == -1) {
+        get_debug();
+    }
     if (dbg > 0) {
         fprintf(stderr, "%ld cobolpost fechar\n", time(NULL));
     }

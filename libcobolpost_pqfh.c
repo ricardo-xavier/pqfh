@@ -51,7 +51,9 @@ void pqfh_executa_sql(PGconn *conn, char *query, char *p_retorno, int *p_registr
         get_debug();
     }
 
-    strcpy(p_linha, "");
+    if (!strncasecmp(query, "select", 6)) {
+        strcpy(p_linha, "");
+    }
     if (dbg > 0) {
         fprintf(stderr, "%ld executa_sql [%s]\n", time(NULL), query);
     }    
@@ -65,7 +67,7 @@ void pqfh_executa_sql(PGconn *conn, char *query, char *p_retorno, int *p_registr
     } else {
         strcpy(p_retorno, "EXECUTADO");
         *p_registros = PQntuples(res);
-        if (*p_registros > 0) {
+        if ((*p_registros > 0) && !strncasecmp(query, "select", 6)) {
             monta_linha(0, p_linha);
         }
 
