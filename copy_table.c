@@ -19,7 +19,28 @@ void  copy_table(PGconn *conn, char *_source, char *_dest) {
         dest = _dest;
     } else dest++;
 
+    strcpy(schema, get_schema(conn, dest));
+    if (schema[0]) {
+        // a tabela destino ja existe no banco
+        sprintf(sql, "drop table %s.%s", schema, dest);
+        if (dbg > 1) {
+            fprintf(stderr, "%ld %s\n", time(NULL), sql);
+        }
+        res = PQexec(conn, sql);
+        if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+            fprintf(stderr, "%ld Erro na execucao do comando: %s\n%s\n", time(NULL), PQerrorMessage(conn), sql);
+            PQclear(res);
+            return;
+        }
+        PQclear(res);
+    }
+
     strcpy(schema, get_schema(conn, source));
+    if (!schema[0]) {
+        // a tabela origem nao existe
+        return;
+    }
+
     sprintf(sql, "create table %s.%s as select * from %s.%s", schema, dest, schema, source);
     if (dbg > 1) {
         fprintf(stderr, "%ld %s\n", time(NULL), sql);

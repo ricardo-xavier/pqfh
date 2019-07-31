@@ -26,7 +26,7 @@ char backup[MAX_REC_LEN+1];
 list2_t *weak=NULL;
 extern bool replica_in_transaction;
 
-#define VERSAO "v1.15.3 30/07/2019"
+#define VERSAO "v1.15.5 31/07/2019"
 
 bool in_transaction=false;
 
@@ -127,7 +127,9 @@ void get_debug() {
     } else {
         dbg = atoi(env);
     }
-    fprintf(stderr, "%ld pqfh %s\n", time(NULL), VERSAO);
+    if (dbg > 0) {
+        fprintf(stderr, "%ld pqfh %s\n", time(NULL), VERSAO);
+    }
     env = getenv("PQFH_DBG_TIMES");
     if (env == NULL) {
         dbg_times = 0;
@@ -283,6 +285,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
         if (op != OP_WRITE) {
 
             // salva o registro anterior para o caso de precisar desfazer
+            memcpy(record, fcd->record, reclen);
             putshort(opcode, OP_READ_RANDOM);
             if (dbg > 0) {
                 fprintf(stderr, "%ld EXTFH %04x [%s]\n\n", time(NULL), OP_READ_RANDOM, filename);
@@ -300,11 +303,13 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
                 tempo_total += tempo;
                 qtde_isam++;
                 qtde_total++;
+                memcpy(fcd->record, record, reclen);
                 return;
             }
 
             memcpy(undo, fcd->record, reclen);
             undo[reclen] = 0;
+            memcpy(fcd->record, record, reclen);
 
         }
 
@@ -628,3 +633,5 @@ bool is_weak(char *table) {
 // 1.14.1 - 27/07 - retornar corretamente o status no start
 // 1.15.0 - 27/07 - isam primeiro
 // 1.15.3 - 30/07 - nao atualizar p_linha no cobolpost se nao for select
+// 1.15.5 - 31/07 - nao considerar prefixo < 4
+//                  testar se a origem e o destino existem no copy

@@ -57,7 +57,7 @@ bool op_rewrite(PGconn *conn, fcd_t *fcd) {
         if (dbg > 0) {
             fprintf(stderr, "%ld status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
         }
-        return false;
+        return true;
     }
 
     memcpy(backup, fcd->record, reclen);
@@ -148,6 +148,9 @@ bool op_rewrite(PGconn *conn, fcd_t *fcd) {
                 } else {
                     tab->bufs[p][col->len - 1] &= ~0x40;
                 }
+            }
+            if (!tab->bufs[p][0]) {
+                strcpy(tab->bufs[p], "0");
             }
         } else {
             memcpy(tab->bufs[p], fcd->record+col->offset, col->len);

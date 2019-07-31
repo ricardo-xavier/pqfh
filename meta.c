@@ -320,15 +320,17 @@ bool nome_dicionario(char *tabela, char *nome) {
     }
 
     strcpy(prefixo, tabela);
-    if (strlen(prefixo) > 4) {
-        for (p=prefixo+4; *p; p++) {
-            if (strchr("0123456789", *p) != NULL) {
-                *p = 0;
-                if (dbg > 2) {
-                    fprintf(stderr, "%ld prefixo [%s]\n", time(NULL), prefixo);
-                }
-                break;
+    if (strlen(prefixo) < 4) {
+        return false;
+    }
+
+    for (p=prefixo+4; *p; p++) {
+        if (strchr("0123456789", *p) != NULL) {
+            *p = 0;
+            if (dbg > 2) {
+                fprintf(stderr, "%ld prefixo [%s]\n", time(NULL), prefixo);
             }
+            break;
         }
     }
 
