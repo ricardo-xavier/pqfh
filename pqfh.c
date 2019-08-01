@@ -26,7 +26,7 @@ char backup[MAX_REC_LEN+1];
 list2_t *weak=NULL;
 extern bool replica_in_transaction;
 
-#define VERSAO "v1.15.5 31/07/2019"
+#define VERSAO "v1.15.6 01/08/2019"
 
 bool in_transaction=false;
 
@@ -178,12 +178,10 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
         get_debug();
     }
 
-    if (dbg > 0) {
-        // pega o nome do arquivo para gravar no log
-        fnlen = getshort(fcd->file_name_len);
-        memcpy(filename, fcd->file_name, fnlen);
-        filename[fnlen] = 0;
-    }
+    // pega o nome do arquivo para gravar no log
+    fnlen = getshort(fcd->file_name_len);
+    memcpy(filename, fcd->file_name, fnlen);
+    filename[fnlen] = 0;
 
     if (conn == NULL) {
         // conecta ao banco de dados e configura a conexao
@@ -279,7 +277,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
         return;
     }
 
-    if ((mode == 'A') && (fcd->isam != 'S')
+    if ((mode == 'A') && (fcd->isam != 'S') && strcmp(filename, "pqfh")
             && ((op == OP_WRITE) || (op == OP_REWRITE) || (op == OP_DELETE))) {
 
         if (op != OP_WRITE) {
@@ -635,3 +633,4 @@ bool is_weak(char *table) {
 // 1.15.3 - 30/07 - nao atualizar p_linha no cobolpost se nao for select
 // 1.15.5 - 31/07 - nao considerar prefixo < 4
 //                  testar se a origem e o destino existem no copy
+// 1.15.6 - 01/08 - nao executar a atualizacao no ISAM se for o arquivo pqfh
