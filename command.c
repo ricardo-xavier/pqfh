@@ -35,6 +35,10 @@ void command(PGconn *conn, table_t *tab, fcd_t *fcd) {
         load_table(conn);
     }
 
+    if (!memcmp(fcd->record, "CMP", 3)) {
+        cmp_table(conn);
+    }
+
     if (!memcmp(fcd->record, "BEGIN TRANSACTION", 17)) {
         pqfh_begin_transaction();
     }

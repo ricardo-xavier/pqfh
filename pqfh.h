@@ -186,6 +186,7 @@ void op_delete(PGconn *conn, fcd_t *fcd);
 void create_table(PGconn *conn, table_t *tab, fcd_t *fcd, unsigned short opcode);
 void copy_table(PGconn *conn, char *source, char *dest);
 void load_table(PGconn *conn);
+void cmp_table(PGconn *conn);
 void truncate_table(PGconn *conn, char *tabname);
 
 extern void EXTFH(unsigned char *opcode, fcd_t *fcd);

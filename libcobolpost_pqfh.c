@@ -9,7 +9,7 @@ PGresult *res;
 void monta_linha(int linha, char *p_linha) {
 
     int num_campos, i, tipo_campo, tam_campo;
-    char *valor_campo, buf_campo[257], fmt[9];
+    char *valor_campo, buf_campo[MAX_REC_LEN+1], fmt[9];
 
     num_campos = PQnfields(res);
 
@@ -80,5 +80,6 @@ void pqfh_sql_next(int *p_registro, char *p_linha) {
     if (dbg > 0) {
         fprintf(stderr, "%ld sql_next %d\n", time(NULL), *p_registro);
     }    
+    strcpy(p_linha, "");
     monta_linha(*p_registro, p_linha);
 }

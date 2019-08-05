@@ -26,7 +26,7 @@ char backup[MAX_REC_LEN+1];
 list2_t *weak=NULL;
 extern bool replica_in_transaction;
 
-#define VERSAO "v1.15.6 01/08/2019"
+#define VERSAO "v1.16.1 05/08/2019"
 
 bool in_transaction=false;
 
@@ -634,3 +634,5 @@ bool is_weak(char *table) {
 // 1.15.5 - 31/07 - nao considerar prefixo < 4
 //                  testar se a origem e o destino existem no copy
 // 1.15.6 - 01/08 - nao executar a atualizacao no ISAM se for o arquivo pqfh
+// 1.16.0 - 04/08 - comando cmp
+// 1.16.1 - 03/08 - correcao de 114 no fechar
