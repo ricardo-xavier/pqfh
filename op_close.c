@@ -8,7 +8,6 @@ list2_t *weak;
 bool op_close(PGconn *conn, fcd_t *fcd) {
     unsigned int fileid;
     table_t      *tab;
-    int          k;
 
     fileid = getint(fcd->file_id);
 
@@ -49,21 +48,12 @@ bool op_close(PGconn *conn, fcd_t *fcd) {
     deallocate(conn, tab);
     close_cursor(conn, tab);
 
-    // desaloca a tabela
-    tab->columns = list2_free(tab->columns);
-    tab->keys = list2_free(tab->keys);
-    for (k=0; k<MAX_KEYS; k++) {
-        tab->prms_random[k] = list2_free(tab->prms_random[k]);
-    }
-    tab->prms_rewrite = list2_free(tab->prms_rewrite);
-    tab->prms_delete = list2_free(tab->prms_delete);
-    tab->clones = list2_free(tab->clones);
-
+    free_tab(tab);
     fcd->open_mode = 128;
     memcpy(fcd->status, ST_OK, 2);
     if (dbg > 0) {
         fprintf(stderr, "%ld status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
     }
-    free(tab);
+
     return false;
 }

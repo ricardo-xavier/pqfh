@@ -155,6 +155,7 @@ char *getkbuf(fcd_t *fcd, unsigned short keyid,  table_t *tab, unsigned short *k
 void getkeys(fcd_t *fcd, table_t *tab);
 void getwhere(unsigned char *record, table_t *table, int keyid, char *op, char *where, char *order);
 void getwhere_prepared(table_t *table, int keyid, char *where, int ini, char cmd);
+void free_tab(table_t *tab);
 
 list2_t *get_clones(char *tabela);
 void replica_write(table_t *tab);

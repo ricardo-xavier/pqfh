@@ -77,6 +77,7 @@ bool op_open(PGconn *conn, fcd_t *fcd, unsigned short opcode) {
             } 
         }
         if (fcd->isam == 'S') {
+            free_tab(tab);
             return false;
         }
     } else {

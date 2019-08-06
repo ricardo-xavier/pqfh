@@ -7,7 +7,7 @@ all: pqfh
 clean:
 	rm -f pqfh $(OBJS)
 
-pqfh2: $(OBJS)
+pqfh: $(OBJS)
 	$(COB) $(OBJS) -o pqfh -lpq -lpthread
 
 .c.o: .c

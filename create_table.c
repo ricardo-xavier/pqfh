@@ -40,6 +40,7 @@ void  create_table(PGconn *conn, table_t *tab, fcd_t *fcd, unsigned short opcode
     for (;;) {
         res = PQexec(conn, "fetch next in cursor_indexes");
         if ((PQresultStatus(res) != PGRES_TUPLES_OK) || (PQntuples(res) == 0)) {
+            PQclear(res);
             break;
         }
         strcpy(indexname, PQgetvalue(res, 0, 0));
@@ -70,6 +71,7 @@ void  create_table(PGconn *conn, table_t *tab, fcd_t *fcd, unsigned short opcode
         if (dbg > 1) {
             fprintf(stderr, "%ld [%s]\n", time(NULL), indexdef);
         }
+        PQclear(res);
         res = PQexec(conn, indexdef);
         if (PQresultStatus(res) != PGRES_COMMAND_OK) {
             PQclear(res);

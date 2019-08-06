@@ -79,6 +79,7 @@ void op_next_prev(PGconn *conn, fcd_t *fcd, char dir) {
             fprintf(stderr, "%ld %s\n", time(NULL), PQerrorMessage(conn));
             fprintf(stderr, "%ld status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
         }
+        PQclear(res);
         return;
     }
 
@@ -87,6 +88,7 @@ void op_next_prev(PGconn *conn, fcd_t *fcd, char dir) {
     }
 
     pq2cob(tab, res, fcd->record, reclen);
+    PQclear(res);
     memcpy(fcd->status, ST_OK, 2);
 
     if (dbg_times > 1) {

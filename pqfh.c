@@ -26,7 +26,7 @@ char backup[MAX_REC_LEN+1];
 list2_t *weak=NULL;
 extern bool replica_in_transaction;
 
-#define VERSAO "v1.16.1 05/08/2019"
+#define VERSAO "v1.16.2 05/08/2019"
 
 bool in_transaction=false;
 
@@ -208,6 +208,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
             PQfinish(conn);
             exit(-1);
         }
+        PQclear(res);
 
         res = PQexec(conn, "BEGIN");
         if (PQresultStatus(res) != PGRES_COMMAND_OK) {
@@ -636,3 +637,4 @@ bool is_weak(char *table) {
 // 1.15.6 - 01/08 - nao executar a atualizacao no ISAM se for o arquivo pqfh
 // 1.16.0 - 04/08 - comando cmp
 // 1.16.1 - 03/08 - correcao de 114 no fechar
+// 1.16.2 - 06/08 - desalocar memoria em todos os pontos que usam o res

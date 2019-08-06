@@ -62,6 +62,7 @@ bool table_info(PGconn *conn, table_t *table, fcd_t *fcd) {
     for (i=0;;i++) {
         res = PQexec(conn, "fetch next in cursor_columns");
         if ((PQresultStatus(res) != PGRES_TUPLES_OK) || (PQntuples(res) == 0)) {
+            PQclear(res);
             break;
         }
 
@@ -149,6 +150,7 @@ char *get_schema(PGconn *conn, char *table) {
     }
 
     strcpy(schema, PQgetvalue(res, 0, 0));
+    PQclear(res);
 
     res = PQexec(conn, "CLOSE cursor_tables");
     PQclear(res);
@@ -355,4 +357,23 @@ bool nome_dicionario(char *tabela, char *nome) {
     }
     return ret;
     
+}
+
+void free_tab(table_t *tab) {
+    int k;
+    tab->columns = list2_free(tab->columns);
+    tab->columns = NULL;
+    tab->keys = list2_free(tab->keys);
+    tab->keys = NULL;
+    for (k=0; k<MAX_KEYS; k++) {
+        tab->prms_random[k] = list2_free(tab->prms_random[k]);
+        tab->prms_random[k] = NULL;
+    }
+    tab->prms_rewrite = list2_free(tab->prms_rewrite);
+    tab->prms_rewrite = NULL;
+    tab->prms_delete = list2_free(tab->prms_delete);
+    tab->prms_delete = NULL;
+    tab->clones = list2_free(tab->clones);
+    tab->clones = NULL;
+    free(tab);
 }
