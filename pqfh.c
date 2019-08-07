@@ -26,7 +26,7 @@ char backup[MAX_REC_LEN+1];
 list2_t *weak=NULL;
 extern bool replica_in_transaction;
 
-#define VERSAO "v1.16.2 05/08/2019"
+#define VERSAO "v1.16.3 07/08/2019"
 
 bool in_transaction=false;
 
@@ -84,6 +84,12 @@ void pqfh_rollback() {
     PQclear(res);
     pending_commits = 0;
     pthread_mutex_unlock(&lock);
+}
+
+void warning(void *arg, const char *message) {
+    if (dbg > 0) {
+        fprintf(stderr, "%s\n", message);
+    }
 }
 
 void unlock(fcd_t *fcd) {
@@ -199,6 +205,8 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
                 time(NULL), PQerrorMessage(conn), conninfo);
             exit(-1);
         }
+
+        PQsetNoticeProcessor(conn, warning, NULL);
 
         res = PQexec(conn, "set client_encoding to 'latin1'");
         if (PQresultStatus(res) != PGRES_COMMAND_OK) {
@@ -342,6 +350,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
             if (op_open(conn, fcd, op)) {
                 break; // command
             }
+unlock(fcd);
             if (fcd->isam == 'S') {
                 EXTFH(opcode, fcd);
                 if (dbg > 0) {
@@ -638,3 +647,4 @@ bool is_weak(char *table) {
 // 1.16.0 - 04/08 - comando cmp
 // 1.16.1 - 03/08 - correcao de 114 no fechar
 // 1.16.2 - 06/08 - desalocar memoria em todos os pontos que usam o res
+// 1.16.3 - 07/08 - mostrar warnings somente com dbg
