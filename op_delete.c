@@ -113,5 +113,8 @@ void op_delete(PGconn *conn, fcd_t *fcd) {
     if (dbg > 0) {
         fprintf(stderr, "%ld status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
     }
+    if (tab->api[0] && !memcmp(fcd->status, ST_OK, 2)) {
+        thread_api_start('d', tab, fcd);
+    }
 
 }

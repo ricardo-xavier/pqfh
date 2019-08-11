@@ -49,7 +49,23 @@ typedef struct {
 
     int oid;
     bool first;
+    char api[MAX_NAME_LEN+1];
+
+    list2_t *json;
+    bool api_pending;
 } table_t;
+
+typedef struct {
+    char colname[MAX_NAME_LEN+1];
+    char json[MAX_NAME_LEN+1];
+} json_t;
+
+typedef struct {
+    char rota[257];
+    char cmd;
+    char json[MAX_REC_LEN+1];
+    table_t *tab;
+} api_args_t;
 
 typedef struct {
     char    schema[MAX_NAME_LEN+1];
@@ -189,6 +205,9 @@ void copy_table(PGconn *conn, char *source, char *dest);
 void load_table(PGconn *conn);
 void cmp_table(PGconn *conn);
 void truncate_table(PGconn *conn, char *tabname);
+
+void thread_api_start(char cmd, table_t *tab, fcd_t *fcd);
+void pqfh_call_java(char *rota, char *metodo, char *json, char *bearer);
 
 extern void EXTFH(unsigned char *opcode, fcd_t *fcd);
 

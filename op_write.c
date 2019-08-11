@@ -174,6 +174,10 @@ bool op_write(PGconn *conn, fcd_t *fcd) {
         fprintf(stderr, "%ld status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
     }
     putshort(fcd->key_id, keyid);
+
+    if (tab->api[0] && !memcmp(fcd->status, ST_OK, 2)) {
+        thread_api_start('i', tab, fcd);
+    }
     return false;
 
 }

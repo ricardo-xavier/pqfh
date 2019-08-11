@@ -1,9 +1,11 @@
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include "pqfh.h"
 
 extern int dbg;
 extern bool force_bd;
+extern char *api;
 char schema[33];
 
 fcd_t fcd01;
@@ -17,7 +19,7 @@ bool nome_dicionario(char *tabela, char *nome);
 bool table_info(PGconn *conn, table_t *table, fcd_t *fcd) {
 
     PGresult   *res;
-    char       sql[4097], aux[33];
+    char       sql[4097], aux[33], *p;
     int        i, offset, oid;
     column_t   col;
     unsigned short reclen;
@@ -32,6 +34,35 @@ bool table_info(PGconn *conn, table_t *table, fcd_t *fcd) {
 
     table->columns = NULL;
     reclen = getshort(fcd->rec_len);
+
+    if (api != NULL) {
+        sprintf(sql, "SELECT api FROM tabela_api where tabela='%s'", table->dictname);
+        res = PQexec(conn, sql);
+        if ((PQresultStatus(res) != PGRES_TUPLES_OK) || (PQntuples(res) == 0)) {
+            table->api[0] = 0;
+        } else {
+            strcpy(table->api, PQgetvalue(res, 0, 0));
+            if ((p = strchr(table->api, ' ')) != NULL) *p=0;
+        }
+        PQclear(res);
+    }
+
+    if (table->api[0]) {
+        int i, n;
+        char *p;
+        json_t json;
+        sprintf(sql, "SELECT coluna,campo FROM campos_api where api='%s'", table->api);
+        res = PQexec(conn, sql);
+        n = PQntuples(res);
+        for (i=0; i<n; i++) {
+            strcpy(json.colname, PQgetvalue(res, i, 0));
+            strcpy(json.json, PQgetvalue(res, i, 1));
+            if ((p = strchr(json.colname, ' ')) != NULL) *p=0;
+            if ((p = strchr(json.json, ' ')) != NULL) *p=0;
+            table->json = list2_append(table->json, &json, sizeof(json_t));
+        }
+        PQclear(res);
+    }
 
     sprintf(sql, "SELECT oid FROM pg_class where relname='%s'", table->name);
     res = PQexec(conn, sql);
@@ -361,6 +392,9 @@ bool nome_dicionario(char *tabela, char *nome) {
 
 void free_tab(table_t *tab) {
     int k;
+    while (tab->api_pending) {
+        sleep(1);
+    }
     tab->columns = list2_free(tab->columns);
     tab->columns = NULL;
     tab->keys = list2_free(tab->keys);
@@ -375,5 +409,7 @@ void free_tab(table_t *tab) {
     tab->prms_delete = NULL;
     tab->clones = list2_free(tab->clones);
     tab->clones = NULL;
+    tab->json = list2_free(tab->json);
+    tab->json = NULL;
     free(tab);
 }

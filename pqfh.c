@@ -9,6 +9,19 @@
 
 // referencias:
 // https://www.postgresql.org/docs/9.1/libpq-example.html
+//
+// create table tabela_api(tabela char(30) not null primary key, api char(30));
+// insert into tabela_api values('sp05a51', 'planoGerencial');
+//
+/*
+create table campos_api(api char(30) not null, coluna char(30) not null, campo char(30));
+alter table campos_api add primary key(api, coluna);
+
+insert into campos_api values('planoGerencial', 'sp0551filial', 'empresaId');
+insert into campos_api values('planoGerencial', 'sp0551cod_red', 'codigo');
+insert into campos_api values('planoGerencial', 'sp0551cod_pla', 'sigla');
+insert into campos_api values('planoGerencial', 'sp0551desc', 'descricao');
+*/
 
 PGconn *conn=NULL;
 PGconn *conn2=NULL;
@@ -16,6 +29,7 @@ int dbg=-1;
 int dbg_times=-1;
 int dbg_cmp=-1;
 bool force_bd;
+char *api=NULL;
 
 int pending_commits = 0;
 pthread_t thread_id;
@@ -26,7 +40,7 @@ char backup[MAX_REC_LEN+1];
 list2_t *weak=NULL;
 extern bool replica_in_transaction;
 
-#define VERSAO "v1.17.0 08/08/2019"
+#define VERSAO "v2.0.0 11/08/2019"
 
 bool in_transaction=false;
 
@@ -153,6 +167,12 @@ void get_debug() {
         force_bd = false;
     } else {
         force_bd = !strcmp(env, "S");
+    }
+    env = getenv("PQFH_API");
+    if (env == NULL) {
+        api = NULL;
+    } else {
+        api = env;
     }
 }
 
@@ -648,3 +668,4 @@ bool is_weak(char *table) {
 // 1.16.2 - 06/08 - desalocar memoria em todos os pontos que usam o res
 // 1.16.3 - 07/08 - mostrar warnings somente com dbg
 // 1.17.0 - 08/08 - alteracao no comando do create table
+// 2.0.0  - 11/08 - integracao com a API
