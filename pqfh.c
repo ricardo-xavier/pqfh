@@ -40,7 +40,7 @@ char backup[MAX_REC_LEN+1];
 list2_t *weak=NULL;
 extern bool replica_in_transaction;
 
-#define VERSAO "v2.0.0 11/08/2019"
+#define VERSAO "v2.0.1 14/08/2019"
 
 bool in_transaction=false;
 
@@ -669,3 +669,4 @@ bool is_weak(char *table) {
 // 1.16.3 - 07/08 - mostrar warnings somente com dbg
 // 1.17.0 - 08/08 - alteracao no comando do create table
 // 2.0.0  - 11/08 - integracao com a API
+// 2.0.1  - 14/08 - verificar o 128 no close antes de usar o nome da tabela
