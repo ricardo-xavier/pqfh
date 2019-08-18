@@ -18,20 +18,25 @@ bool op_rewrite(PGconn *conn, fcd_t *fcd) {
     PGresult       *res;
     char           where[4097], stmt_name[65];
 
+    if (fcd->open_mode == 128) {
+        memcpy(fcd->status, ST_NOT_OPENED_UPDEL, 2);
+        if (dbg > 0) {
+            short fnlen = getshort(fcd->file_name_len);
+            char filename[257];
+            memcpy(filename, (char *) fcd->file_name, fnlen);
+            filename[fnlen] = 0;
+            fprintf(stderr, "%ld op_rewrite [%s] %d\n", time(NULL), filename, (int) fcd->open_mode);
+            fprintf(stderr, "%ld status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
+        }
+        return false;
+    }
+
     fileid = getint(fcd->file_id);
     reclen = getshort(fcd->rec_len);
 
     tab = (table_t *) fileid;
     if (dbg > 0) {
         fprintf(stderr, "%ld op_rewrite [%s]\n", time(NULL), tab->name);
-    }
-
-    if (fcd->open_mode == 128) {
-        memcpy(fcd->status, ST_NOT_OPENED_UPDEL, 2);
-        if (dbg > 0) {
-            fprintf(stderr, "%ld status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
-        }
-        return false;
     }
 
     keyid = getshort(fcd->key_id);

@@ -17,19 +17,24 @@ void op_delete(PGconn *conn, fcd_t *fcd) {
     list2_t        *ptr;
     PGresult       *res;
 
+    if (fcd->open_mode == 128) {
+        memcpy(fcd->status, ST_NOT_OPENED_UPDEL, 2);
+        if (dbg > 0) {
+            short fnlen = getshort(fcd->file_name_len);
+            char filename[257];
+            memcpy(filename, (char *) fcd->file_name, fnlen);
+            filename[fnlen] = 0;
+            fprintf(stderr, "%ld op_delete [%s] %d\n", time(NULL), filename, (int) fcd->open_mode);
+            fprintf(stderr, "%ld status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
+        }
+        return;
+    }
+
     fileid = getint(fcd->file_id);
 
     tab = (table_t *) fileid;
     if (dbg > 0) {
         fprintf(stderr, "%ld op_delete [%s]\n", time(NULL), tab->name);
-    }
-
-    if (fcd->open_mode == 128) {
-        memcpy(fcd->status, ST_NOT_OPENED_UPDEL, 2);
-        if (dbg > 0) {
-            fprintf(stderr, "%ld status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
-        }
-        return;
     }
 
     // verifica se o registro existe

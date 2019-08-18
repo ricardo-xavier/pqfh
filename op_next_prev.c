@@ -16,6 +16,19 @@ void op_next_prev(PGconn *conn, fcd_t *fcd, char dir) {
     PGresult     *res;
     struct timeval tv1, tv2, tv3;
 
+    if (fcd->open_mode == 128) {
+        memcpy(fcd->status, ST_NOT_OPENED_READ, 2);
+        if (dbg > 0) {
+            short fnlen = getshort(fcd->file_name_len);
+            char filename[257];
+            memcpy(filename, (char *) fcd->file_name, fnlen);
+            filename[fnlen] = 0;
+            fprintf(stderr, "%ld op_next_prev [%s] %d\n", time(NULL), filename, (int) fcd->open_mode);
+            fprintf(stderr, "%ld status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
+        }
+        return;
+    }
+
     if (dbg_times > 1) {
         gettimeofday(&tv1, NULL);
     }
