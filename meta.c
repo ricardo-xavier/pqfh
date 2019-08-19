@@ -136,6 +136,9 @@ bool table_info(PGconn *conn, table_t *table, fcd_t *fcd) {
     res = PQexec(conn, "CLOSE cursor_columns");
     PQclear(res);
 
+    if (table->columns == NULL) {
+        return false;
+    }
     table->columns = list2_first(table->columns);
     
     getkeys(fcd, table);
@@ -144,7 +147,7 @@ bool table_info(PGconn *conn, table_t *table, fcd_t *fcd) {
 
     table->clones = get_clones(table->name);
 
-    return table->columns != NULL ? true : false;
+    return true;
 }
 
 char *get_schema(PGconn *conn, char *table) {
@@ -167,7 +170,8 @@ char *get_schema(PGconn *conn, char *table) {
         fprintf(stderr, "%ld Erro na execucao do comando: %s\n%s\n",
             time(NULL), PQerrorMessage(conn), sql);
         PQclear(res);
-        return "";
+        strcpy(schema, "");
+        return schema;
     }
     PQclear(res);
 
@@ -177,7 +181,8 @@ char *get_schema(PGconn *conn, char *table) {
         PQclear(res);
         res = PQexec(conn, "CLOSE cursor_tables");
         PQclear(res);
-        return "";
+        strcpy(schema, "");
+        return schema;
     }
 
     strcpy(schema, PQgetvalue(res, 0, 0));
