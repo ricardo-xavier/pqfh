@@ -50,22 +50,10 @@ typedef struct {
     int oid;
     bool first;
     char api[MAX_NAME_LEN+1];
+    char api_root[MAX_NAME_LEN+1];
+    list2_t *columns_api;
 
-    list2_t *json;
-    bool api_pending;
 } table_t;
-
-typedef struct {
-    char colname[MAX_NAME_LEN+1];
-    char json[MAX_NAME_LEN+1];
-} json_t;
-
-typedef struct {
-    char rota[257];
-    char cmd;
-    char json[MAX_REC_LEN+1];
-    table_t *tab;
-} api_args_t;
 
 typedef struct {
     char    schema[MAX_NAME_LEN+1];
@@ -93,6 +81,23 @@ typedef struct {
     int ncols;
     column_t *columns[MAX_COMPS];
 } _key_t;
+
+#define MSGSZ 4096
+
+#define CALLAPI_ENDERECO 1
+#define CALLAPI_BEARER   2
+#define CALLAPI_CALL     3
+
+typedef struct msgbuf {
+    long mtype;
+    char mtext[MSGSZ];
+} msg_t;
+
+typedef struct {
+    char api[33];
+    char cmd;
+    char json[MSGSZ-34];
+} api_args_t;
 
 typedef struct {
     unsigned char status[2];        /* 00 */
@@ -207,7 +212,7 @@ void cmp_table(PGconn *conn);
 void truncate_table(PGconn *conn, char *tabname);
 
 void thread_api_start(char cmd, table_t *tab, fcd_t *fcd);
-void pqfh_call_java(char *rota, char *metodo, char *json, char *bearer);
+void pqfh_call_java(char *endereco, char *operacao, char *metodo, char *json, char *bearer);
 
 extern void EXTFH(unsigned char *opcode, fcd_t *fcd);
 

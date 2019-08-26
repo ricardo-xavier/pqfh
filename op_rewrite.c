@@ -210,9 +210,11 @@ bool op_rewrite(PGconn *conn, fcd_t *fcd) {
     }
     putshort(fcd->key_id, keyid);
 
+#ifdef API
     if (tab->api[0] && !memcmp(fcd->status, ST_OK, 2)) {
         thread_api_start('u', tab, fcd);
     }
+#endif
     return true;
 
 }

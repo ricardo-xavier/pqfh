@@ -13,15 +13,6 @@
 // create table tabela_api(tabela char(30) not null primary key, api char(30));
 // insert into tabela_api values('sp05a51', 'planoGerencial');
 //
-/*
-create table campos_api(api char(30) not null, coluna char(30) not null, campo char(30));
-alter table campos_api add primary key(api, coluna);
-
-insert into campos_api values('planoGerencial', 'sp0551filial', 'empresaId');
-insert into campos_api values('planoGerencial', 'sp0551cod_red', 'codigo');
-insert into campos_api values('planoGerencial', 'sp0551cod_pla', 'sigla');
-insert into campos_api values('planoGerencial', 'sp0551desc', 'descricao');
-*/
 
 PGconn *conn=NULL;
 PGconn *conn2=NULL;
@@ -40,7 +31,7 @@ char backup[MAX_REC_LEN+1];
 list2_t *weak=NULL;
 extern bool replica_in_transaction;
 
-#define VERSAO "v2.0.3 19/08/2019"
+#define VERSAO "v2.0.4 26/08/2019"
 
 bool in_transaction=false;
 
@@ -287,8 +278,15 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
     }
 
     if ((mode == 'I') || (fcd->isam == 'S')) {
+#ifdef API
+        unsigned int fileid = getint(fcd->file_id);
+        table_t *tab;
+        if ((api != NULL) && (mode != 'I')) {
+            tab = (table_t *) fileid;
+        }
+#endif
         if (dbg > 0) {
-            fprintf(stderr, "%ld EXTFH %04x [%s]\n\n", time(NULL), op, filename);
+            fprintf(stderr, "%ld EXTFH %04x [%s]\n", time(NULL), op, filename);
         }
         EXTFH(opcode, fcd);
         if (dbg > 0) {
@@ -303,6 +301,21 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
         if (dbg_cmp > 0) {
             dbg_status(fcd);
         }
+#ifdef API
+        if ((api != NULL) && (mode != 'I'))  {
+            switch (op) {
+                case OP_CLOSE:
+                    free(tab);
+                    fcd->isam = ' ';
+                    break;
+                case OP_WRITE:
+                    if (tab->api[0] && !memcmp(fcd->status, ST_OK, 2)) {
+                        thread_api_start('i', tab, fcd);
+                    }
+                    break;
+            }
+        }
+#endif
         return;
     }
 
@@ -672,3 +685,4 @@ bool is_weak(char *table) {
 // 2.0.1  - 14/08 - verificar o 128 no close antes de usar o nome da tabela
 // 2.0.2  - 18/08 - verificar o 128 nas outras operacoes
 // 2.0.3  - 19/08 - retornar antes do get_keys se as colunas estiverem nulas
+// 2.0.4  - 26/08 - attach vm

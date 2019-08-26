@@ -63,8 +63,10 @@ bool op_open(PGconn *conn, fcd_t *fcd, unsigned short opcode) {
     tab->timestamp = time(NULL);
     tab->first = false;
     tab->api[0] = 0;
-    tab->json = NULL;
-    tab->api_pending = false;
+    tab->columns_api = NULL;
+
+    fileid = (int) tab;
+    putint(fcd->file_id, fileid);
 
     if (strcmp(tab->name, "pqfh")) {
         if (table_info(conn, tab, fcd)) {
@@ -80,7 +82,9 @@ bool op_open(PGconn *conn, fcd_t *fcd, unsigned short opcode) {
             } 
         }
         if (fcd->isam == 'S') {
+#ifndef API
             free_tab(tab);
+#endif
             return false;
         }
     } else {
@@ -92,7 +96,5 @@ bool op_open(PGconn *conn, fcd_t *fcd, unsigned short opcode) {
         fprintf(stderr, "%ld status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
     }
 
-    fileid = (int) tab;
-    putint(fcd->file_id, fileid);
     return !strcmp(tab->name, "pqfh");
 }

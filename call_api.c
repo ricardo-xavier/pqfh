@@ -4,13 +4,27 @@
 
 JavaVM *jvm=NULL;
 JNIEnv *env=NULL;
+JNIEnv *thread_env=NULL;
 
 extern int dbg;
+
+static void throwJavaException() {
+
+    jthrowable e = (*thread_env)->ExceptionOccurred(thread_env);
+    if (e != NULL) {
+        (*thread_env)->ExceptionDescribe(thread_env);
+    }
+
+}
 
 void create_vm() {
 
     JavaVMInitArgs vm_args;
     JavaVMOption options; 
+
+    if (jvm != NULL) {
+        return;
+    }
 
     char *java = getenv("PQFH_JAVA");
     if (java == NULL) {
@@ -21,22 +35,23 @@ void create_vm() {
     vm_args.version = JNI_VERSION_1_6;
     vm_args.nOptions = 1;
     vm_args.options = &options;
-    vm_args.ignoreUnrecognized = 0;
+    vm_args.ignoreUnrecognized = JNI_TRUE;
 
     JNI_CreateJavaVM(&jvm, (void**) &env, &vm_args);
 }
 
-static void throwJavaException(){
+void attach_vm() {
 
-    jthrowable e = (*env)->ExceptionOccurred(env);
-    if (e != NULL) {
-        (*env)->ExceptionDescribe(env);
+    if (jvm == NULL) {
+        return;
     }
 
+    (*jvm)->AttachCurrentThread(jvm, (void **) &thread_env, NULL);
 }
 
 void api_get_all(char *operacao, char *arquivo) {
 
+/*
     char *bearer, *endereco, aux[4097], *p;
 
     bearer = getenv("PQFH_BEARER");
@@ -46,7 +61,7 @@ void api_get_all(char *operacao, char *arquivo) {
         create_vm();
     }
 
-    jclass class = (*env)->FindClass(env, "br/com/avancoinfo/callapi/CallApi");
+    jclass class = (*thread_env)->FindClass(thread_env, "br/com/avancoinfo/callapi/CallApi");
     throwJavaException();
 
     jmethodID method;
@@ -84,42 +99,59 @@ void api_get_all(char *operacao, char *arquivo) {
 
     (*env)->CallStaticVoidMethod(env, class, method, j_operacao, j_arquivo);
     throwJavaException();
+*/
 
 }
 
-void pqfh_call_java(char *rota, char *metodo, char *json, char *bearer) {
+void pqfh_call_java(char *endereco, char *operacao, char *metodo, char *json, char *bearer) {
 
-    fprintf(stderr, "pqfh_call_java [%s] [%s] [%s]\n", rota, metodo, json);
-        
-    if (jvm == NULL) {
-        create_vm();
+    if (dbg > 0) {
+        fprintf(stderr, "pqfh_call_java [%s] [%s] [%s] [%s]\n", endereco, operacao, metodo, json);
     }
 
-    //jclass class = (*env)->FindClass(env, "avanco/HelloJava");
-    jclass class = (*env)->FindClass(env, "br/com/avancoinfo/callapi/CallApi");
+    attach_vm();
+
+    jclass class = (*thread_env)->FindClass(thread_env, "br/com/avancoinfo/callapi/CallApi");
+    throwJavaException();
+    if (dbg > 1) {
+        fprintf(stderr, "classe carregada\n");
+    }
+
+    jstring j_endereco = (*thread_env)->NewStringUTF(thread_env, endereco);
+    jstring j_bearer = (*thread_env)->NewStringUTF(thread_env, bearer);
+    jstring j_operacao = (*thread_env)->NewStringUTF(thread_env, operacao);
+    jstring j_metodo = (*thread_env)->NewStringUTF(thread_env, metodo);
+    jstring j_json = (*thread_env)->NewStringUTF(thread_env, json);
+
+    if (dbg > 1) {
+        fprintf(stderr, "setBearer\n");
+    }
+    jmethodID method = (*thread_env)->GetStaticMethodID(thread_env, class, "setBearer", "(Ljava/lang/String;)V");
     throwJavaException();
 
-    jstring j_rota = (*env)->NewStringUTF(env, rota);
-    jstring j_bearer = (*env)->NewStringUTF(env, bearer);
-    jstring j_metodo = (*env)->NewStringUTF(env, metodo);
-    jstring j_json = (*env)->NewStringUTF(env, json);
-
-    jmethodID method = (*env)->GetStaticMethodID(env, class, "setBearer", "(Ljava/lang/String;)V");
+    (*thread_env)->CallStaticVoidMethod(thread_env, class, method, j_bearer);
     throwJavaException();
 
-    (*env)->CallStaticVoidMethod(env, class, method, j_bearer);
+    if (dbg > 1) {
+        fprintf(stderr, "setEndereco\n");
+    }
+    method = (*thread_env)->GetStaticMethodID(thread_env, class, "setEndereco", "(Ljava/lang/String;)V");
     throwJavaException();
 
-    method = (*env)->GetStaticMethodID(env, class, "setRota", "(Ljava/lang/String;)V");
+    (*thread_env)->CallStaticVoidMethod(thread_env, class, method, j_endereco);
     throwJavaException();
 
-    (*env)->CallStaticVoidMethod(env, class, method, j_rota);
+    if (dbg > 1) {
+        fprintf(stderr, "call\n");
+    }
+    method = (*thread_env)->GetStaticMethodID(thread_env, class, "call", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;");
     throwJavaException();
 
-    method = (*env)->GetStaticMethodID(env, class, "call", "(Ljava/lang/String;Ljava/lang/String;)V");
+    (*thread_env)->CallStaticVoidMethod(thread_env, class, method, j_operacao, j_metodo, j_json);
     throwJavaException();
 
-    (*env)->CallStaticVoidMethod(env, class, method, j_metodo, j_json);
-    throwJavaException();
+    if (dbg > 1) {
+        fprintf(stderr, "fim thread\n");
+    }
 
 }

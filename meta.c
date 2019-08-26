@@ -26,14 +26,6 @@ bool table_info(PGconn *conn, table_t *table, fcd_t *fcd) {
     bool convertida;
 
     nome_dicionario(table->name, table->dictname);
-    convertida = tabela_convertida(table->dictname);
-    if (!convertida) {
-        fcd->isam = 'S';
-        return false;
-    }
-
-    table->columns = NULL;
-    reclen = getshort(fcd->rec_len);
 
     if (api != NULL) {
         sprintf(sql, "SELECT api FROM tabela_api where tabela='%s'", table->dictname);
@@ -44,25 +36,20 @@ bool table_info(PGconn *conn, table_t *table, fcd_t *fcd) {
             strcpy(table->api, PQgetvalue(res, 0, 0));
             if ((p = strchr(table->api, ' ')) != NULL) *p=0;
         }
-        PQclear(res);
-    }
-
-    if (table->api[0]) {
-        int i, n;
-        char *p;
-        json_t json;
-        sprintf(sql, "SELECT coluna,campo FROM campos_api where api='%s'", table->api);
-        res = PQexec(conn, sql);
-        n = PQntuples(res);
-        for (i=0; i<n; i++) {
-            strcpy(json.colname, PQgetvalue(res, i, 0));
-            strcpy(json.json, PQgetvalue(res, i, 1));
-            if ((p = strchr(json.colname, ' ')) != NULL) *p=0;
-            if ((p = strchr(json.json, ' ')) != NULL) *p=0;
-            table->json = list2_append(table->json, &json, sizeof(json_t));
+        if (dbg > 0) {
+            fprintf(stderr, "tabela_api [%s]\n", table->api);
         }
         PQclear(res);
     }
+
+    convertida = tabela_convertida(table->dictname);
+    if (!convertida) {
+        fcd->isam = 'S';
+        return false;
+    }
+
+    table->columns = NULL;
+    reclen = getshort(fcd->rec_len);
 
     sprintf(sql, "SELECT oid FROM pg_class where relname='%s'", table->name);
     res = PQexec(conn, sql);
@@ -397,9 +384,6 @@ bool nome_dicionario(char *tabela, char *nome) {
 
 void free_tab(table_t *tab) {
     int k;
-    while (tab->api_pending) {
-        sleep(1);
-    }
     tab->columns = list2_free(tab->columns);
     tab->columns = NULL;
     tab->keys = list2_free(tab->keys);
@@ -414,7 +398,7 @@ void free_tab(table_t *tab) {
     tab->prms_delete = NULL;
     tab->clones = list2_free(tab->clones);
     tab->clones = NULL;
-    tab->json = list2_free(tab->json);
-    tab->json = NULL;
+    tab->columns_api = list2_free(tab->columns_api);
+    tab->columns_api = NULL;
     free(tab);
 }

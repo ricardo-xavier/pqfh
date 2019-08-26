@@ -180,9 +180,13 @@ bool op_write(PGconn *conn, fcd_t *fcd) {
     }
     putshort(fcd->key_id, keyid);
 
+#ifdef API
     if (tab->api[0] && !memcmp(fcd->status, ST_OK, 2)) {
+fprintf(stderr, "teste1\n");
         thread_api_start('i', tab, fcd);
+fprintf(stderr, "teste2\n");
     }
+#endif
     return false;
 
 }
