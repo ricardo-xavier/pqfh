@@ -31,7 +31,7 @@ char backup[MAX_REC_LEN+1];
 list2_t *weak=NULL;
 extern bool replica_in_transaction;
 
-#define VERSAO "v2.0.4 26/08/2019"
+#define VERSAO "v2.1.0 27/08/2019"
 
 bool in_transaction=false;
 
@@ -686,3 +686,4 @@ bool is_weak(char *table) {
 // 2.0.2  - 18/08 - verificar o 128 nas outras operacoes
 // 2.0.3  - 19/08 - retornar antes do get_keys se as colunas estiverem nulas
 // 2.0.4  - 26/08 - attach vm
+// 2.1.0  - 27/08 - log de deadlock

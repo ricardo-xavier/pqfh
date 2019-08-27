@@ -163,6 +163,9 @@ bool op_write(PGconn *conn, fcd_t *fcd) {
     res =  PQexecPrepared(conn, stmt_name, p, tab->values, tab->lengths, tab->formats, 0);
     if (PQresultStatus(res) != PGRES_COMMAND_OK) {
         memcpy(fcd->status, ST_ERROR, 2);
+        if (strstr(PQerrorMessage(conn), "deadlock")) {
+            deadlock_log(PQerrorMessage(conn));
+        }
         if (dbg > 0) {
             fprintf(stderr, "%ld %s\n", time(NULL), PQerrorMessage(conn));
         }
@@ -182,9 +185,7 @@ bool op_write(PGconn *conn, fcd_t *fcd) {
 
 #ifdef API
     if (tab->api[0] && !memcmp(fcd->status, ST_OK, 2)) {
-fprintf(stderr, "teste1\n");
         thread_api_start('i', tab, fcd);
-fprintf(stderr, "teste2\n");
     }
 #endif
     return false;

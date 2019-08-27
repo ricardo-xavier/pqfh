@@ -193,6 +193,9 @@ bool op_rewrite(PGconn *conn, fcd_t *fcd) {
     res =  PQexecPrepared(conn, stmt_name, nParams, tab->values, tab->lengths, tab->formats, 0);
     if (PQresultStatus(res) != PGRES_COMMAND_OK) {
         memcpy(fcd->status, ST_REC_NOT_FOUND, 2);
+        if (strstr(PQerrorMessage(conn), "deadlock")) {
+            deadlock_log(PQerrorMessage(conn));
+        }
         if (dbg > 0) {
             fprintf(stderr, "%ld %s\n", time(NULL), PQerrorMessage(conn));
         }
