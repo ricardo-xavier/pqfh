@@ -35,8 +35,16 @@ void command(PGconn *conn, table_t *tab, fcd_t *fcd) {
         load_table(conn);
     }
 
-    if (!memcmp(fcd->record, "CMP", 3)) {
-        cmp_table(conn);
+    if (!memcmp(fcd->record, "CMPISAM", 7)) {
+        strcpy(aux, (char *) fcd->record+8);
+        if ((p = strchr(aux, ' ')) != NULL) *p = 0;
+        cmp_isam(conn, aux);
+
+    } else if (!memcmp(fcd->record, "CMP", 3)) {
+        cmp_table(conn, false);
+
+    } else if (!memcmp(fcd->record, "SYNC", 4)) {
+        cmp_table(conn, true);
     }
 
     if (!memcmp(fcd->record, "BEGIN TRANSACTION", 17)) {

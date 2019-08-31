@@ -11,7 +11,7 @@ void cmp_isam(PGconn *conn, char *filename2) {
     fcd_t *fcd1, *fcd2;
     unsigned char opcode[2], record1[MAX_REC_LEN+1], record2[MAX_REC_LEN+1];
     char filename1[257];
-    char logname[257];
+    char logname[257], *p;
     FILE *f;
     int c, kofs, k;
     short reclen;
@@ -38,7 +38,11 @@ void cmp_isam(PGconn *conn, char *filename2) {
         fprintf(stderr, "%ld cmp_isam [%s] [%s]\n", time(NULL), filename1, filename2);
     }
 
-    sprintf(logname, "%s_cmp.log", filename1);
+    if ((p = strrchr(filename1, '/')) == NULL) {
+        sprintf(logname, "%s_cmp.log", filename1);
+    } else {
+        sprintf(logname, "%s_cmp.log", p+1);
+    }
     if ((f = fopen(logname, "w")) == NULL) {
         free(fcd2);
         return;
@@ -108,8 +112,10 @@ void cmp_isam(PGconn *conn, char *filename2) {
             } 
             key1[kofs] = 0;
             key2[kofs] = 0;
-            //fprintf(stderr, "key1=[%s]\n", key1);
-            //fprintf(stderr, "key2=[%s]\n", key2);
+            if (dbg > 2) {
+                fprintf(stderr, "cmpisam key1=[%s]\n", key1);
+                fprintf(stderr, "cmpisam key2=[%s]\n", key2);
+            }
 
             k = memcmp(key1, key2, kofs);
             if (!k) {

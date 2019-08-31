@@ -31,7 +31,9 @@ char backup[MAX_REC_LEN+1];
 list2_t *weak=NULL;
 extern bool replica_in_transaction;
 
-#define VERSAO "v2.1.0 27/08/2019"
+extern fcd_t *fcd_open;
+
+#define VERSAO "v2.3.0 31/08/2019"
 
 bool in_transaction=false;
 
@@ -291,6 +293,9 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
         EXTFH(opcode, fcd);
         if (dbg > 0) {
             fprintf(stderr, "%ld EXTFH status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
+        }
+        if (op <= OP_OPEN_INPUT) {
+            fcd_open = fcd;
         }
         gettimeofday(&tv2, NULL);
         tempo = ((tv2.tv_sec * 1000000) + tv2.tv_usec) - ((tv1.tv_sec * 1000000) + tv1.tv_usec);
@@ -687,3 +692,6 @@ bool is_weak(char *table) {
 // 2.0.3  - 19/08 - retornar antes do get_keys se as colunas estiverem nulas
 // 2.0.4  - 26/08 - attach vm
 // 2.1.0  - 27/08 - log de deadlock
+// 2.2.0  - 28/08 - comparacao de ISAM
+// 2.2.1  - 30/08 - resultado do CMP igual ao do CMPISAM
+// 2.3.0  - 31/08 - correcoes nos comparadores e implementacao do SYNC

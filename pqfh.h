@@ -209,7 +209,8 @@ void op_delete(PGconn *conn, fcd_t *fcd);
 void create_table(PGconn *conn, table_t *tab, fcd_t *fcd, unsigned short opcode);
 void copy_table(PGconn *conn, char *source, char *dest);
 void load_table(PGconn *conn);
-void cmp_table(PGconn *conn);
+void cmp_table(PGconn *conn, bool sync);
+void cmp_isam(PGconn *conn, char *filename);
 void truncate_table(PGconn *conn, char *tabname);
 
 void thread_api_start(char cmd, table_t *tab, fcd_t *fcd);
