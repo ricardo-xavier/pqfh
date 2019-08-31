@@ -17,6 +17,7 @@
 PGconn *conn=NULL;
 PGconn *conn2=NULL;
 int dbg=-1;
+int dbg_upd=-1;
 int dbg_times=-1;
 int dbg_cmp=-1;
 bool force_bd;
@@ -33,13 +34,13 @@ extern bool replica_in_transaction;
 
 extern fcd_t *fcd_open;
 
-#define VERSAO "v2.3.0 31/08/2019"
+#define VERSAO "v2.4.0 31/08/2019"
 
 bool in_transaction=false;
 
 void commit() {
     PGresult *res;
-    if (dbg > 0) {
+    if (dbg > 0 || (dbg_upd > 0)) {
         fprintf(stderr, "%ld commit %d %s\n", time(NULL), pending_commits, in_transaction ? "TRANSACAO" : "AUTO_COMMIT");
     }
     res = PQexec(conn, "COMMIT");
@@ -82,7 +83,7 @@ void pqfh_rollback() {
     PGresult *res;
     in_transaction = false;
     pthread_mutex_lock(&lock);
-    if (dbg > 0) {
+    if (dbg > 0 || (dbg_upd > 0)) {
         fprintf(stderr, "%ld rollback %d %s\n", time(NULL), pending_commits, in_transaction ? "TRANSACAO" : "AUTO_COMMIT");
     }
     res = PQexec(conn, "ROLLBACK");
@@ -140,7 +141,13 @@ void get_debug() {
     } else {
         dbg = atoi(env);
     }
-    if (dbg > 0) {
+    env = getenv("PQFH_DBG_UPD");
+    if (env == NULL) {
+        dbg_upd = 0;
+    } else {
+        dbg_upd = atoi(env);
+    }
+    if ((dbg > 0) || (dbg_upd > 0))  {
         fprintf(stderr, "%ld pqfh %s\n", time(NULL), VERSAO);
     }
     env = getenv("PQFH_DBG_TIMES");
@@ -287,11 +294,12 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
             tab = (table_t *) fileid;
         }
 #endif
-        if (dbg > 0) {
+        if (dbg > 0 || DBG_UPD) {
             fprintf(stderr, "%ld EXTFH %04x [%s]\n", time(NULL), op, filename);
+            dbg_record(fcd);
         }
         EXTFH(opcode, fcd);
-        if (dbg > 0) {
+        if (dbg > 0 || DBG_UPD) {
             fprintf(stderr, "%ld EXTFH status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
         }
         if (op <= OP_OPEN_INPUT) {
@@ -333,7 +341,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
             memcpy(record, fcd->record, reclen);
             putshort(opcode, OP_READ_RANDOM);
             if (dbg > 0) {
-                fprintf(stderr, "%ld EXTFH %04x [%s]\n\n", time(NULL), OP_READ_RANDOM, filename);
+                fprintf(stderr, "%ld EXTFH %04x [%s]\n", time(NULL), OP_READ_RANDOM, filename);
             }
             EXTFH(opcode, fcd);
             if (dbg > 0) {
@@ -359,11 +367,12 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
         }
 
         // executa primeiro no ISAM
-        if (dbg > 0) {
-            fprintf(stderr, "%ld EXTFH %04x [%s]\n\n", time(NULL), op, filename);
+        if ((dbg > 0) || DBG_UPD) {
+            fprintf(stderr, "%ld EXTFH %04x [%s]\n", time(NULL), op, filename);
+            dbg_record(fcd);
         }
         EXTFH(opcode, fcd);
-        if (dbg > 0) {
+        if (dbg > 0 || DBG_UPD) {
             fprintf(stderr, "%ld EXTFH status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
         }
         gettimeofday(&tv2, NULL);
@@ -477,7 +486,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
 
                 // erro no update do banco
                 // desfaz o isam
-                if (dbg > 1) {
+                if (dbg > 1 || DBG_UPD) {
                     fprintf(stderr, "%ld desfaz rewrite %c%c\n", time(NULL), fcd->status[0], fcd->status[1]);
                 }
 
@@ -508,7 +517,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
 
                 // erro no insert do banco
                 // desfaz o isam
-                if (dbg > 0) {
+                if (dbg > 0 || DBG_UPD) {
                     fprintf(stderr, "%ld desfaz write %c%c\n", time(NULL), fcd->status[0], fcd->status[1]);
                 }
                 memcpy(st, fcd->status, 2);
@@ -529,7 +538,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
 
                 // erro no delete do banco
                 // desfaz o isam
-                if (dbg > 0) {
+                if (dbg > 0 || DBG_UPD) {
                     fprintf(stderr, "%ld desfaz delete %c%c\n", time(NULL), fcd->status[0], fcd->status[1]);
                 }
 
@@ -695,3 +704,4 @@ bool is_weak(char *table) {
 // 2.2.0  - 28/08 - comparacao de ISAM
 // 2.2.1  - 30/08 - resultado do CMP igual ao do CMPISAM
 // 2.3.0  - 31/08 - correcoes nos comparadores e implementacao do SYNC
+// 2.4.0  - 31/08 - dbg upd

@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <string.h>
 #include "pqfh.h"
 
 extern int dbg;
@@ -93,3 +94,16 @@ void close_cursor(PGconn *conn, table_t *tab) {
     }
     PQclear(res);
 }
+
+extern int dbg_upd;
+
+void dbg_record(fcd_t *fcd) {
+    if (dbg_upd > 0) {
+        char tmp[MAX_REC_LEN+1];
+        short reclen;
+        reclen = getshort(fcd->rec_len);
+        memcpy(tmp, fcd->record, reclen);
+        tmp[reclen] = 0;
+        fprintf(stderr, "[%s]\n", tmp);
+    }
+} 

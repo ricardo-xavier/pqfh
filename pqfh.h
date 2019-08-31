@@ -162,6 +162,8 @@ typedef struct {
 #define ST_NOT_OPENED_UPDEL  "49"
 #define ST_LOCKED            "99"
 
+#define DBG_UPD ((dbg_upd > 0) && (op == OP_WRITE || op == OP_REWRITE || op == OP_DELETE))
+
 bool table_info(PGconn *conn, table_t *table, fcd_t *fcd);
 char *get_schema(PGconn *conn, char *table);
 
@@ -197,6 +199,7 @@ void get_debug();
 void deadlock_log(char *msg);
 void deallocate(PGconn *conn, table_t *tab);
 void close_cursor(PGconn *conn, table_t *tab);
+void dbg_record(fcd_t *fcd);
 
 bool op_open(PGconn *conn, fcd_t *fcd, unsigned short opcode);
 bool op_close(PGconn *conn, fcd_t *fcd);

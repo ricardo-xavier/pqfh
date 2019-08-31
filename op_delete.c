@@ -3,6 +3,7 @@
 #include "pqfh.h"
 
 extern int dbg;
+extern int dbg_upd;
 
 extern int pending_commits;
 
@@ -16,6 +17,7 @@ void op_delete(PGconn *conn, fcd_t *fcd) {
     int            p, nParams;
     list2_t        *ptr;
     PGresult       *res;
+    short          op;
 
     if (fcd->open_mode == 128) {
         memcpy(fcd->status, ST_NOT_OPENED_UPDEL, 2);
@@ -33,15 +35,17 @@ void op_delete(PGconn *conn, fcd_t *fcd) {
     fileid = getint(fcd->file_id);
 
     tab = (table_t *) fileid;
-    if (dbg > 0) {
+    op = OP_DELETE;
+    if (dbg > 0 || DBG_UPD) {
         fprintf(stderr, "%ld op_delete [%s]\n", time(NULL), tab->name);
+        dbg_record(fcd);
     }
 
     // verifica se o registro existe
     op_read_random(conn, fcd, false);
     if (memcmp(fcd->status, ST_OK, 2)) {
         memcpy(fcd->status, ST_REC_NOT_FOUND, 2);
-        if (dbg > 0) {
+        if (dbg > 0 || DBG_UPD) {
             fprintf(stderr, "%ld status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
         }
         return;
@@ -118,8 +122,8 @@ void op_delete(PGconn *conn, fcd_t *fcd) {
     PQclear(res);
     pending_commits++;
 
-    if (dbg > 0) {
-        fprintf(stderr, "%ld status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
+    if (dbg > 0 || DBG_UPD) {
+        fprintf(stderr, "%ld status=%c%c commits=%d\n\n", time(NULL), fcd->status[0], fcd->status[1], pending_commits);
     }
 #ifdef API
     if (tab->api[0] && !memcmp(fcd->status, ST_OK, 2)) {

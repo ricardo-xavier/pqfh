@@ -3,6 +3,7 @@
 #include "pqfh.h"
 
 extern int dbg;
+extern int dbg_upd;
 
 extern int pending_commits;
 
@@ -17,6 +18,7 @@ bool op_write(PGconn *conn, fcd_t *fcd) {
     int            p;
     list2_t        *ptr;
     PGresult       *res;
+    short          op;
 
     if (fcd->open_mode == 128) {
         memcpy(fcd->status, ST_NOT_OPENED_WRITE, 2);
@@ -34,8 +36,10 @@ bool op_write(PGconn *conn, fcd_t *fcd) {
     fileid = getint(fcd->file_id);
 
     tab = (table_t *) fileid;
-    if (dbg > 0) {
+    op = OP_WRITE;
+    if (dbg > 0 || DBG_UPD) {
         fprintf(stderr, "%ld op_write [%s]\n", time(NULL), tab->name);
+        dbg_record(fcd);
     }
 
     if (!strcmp(tab->name, "pqfh")) {
@@ -53,7 +57,7 @@ bool op_write(PGconn *conn, fcd_t *fcd) {
     op_read_random(conn, fcd, false);
     if (!memcmp(fcd->status, ST_OK, 2)) {
         memcpy(fcd->status, ST_DUPL_KEY, 2);
-        if (dbg > 0) {
+        if (dbg > 0 || DBG_UPD) {
             fprintf(stderr, "%ld status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
         }
         putshort(fcd->key_id, keyid);
@@ -178,8 +182,8 @@ bool op_write(PGconn *conn, fcd_t *fcd) {
     PQclear(res);
     pending_commits++;
 
-    if (dbg > 0) {
-        fprintf(stderr, "%ld status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
+    if (dbg > 0 || DBG_UPD) {
+        fprintf(stderr, "%ld status=%c%c commits=%d\n\n", time(NULL), fcd->status[0], fcd->status[1], pending_commits);
     }
     putshort(fcd->key_id, keyid);
 

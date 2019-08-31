@@ -3,6 +3,7 @@
 #include "pqfh.h"
 
 extern int dbg;
+extern int dbg_upd;
 extern int pending_commits;
 extern char backup[MAX_REC_LEN+1];
 
@@ -17,6 +18,7 @@ bool op_rewrite(PGconn *conn, fcd_t *fcd) {
     list2_t        *ptr;
     PGresult       *res;
     char           where[4097], stmt_name[65];
+    short          op;
 
     if (fcd->open_mode == 128) {
         memcpy(fcd->status, ST_NOT_OPENED_UPDEL, 2);
@@ -35,8 +37,10 @@ bool op_rewrite(PGconn *conn, fcd_t *fcd) {
     reclen = getshort(fcd->rec_len);
 
     tab = (table_t *) fileid;
-    if (dbg > 0) {
+    op = OP_REWRITE;
+    if (dbg > 0 || DBG_UPD) {
         fprintf(stderr, "%ld op_rewrite [%s]\n", time(NULL), tab->name);
+        dbg_record(fcd);
     }
 
     keyid = getshort(fcd->key_id);
@@ -59,7 +63,7 @@ bool op_rewrite(PGconn *conn, fcd_t *fcd) {
     }
     if (!memcmp(record, fcd->record, reclen)) {
         memcpy(fcd->status, ST_OK, 2);
-        if (dbg > 0) {
+        if (dbg > 0 || DBG_UPD) {
             fprintf(stderr, "%ld status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
         }
         return true;
@@ -208,8 +212,8 @@ bool op_rewrite(PGconn *conn, fcd_t *fcd) {
     PQclear(res);
     pending_commits++;
 
-    if (dbg > 0) {
-        fprintf(stderr, "%ld status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
+    if (dbg > 0 || DBG_UPD) {
+        fprintf(stderr, "%ld status=%c%c commits=%d\n\n", time(NULL), fcd->status[0], fcd->status[1], pending_commits);
     }
     putshort(fcd->key_id, keyid);
 
