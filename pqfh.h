@@ -16,6 +16,7 @@
 #define MAX_COLS     256
 #define MAX_KEYS     16
 #define MAX_COMPS    16
+#define MAX_APIS     4
 
 typedef struct {
     char    name[MAX_NAME_LEN+1];
@@ -49,9 +50,10 @@ typedef struct {
 
     int oid;
     bool first;
-    char api[MAX_NAME_LEN+1];
-    char api_root[MAX_NAME_LEN+1];
-    list2_t *columns_api;
+    int num_apis;
+    char api[MAX_APIS][MAX_NAME_LEN+1];
+    char api_root[MAX_APIS][MAX_NAME_LEN+1];
+    list2_t *columns_api[MAX_APIS];
 
 } table_t;
 

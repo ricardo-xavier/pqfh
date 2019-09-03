@@ -31,13 +31,16 @@ bool table_info(PGconn *conn, table_t *table, fcd_t *fcd) {
         sprintf(sql, "SELECT api FROM tabela_api where tabela='%s'", table->dictname);
         res = PQexec(conn, sql);
         if ((PQresultStatus(res) != PGRES_TUPLES_OK) || (PQntuples(res) == 0)) {
-            table->api[0] = 0;
+            table->num_apis = 0;
         } else {
-            strcpy(table->api, PQgetvalue(res, 0, 0));
-            if ((p = strchr(table->api, ' ')) != NULL) *p=0;
-        }
-        if (dbg > 0) {
-            fprintf(stderr, "tabela_api [%s]\n", table->api);
+            table->num_apis = PQntuples(res);
+            for (i=0; i<table->num_apis; i++) {
+                strcpy(table->api[i], PQgetvalue(res, i, 0));
+                if ((p = strchr(table->api[i], ' ')) != NULL) *p=0;
+                if (dbg > 0) {
+                    fprintf(stderr, "tabela_api [%s]\n", table->api[i]);
+                }
+            }
         }
         PQclear(res);
     }
@@ -383,7 +386,7 @@ bool nome_dicionario(char *tabela, char *nome) {
 }
 
 void free_tab(table_t *tab) {
-    int k;
+    int k, a;
     tab->columns = list2_free(tab->columns);
     tab->columns = NULL;
     tab->keys = list2_free(tab->keys);
@@ -398,7 +401,9 @@ void free_tab(table_t *tab) {
     tab->prms_delete = NULL;
     tab->clones = list2_free(tab->clones);
     tab->clones = NULL;
-    tab->columns_api = list2_free(tab->columns_api);
-    tab->columns_api = NULL;
+    for (a=0; a<tab->num_apis; a++) { 
+        tab->columns_api[a] = list2_free(tab->columns_api[a]);
+        tab->columns_api[a] = NULL;
+    }
     free(tab);
 }

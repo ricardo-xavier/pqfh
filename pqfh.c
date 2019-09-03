@@ -34,7 +34,7 @@ extern bool replica_in_transaction;
 
 extern fcd_t *fcd_open;
 
-#define VERSAO "v2.4.0 31/08/2019"
+#define VERSAO "v2.5.0 03/09/2019"
 
 bool in_transaction=false;
 
@@ -203,13 +203,14 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
     if (dbg == -1) {
         get_debug();
     }
+    mode = get_mode();
 
     // pega o nome do arquivo para gravar no log
     fnlen = getshort(fcd->file_name_len);
     memcpy(filename, fcd->file_name, fnlen);
     filename[fnlen] = 0;
 
-    if (conn == NULL) {
+    if ((conn == NULL) && (mode != 'I')) {
         // conecta ao banco de dados e configura a conexao
         conninfo = getenv("CONECTA_BD");
         if (conninfo == NULL) {
@@ -277,7 +278,6 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
     }
 
     op = getshort(opcode);
-    mode = get_mode();
     reclen = getshort(fcd->rec_len);
 
     if (dbg_cmp > 0) {
@@ -705,3 +705,4 @@ bool is_weak(char *table) {
 // 2.2.1  - 30/08 - resultado do CMP igual ao do CMPISAM
 // 2.3.0  - 31/08 - correcoes nos comparadores e implementacao do SYNC
 // 2.4.0  - 31/08 - dbg upd
+// 2.5.0  - 03/09 - mais de uma api por tabela

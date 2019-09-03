@@ -36,20 +36,20 @@ void *thread_api(void *vargp) {
     return NULL;
 }
 
-void load_cpy(table_t *tab) {
+void load_cpy(table_t *tab, int a) {
 
     char cpy[257], buf[257], *p, *q;
     FILE *f;
     column_t col;
 
-    sprintf(cpy, "%s.cpy", tab->api);
+    sprintf(cpy, "%s.cpy", tab->api[a]);
     if ((f = fopen(cpy, "r")) == NULL) {
         return;
     }
 
     fgets(buf, 257, f);
     if ((p = strpbrk(buf, "\r\n")) != NULL) *p = 0;
-    strcpy(tab->api_root, buf+7);
+    strcpy(tab->api_root[a], buf+7);
 
     while (fgets(buf, 257, f) != NULL) {
         if ((p = strstr(buf, "03 ")) == NULL) {
@@ -73,23 +73,23 @@ void load_cpy(table_t *tab) {
         q = strchr(p, ')');
         *q = 0;
         col.len = atoi(p);
-        tab->columns_api = list2_append(tab->columns_api, &col, sizeof(column_t));
+        tab->columns_api[a] = list2_append(tab->columns_api[a], &col, sizeof(column_t));
     }
 
     fclose(f);
-    tab->columns_api = list2_first(tab->columns_api);
+    tab->columns_api[a] = list2_first(tab->columns_api[a]);
 }
 
-void to_json(table_t *tab, char *record, char *json) {
+void to_json(table_t *tab, char *record, char *json, int a) {
     list2_t *ptr;
     column_t *col;
     char *p, *q, ch, aux[33];
     int offset=0;
 
     p = record;
-    sprintf(json, "{ \"%s\" : [ {\n", tab->api_root);
+    sprintf(json, "{ \"%s\" : [ {\n", tab->api_root[a]);
     
-    for (ptr=tab->columns_api; ptr!=NULL; ptr=ptr->next) {
+    for (ptr=tab->columns_api[a]; ptr!=NULL; ptr=ptr->next) {
         col = (column_t *) ptr->buf;
         strcat(json, "\t\"");
         strcat(json, col->name);
@@ -137,6 +137,7 @@ void thread_api_start(char cmd, table_t *tab, fcd_t *fcd) {
     argv[1] = entrada;
     argv[2] = saida;
     unsigned short reclen;
+    int a;
 
     reclen = getshort(fcd->rec_len);
     strcpy((char *) tabela, tab->name);
@@ -144,14 +145,15 @@ void thread_api_start(char cmd, table_t *tab, fcd_t *fcd) {
     entrada[reclen] = 0;
     cobcall((cobchar_t *) "converteapi", 3, argv);
 
-    load_cpy(tab);
-    to_json(tab, (char *) saida, json);
-
-    strcpy(args.api, tab->api);
-    args.cmd = cmd;
-    strcpy(args.json, json);
-
     create_vm();
-    pthread_create(&thread_id, NULL, thread_api, &args);
-    sleep(1);
+
+    for (a=0; a<tab->num_apis; a++) {
+        load_cpy(tab, a);
+        to_json(tab, (char *) saida, json, a);
+        strcpy(args.api, tab->api[a]);
+        args.cmd = cmd;
+        strcpy(args.json, json);
+        pthread_create(&thread_id, NULL, thread_api, &args);
+    }
+
 }

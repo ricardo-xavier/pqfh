@@ -13,7 +13,7 @@ bool op_open(PGconn *conn, fcd_t *fcd, unsigned short opcode) {
     table_t        *tab;
     unsigned short fnlen;
     unsigned int   fileid;
-    int            k;
+    int            k, a;
 
     fcd_open = fcd;
     fnlen = getshort(fcd->file_name_len);
@@ -62,8 +62,11 @@ bool op_open(PGconn *conn, fcd_t *fcd, unsigned short opcode) {
     tab->advisory_lock = 0;
     tab->timestamp = time(NULL);
     tab->first = false;
-    tab->api[0] = 0;
-    tab->columns_api = NULL;
+    tab->num_apis = 0;
+    for (a=0; a<MAX_APIS; a++) {
+        tab->api[a][0] = 0;
+        tab->columns_api[a] = NULL;
+    }
 
     fileid = (int) tab;
     putint(fcd->file_id, fileid);
