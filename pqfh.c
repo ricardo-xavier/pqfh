@@ -22,6 +22,7 @@ int dbg_times=-1;
 int dbg_cmp=-1;
 bool force_bd;
 char *api=NULL;
+char mode='I';
 
 int pending_commits = 0;
 pthread_t thread_id;
@@ -34,7 +35,7 @@ extern bool replica_in_transaction;
 
 extern fcd_t *fcd_open;
 
-#define VERSAO "v2.5.0 03/09/2019"
+#define VERSAO "v2.5.1 08/09/2019"
 
 bool in_transaction=false;
 
@@ -195,7 +196,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
     bool           ret;
     char           filename[257], record[8193], undo[8193];
     short          reclen, fnlen;
-    char           st[2], mode;
+    char           st[2];
     struct timeval tv1, tv2;
     long tempo;
 
@@ -286,7 +287,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
         fprintf(stderr, "%ld cmd=%d %04x [%s] [%s]\n", time(NULL), ++seqcmd, op, filename, record);
     }
 
-    if ((mode == 'I') || (fcd->isam == 'S')) {
+    if (((mode == 'I') || (fcd->isam == 'S')) && memcmp(filename, "pqfh", 4)) {
 #ifdef API
         unsigned int fileid = getint(fcd->file_id);
         table_t *tab;
@@ -706,3 +707,4 @@ bool is_weak(char *table) {
 // 2.3.0  - 31/08 - correcoes nos comparadores e implementacao do SYNC
 // 2.4.0  - 31/08 - dbg upd
 // 2.5.0  - 03/09 - mais de uma api por tabela
+// 2.5.1  - 08/09 - CMPISAM sem .pqfh

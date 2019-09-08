@@ -5,6 +5,7 @@
 
 extern int dbg;
 extern fcd_t *fcd_open;
+extern char mode;
 
 void cmp_isam(PGconn *conn, char *filename2) {
 
@@ -24,7 +25,7 @@ void cmp_isam(PGconn *conn, char *filename2) {
     if (fcd_open == NULL) {
         return;
     }
-    if (fcd_open->isam != 'S') {
+    if (fcd_open->isam != 'S' && mode != 'I') {
         return;
     }
     fcd1 = fcd_open;
