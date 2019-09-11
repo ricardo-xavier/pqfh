@@ -12,7 +12,7 @@
 #define MAX_COL_LEN  256
 #define MAX_KEY_LEN  256
 #define MAX_NAME_LEN 30
-#define MAX_REC_LEN  4096
+#define MAX_REC_LEN  19624
 #define MAX_COLS     256
 #define MAX_KEYS     16
 #define MAX_COMPS    16

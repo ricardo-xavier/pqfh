@@ -109,8 +109,12 @@ void cmp_table(PGconn *conn, bool sync) {
                 // chaves iguais - compara registros
                 if (memcmp(fcd1->record, fcd2->record, reclen)) {
                     // registros diferentes
-                    fprintf(f, ">%s\n", fcd1->record);
-                    fprintf(f, "<%s\n", fcd2->record);
+                    fprintf(f, ">");
+                    fwrite(fcd1->record, reclen, 1, f);
+                    fprintf(f, "\n");
+                    fprintf(f, "<");
+                    fwrite(fcd2->record, reclen, 1, f);
+                    fprintf(f, "\n");
 
                     if (sync) {
                         char tmp[MAX_REC_LEN+1];
@@ -136,7 +140,9 @@ void cmp_table(PGconn *conn, bool sync) {
 
             if (k > 0) {
                 // o registro existe apenas no arquivo 2
-                fprintf(f, "-%s\n", fcd2->record);
+                fprintf(f, "-");
+                fwrite(fcd2->record, reclen, 1, f);
+                fprintf(f, "\n");
                 if (sync) {
                     char tmp[MAX_REC_LEN+1];
                     memcpy(tmp, fcd1->record, reclen);
@@ -155,7 +161,9 @@ void cmp_table(PGconn *conn, bool sync) {
             }
 
             // o registro existe apenas no arquivo 1
-            fprintf(f, "+%s\n", fcd1->record);
+            fprintf(f, "+");
+            fwrite(fcd1->record, reclen, 1, f);
+            fprintf(f, "\n");
             if (sync) {
                 op_delete(conn, fcd1);
                 if (dbg > 2) {
@@ -170,7 +178,9 @@ void cmp_table(PGconn *conn, bool sync) {
 
         } else if (!memcmp(fcd1->status, ST_OK, 2)) {
             // + - fim do arquivo 2
-            fprintf(f, "+%s\n", fcd1->record);
+            fprintf(f, "+");
+            fwrite(fcd1->record, reclen, 1, f);
+            fprintf(f, "\n");
             if (sync) {
                 op_delete(conn, fcd1);
                 if (dbg > 2) {
@@ -185,7 +195,9 @@ void cmp_table(PGconn *conn, bool sync) {
 
         } else {
             // - - fim do arquivo 1
-            fprintf(f, "-%s\n", fcd2->record);
+            fprintf(f, "-");
+            fwrite(fcd2->record, reclen, 1, f);
+            fprintf(f, "\n");
             if (sync) {
                 char tmp[MAX_REC_LEN+1];
                 memcpy(tmp, fcd1->record, reclen);

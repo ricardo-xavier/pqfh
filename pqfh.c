@@ -35,7 +35,7 @@ extern bool replica_in_transaction;
 
 extern fcd_t *fcd_open;
 
-#define VERSAO "v2.5.1 08/09/2019"
+#define VERSAO "v2.5.3 11/09/2019"
 
 bool in_transaction=false;
 
@@ -179,7 +179,7 @@ void get_debug() {
 
 void dbg_status(fcd_t *fcd) {
     short reclen = getshort(fcd->rec_len);
-    char aux[8193];
+    char aux[MAX_REC_LEN+1];
     memcpy(aux, fcd->record, reclen);
     aux[reclen] = 0;
     fprintf(stderr, "st=%c%c [%s]\n", fcd->status[0], fcd->status[1], aux);
@@ -194,7 +194,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
     unsigned char  open_mode;
     PGresult       *res;
     bool           ret;
-    char           filename[257], record[8193], undo[8193];
+    char           filename[257], record[MAX_REC_LEN+1], undo[MAX_REC_LEN+1];
     short          reclen, fnlen;
     char           st[2];
     struct timeval tv1, tv2;
@@ -708,3 +708,5 @@ bool is_weak(char *table) {
 // 2.4.0  - 31/08 - dbg upd
 // 2.5.0  - 03/09 - mais de uma api por tabela
 // 2.5.1  - 08/09 - CMPISAM sem .pqfh
+// 2.5.2  - 10/09 - registro estourando no debug
+// 2.5.3  - 11/09 - gravar o log do cmp com fwrite

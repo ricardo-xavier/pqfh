@@ -123,8 +123,12 @@ void cmp_isam(PGconn *conn, char *filename2) {
                 // chaves iguais - compara registros
                 if (memcmp(fcd1->record, fcd2->record, reclen)) {
                     // registros diferentes
-                    fprintf(f, ">%s\n", fcd1->record);
-                    fprintf(f, "<%s\n", fcd2->record);
+                    fprintf(f, ">");
+                    fwrite(fcd1->record, reclen, 1, f);
+                    fprintf(f, "\n");
+                    fprintf(f, "<");
+                    fwrite(fcd2->record, reclen, 1, f);
+                    fprintf(f, "\n");
                 }
                 EXTFH(opcode, fcd1);
                 if (dbg > 2) {
@@ -139,7 +143,9 @@ void cmp_isam(PGconn *conn, char *filename2) {
 
             if (k > 0) {
                 // o registro existe apenas no arquivo 2
-                fprintf(f, "-%s\n", fcd2->record);
+                fprintf(f, "-");
+                fwrite(fcd2->record, reclen, 1, f);
+                fprintf(f, "\n");
                 EXTFH(opcode, fcd2);
                 if (dbg > 2) {
                     fprintf(stderr, "%ld cmpisam next [%s] %c%c %d\n", time(NULL), filename2, fcd2->status[0], fcd2->status[1], fcd2->status[1]);
@@ -148,7 +154,9 @@ void cmp_isam(PGconn *conn, char *filename2) {
             }
 
             // o registro existe apenas no arquivo 1
-            fprintf(f, "+%s\n", fcd1->record);
+            fprintf(f, "+");
+            fwrite(fcd1->record, reclen, 1, f);
+            fprintf(f, "\n");
             EXTFH(opcode, fcd1);
             if (dbg > 2) {
                 fprintf(stderr, "%ld cmpisam next [%s] %c%c %d\n", time(NULL), filename1, fcd1->status[0], fcd1->status[1], fcd1->status[1]);
@@ -157,7 +165,9 @@ void cmp_isam(PGconn *conn, char *filename2) {
 
         } else if (!memcmp(fcd1->status, ST_OK, 2)) {
             // + - fim do arquivo 2
-            fprintf(f, "+%s\n", fcd1->record);
+            fprintf(f, "+");
+            fwrite(fcd1->record, reclen, 1, f);
+            fprintf(f, "\n");
             EXTFH(opcode, fcd1);
             if (dbg > 2) {
                 fprintf(stderr, "%ld cmpisam next [%s] %c%c %d\n", time(NULL), filename1, fcd1->status[0], fcd1->status[1], fcd1->status[1]);
@@ -166,7 +176,9 @@ void cmp_isam(PGconn *conn, char *filename2) {
 
         } else {
             // - - fim do arquivo 1
-            fprintf(f, "-%s\n", fcd2->record);
+            fprintf(f, "-");
+            fwrite(fcd2->record, reclen, 1, f);
+            fprintf(f, "\n");
             EXTFH(opcode, fcd2);
             if (dbg > 2) {
                 fprintf(stderr, "%ld cmpisam next [%s] %c%c %d\n", time(NULL), filename2, fcd2->status[0], fcd2->status[1], fcd2->status[1]);
