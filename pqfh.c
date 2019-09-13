@@ -35,14 +35,14 @@ extern bool replica_in_transaction;
 
 extern fcd_t *fcd_open;
 
-#define VERSAO "v2.5.3 11/09/2019"
+#define VERSAO "v2.6.1 13/09/2019"
 
 bool in_transaction=false;
 
 void commit() {
     PGresult *res;
     if (dbg > 0 || (dbg_upd > 0)) {
-        fprintf(stderr, "%ld commit %d %s\n", time(NULL), pending_commits, in_transaction ? "TRANSACAO" : "AUTO_COMMIT");
+        fprintf(flog, "%ld commit %d %s\n", time(NULL), pending_commits, in_transaction ? "TRANSACAO" : "AUTO_COMMIT");
     }
     res = PQexec(conn, "COMMIT");
     PQclear(res);
@@ -55,7 +55,7 @@ void *thread_commit(void *vargp) {
     while (true) {
         sleep(1); 
         if (dbg > 1) {
-            fprintf(stderr, "%ld pending_commits %d %s\n", time(NULL), pending_commits, in_transaction ? "TRANSACAO" : "AUTO_COMMIT");
+            fprintf(flog, "%ld pending_commits %d %s\n", time(NULL), pending_commits, in_transaction ? "TRANSACAO" : "AUTO_COMMIT");
         }
         if ((pending_commits > 0) && !in_transaction) {
             pthread_mutex_lock(&lock);
@@ -85,7 +85,7 @@ void pqfh_rollback() {
     in_transaction = false;
     pthread_mutex_lock(&lock);
     if (dbg > 0 || (dbg_upd > 0)) {
-        fprintf(stderr, "%ld rollback %d %s\n", time(NULL), pending_commits, in_transaction ? "TRANSACAO" : "AUTO_COMMIT");
+        fprintf(flog, "%ld rollback %d %s\n", time(NULL), pending_commits, in_transaction ? "TRANSACAO" : "AUTO_COMMIT");
     }
     res = PQexec(conn, "ROLLBACK");
     PQclear(res);
@@ -97,7 +97,7 @@ void pqfh_rollback() {
 
 void warning(void *arg, const char *message) {
     if (dbg > 0) {
-        fprintf(stderr, "%s\n", message);
+        fprintf(flog, "%s\n", message);
     }
 }
 
@@ -108,7 +108,7 @@ void unlock(fcd_t *fcd) {
     unsigned int fileid = getint(fcd->file_id);
     tab = (table_t *) fileid;
     if (dbg > 0) {
-        fprintf(stderr, "%ld unlock [%s] %d %d\n", time(NULL), tab->name, tab->oid, tab->advisory_lock);
+        fprintf(flog, "%ld unlock [%s] %d %d\n", time(NULL), tab->name, tab->oid, tab->advisory_lock);
     }
     sprintf(sql, "SELECT pg_advisory_unlock(%d, %d)", tab->oid, tab->advisory_lock);
     res = PQexec(conn, sql);
@@ -136,6 +136,7 @@ char get_mode() {
 }
 
 void get_debug() {
+    char *logname = getenv("PQFH_LOGNAME");
     char *env = getenv("PQFH_DBG");
     if (env == NULL) {
         dbg = 0;
@@ -149,7 +150,17 @@ void get_debug() {
         dbg_upd = atoi(env);
     }
     if ((dbg > 0) || (dbg_upd > 0))  {
-        fprintf(stderr, "%ld pqfh %s\n", time(NULL), VERSAO);
+        if (logname == NULL) {
+            flog = stderr;
+        } else {
+            flog = fopen(logname, "w");
+            if (flog == NULL) {
+                flog = stderr;
+            } else {
+                setbuf(flog, NULL);
+            }
+        }
+        fprintf(flog, "%ld pqfh %s\n", time(NULL), VERSAO);
     }
     env = getenv("PQFH_DBG_TIMES");
     if (env == NULL) {
@@ -182,7 +193,7 @@ void dbg_status(fcd_t *fcd) {
     char aux[MAX_REC_LEN+1];
     memcpy(aux, fcd->record, reclen);
     aux[reclen] = 0;
-    fprintf(stderr, "st=%c%c [%s]\n", fcd->status[0], fcd->status[1], aux);
+    fprintf(flog, "st=%c%c [%s]\n", fcd->status[0], fcd->status[1], aux);
 }
 
 int seqcmd=0;
@@ -219,11 +230,11 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
         }
 
         if (dbg > 0) {
-            fprintf(stderr, "%ld connect [%s]\n", time(NULL), conninfo);
+            fprintf(flog, "%ld connect [%s]\n", time(NULL), conninfo);
         }
         conn = PQconnectdb(conninfo);
         if (PQstatus(conn) != CONNECTION_OK) {
-            fprintf(stderr, "%ld Erro na conexao com o banco de dados: %s\n%s\n",
+            fprintf(flog, "%ld Erro na conexao com o banco de dados: %s\n%s\n",
                 time(NULL), PQerrorMessage(conn), conninfo);
             exit(-1);
         }
@@ -232,7 +243,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
 
         res = PQexec(conn, "set client_encoding to 'latin1'");
         if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-            fprintf(stderr, "%ld Erro ao configurar o encoding: %s\n",
+            fprintf(flog, "%ld Erro ao configurar o encoding: %s\n",
                 time(NULL), PQerrorMessage(conn));
             PQclear(res);
             PQfinish(conn);
@@ -242,7 +253,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
 
         res = PQexec(conn, "BEGIN");
         if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-            fprintf(stderr, "%ld Erro ao iniciar a transacao: %s\n",
+            fprintf(flog, "%ld Erro ao iniciar a transacao: %s\n",
                 time(NULL), PQerrorMessage(conn));
             PQclear(res);
             PQfinish(conn);
@@ -254,18 +265,18 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
         conninfo = getenv("REPLICA_BD");
         if (conninfo != NULL) {
             if (dbg > 0) {
-                fprintf(stderr, "%ld connect replica [%s]\n", time(NULL), conninfo);
+                fprintf(flog, "%ld connect replica [%s]\n", time(NULL), conninfo);
             }
             conn2 = PQconnectdb(conninfo);
             if (PQstatus(conn2) != CONNECTION_OK) {
-                fprintf(stderr, "%ld Erro na conexao com o banco de dados: %s\n%s\n",
+                fprintf(flog, "%ld Erro na conexao com o banco de dados: %s\n%s\n",
                     time(NULL), PQerrorMessage(conn2), conninfo);
                 exit(-1);
             }
 
             res = PQexec(conn2, "BEGIN");
             if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-                fprintf(stderr, "%ld Erro ao iniciar a transacao: %s\n",
+                fprintf(flog, "%ld Erro ao iniciar a transacao: %s\n",
                     time(NULL), PQerrorMessage(conn2));
                 PQclear(res);
                 PQfinish(conn2);
@@ -284,7 +295,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
     if (dbg_cmp > 0) {
         memcpy(record, fcd->record, reclen);
         record[reclen] = 0;
-        fprintf(stderr, "%ld cmd=%d %04x [%s] [%s]\n", time(NULL), ++seqcmd, op, filename, record);
+        fprintf(flog, "%ld cmd=%d %04x [%s] [%s]\n", time(NULL), ++seqcmd, op, filename, record);
     }
 
     if (((mode == 'I') || (fcd->isam == 'S')) && memcmp(filename, "pqfh", 4)) {
@@ -296,14 +307,14 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
         }
 #endif
         if (dbg > 0 || DBG_UPD) {
-            fprintf(stderr, "%ld EXTFH %04x [%s]\n", time(NULL), op, filename);
+            fprintf(flog, "%ld EXTFH %04x [%s]\n", time(NULL), op, filename);
             dbg_record(fcd);
         }
         EXTFH(opcode, fcd);
         if (dbg > 0 || DBG_UPD) {
-            fprintf(stderr, "%ld EXTFH status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
+            fprintf(flog, "%ld EXTFH status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
         }
-        if (op <= OP_OPEN_INPUT) {
+        if (op <= OP_OPEN_EXTEND) {
             fcd_open = fcd;
         }
         gettimeofday(&tv2, NULL);
@@ -342,11 +353,11 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
             memcpy(record, fcd->record, reclen);
             putshort(opcode, OP_READ_RANDOM);
             if (dbg > 0) {
-                fprintf(stderr, "%ld EXTFH %04x [%s]\n", time(NULL), OP_READ_RANDOM, filename);
+                fprintf(flog, "%ld EXTFH %04x [%s]\n", time(NULL), OP_READ_RANDOM, filename);
             }
             EXTFH(opcode, fcd);
             if (dbg > 0) {
-                fprintf(stderr, "%ld EXTFH status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
+                fprintf(flog, "%ld EXTFH status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
             }
             putshort(opcode, op);
 
@@ -369,12 +380,12 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
 
         // executa primeiro no ISAM
         if ((dbg > 0) || DBG_UPD) {
-            fprintf(stderr, "%ld EXTFH %04x [%s]\n", time(NULL), op, filename);
+            fprintf(flog, "%ld EXTFH %04x [%s]\n", time(NULL), op, filename);
             dbg_record(fcd);
         }
         EXTFH(opcode, fcd);
         if (dbg > 0 || DBG_UPD) {
-            fprintf(stderr, "%ld EXTFH status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
+            fprintf(flog, "%ld EXTFH status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
         }
         gettimeofday(&tv2, NULL);
         tempo = ((tv2.tv_sec * 1000000) + tv2.tv_usec) - ((tv1.tv_sec * 1000000) + tv1.tv_usec);
@@ -395,13 +406,14 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
         case OP_OPEN_INPUT:
         case OP_OPEN_OUTPUT:
         case OP_OPEN_IO:
+        case OP_OPEN_EXTEND:
             if (op_open(conn, fcd, op)) {
                 break; // command
             }
             if (fcd->isam == 'S') {
                 EXTFH(opcode, fcd);
                 if (dbg > 0) {
-                    fprintf(stderr, "%ld EXTFH status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
+                    fprintf(flog, "%ld EXTFH status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
                 }
                 break;
             }
@@ -417,7 +429,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
                     // erro no isam
                     // fecha e retorna o erro do isam
                     if (dbg > 0) {
-                        fprintf(stderr, "%ld desfaz open %c%c\n", time(NULL), fcd->status[0], fcd->status[1]);
+                        fprintf(flog, "%ld desfaz open %c%c\n", time(NULL), fcd->status[0], fcd->status[1]);
                     }
                     memcpy(st, fcd->status, 2);
                     op_close(conn, fcd);
@@ -488,7 +500,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
                 // erro no update do banco
                 // desfaz o isam
                 if (dbg > 1 || DBG_UPD) {
-                    fprintf(stderr, "%ld desfaz rewrite %c%c\n", time(NULL), fcd->status[0], fcd->status[1]);
+                    fprintf(flog, "%ld desfaz rewrite %c%c\n", time(NULL), fcd->status[0], fcd->status[1]);
                 }
 
                 // salva o registro atual e o status
@@ -519,7 +531,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
                 // erro no insert do banco
                 // desfaz o isam
                 if (dbg > 0 || DBG_UPD) {
-                    fprintf(stderr, "%ld desfaz write %c%c\n", time(NULL), fcd->status[0], fcd->status[1]);
+                    fprintf(flog, "%ld desfaz write %c%c\n", time(NULL), fcd->status[0], fcd->status[1]);
                 }
                 memcpy(st, fcd->status, 2);
                 putshort(opcode, OP_DELETE);
@@ -540,7 +552,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
                 // erro no delete do banco
                 // desfaz o isam
                 if (dbg > 0 || DBG_UPD) {
-                    fprintf(stderr, "%ld desfaz delete %c%c\n", time(NULL), fcd->status[0], fcd->status[1]);
+                    fprintf(flog, "%ld desfaz delete %c%c\n", time(NULL), fcd->status[0], fcd->status[1]);
                 }
 
                 // salva o registro atual e o status
@@ -563,7 +575,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
             break;
 
         default:
-            fprintf(stderr, "Comando nao implementado: %04x\n", op);
+            fprintf(flog, "Comando nao implementado: %04x\n", op);
             //PQfinish(conn);
             //exit(-1);
 
@@ -578,6 +590,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
         case OP_OPEN_INPUT:
         case OP_OPEN_OUTPUT:
         case OP_OPEN_IO:
+        case OP_OPEN_EXTEND:
             tempo_open += tempo;
             qtde_open++;
             break;
@@ -586,16 +599,16 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
             tempo_close += tempo;
             qtde_close++;
             if (dbg_times > 0) {
-                fprintf(stderr, "tempo_total=%ld %d\n", tempo_total, qtde_total);
-                fprintf(stderr, "tempo_open=%ld %d\n", tempo_open, qtde_open);
-                fprintf(stderr, "tempo_close=%ld %d\n", tempo_close, qtde_close);
-                fprintf(stderr, "tempo_start=%ld %d\n", tempo_start, qtde_start);
-                fprintf(stderr, "tempo_next_prev=%ld %d\n", tempo_next_prev, qtde_next_prev);
-                fprintf(stderr, "tempo_read=%ld %d\n", tempo_read, qtde_read);
-                fprintf(stderr, "tempo_write=%ld %d\n", tempo_write, qtde_write);
-                fprintf(stderr, "tempo_rewrite=%ld %d\n", tempo_rewrite, qtde_rewrite);
-                fprintf(stderr, "tempo_delete=%ld %d\n", tempo_delete, qtde_delete);
-                fprintf(stderr, "tempo_isam=%ld %d\n", tempo_isam, qtde_isam);
+                fprintf(flog, "tempo_total=%ld %d\n", tempo_total, qtde_total);
+                fprintf(flog, "tempo_open=%ld %d\n", tempo_open, qtde_open);
+                fprintf(flog, "tempo_close=%ld %d\n", tempo_close, qtde_close);
+                fprintf(flog, "tempo_start=%ld %d\n", tempo_start, qtde_start);
+                fprintf(flog, "tempo_next_prev=%ld %d\n", tempo_next_prev, qtde_next_prev);
+                fprintf(flog, "tempo_read=%ld %d\n", tempo_read, qtde_read);
+                fprintf(flog, "tempo_write=%ld %d\n", tempo_write, qtde_write);
+                fprintf(flog, "tempo_rewrite=%ld %d\n", tempo_rewrite, qtde_rewrite);
+                fprintf(flog, "tempo_delete=%ld %d\n", tempo_delete, qtde_delete);
+                fprintf(flog, "tempo_isam=%ld %d\n", tempo_isam, qtde_isam);
             }
             break;
 
@@ -710,3 +723,5 @@ bool is_weak(char *table) {
 // 2.5.1  - 08/09 - CMPISAM sem .pqfh
 // 2.5.2  - 10/09 - registro estourando no debug
 // 2.5.3  - 11/09 - gravar o log do cmp com fwrite
+// 2.6.0  - 12/09 - PQFH_LOGNAME
+// 2.6.1  - 13/09 - zerar o first antes do start

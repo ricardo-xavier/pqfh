@@ -29,7 +29,7 @@ void cmp_table(PGconn *conn, bool sync) {
     memcpy(fcd2, fcd1, sizeof(fcd_t));
 
     if (dbg > 0) {
-        fprintf(stderr, "%ld cmp [%s]\n", time(NULL), tab_open->name);
+        fprintf(flog, "%ld cmp [%s]\n", time(NULL), tab_open->name);
     }
 
     sprintf(logname, "%s_cmp.log", tab_open->name);
@@ -49,7 +49,7 @@ void cmp_table(PGconn *conn, bool sync) {
     putshort(opcode, OP_OPEN_INPUT);
     EXTFH(opcode, fcd2);
     if (dbg > 2) {
-        fprintf(stderr, "%ld cmp open isam %c%c %d\n", time(NULL), fcd2->status[0], fcd2->status[1], fcd2->status[1]);
+        fprintf(flog, "%ld cmp open isam %c%c %d\n", time(NULL), fcd2->status[0], fcd2->status[1], fcd2->status[1]);
     }
 
     kda = fcd1->kdb + 14 ;
@@ -65,25 +65,25 @@ void cmp_table(PGconn *conn, bool sync) {
     memset(fcd1->record, 0, reclen);
     op_start(conn, fcd1, ">=");
     if (dbg > 2) {
-        fprintf(stderr, "%ld cmp start bd %c%c %d\n", time(NULL), fcd1->status[0], fcd1->status[1], fcd1->status[1]);
+        fprintf(flog, "%ld cmp start bd %c%c %d\n", time(NULL), fcd1->status[0], fcd1->status[1], fcd1->status[1]);
     }
 
     putshort(opcode, OP_START_GT);
     memset(fcd2->record, 0, reclen);
     EXTFH(opcode, fcd2);
     if (dbg > 2) {
-        fprintf(stderr, "%ld cmp start isam %c%c %d\n", time(NULL), fcd2->status[0], fcd2->status[1], fcd2->status[1]);
+        fprintf(flog, "%ld cmp start isam %c%c %d\n", time(NULL), fcd2->status[0], fcd2->status[1], fcd2->status[1]);
     }
 
     op_next_prev(conn, fcd1, 'n');
     if (dbg > 2) {
-        fprintf(stderr, "%ld cmp next bd %c%c %d\n", time(NULL), fcd1->status[0], fcd1->status[1], fcd1->status[1]);
+        fprintf(flog, "%ld cmp next bd %c%c %d\n", time(NULL), fcd1->status[0], fcd1->status[1], fcd1->status[1]);
     }
 
     putshort(opcode, OP_READ_NEXT);
     EXTFH(opcode, fcd2);
     if (dbg > 2) {
-        fprintf(stderr, "%ld cmp next isam %c%c %d\n", time(NULL), fcd2->status[0], fcd2->status[1], fcd2->status[1]);
+        fprintf(flog, "%ld cmp next isam %c%c %d\n", time(NULL), fcd2->status[0], fcd2->status[1], fcd2->status[1]);
     }
 
     while (!memcmp(fcd1->status, ST_OK, 2) || !memcmp(fcd2->status, ST_OK, 2)) {
@@ -100,8 +100,8 @@ void cmp_table(PGconn *conn, bool sync) {
             key1[kofs] = 0;
             key2[kofs] = 0;
             if (dbg > 2) {
-                fprintf(stderr, "cmp key1=[%s]\n", key1);
-                fprintf(stderr, "cmp key2=[%s]\n", key2);
+                fprintf(flog, "cmp key1=[%s]\n", key1);
+                fprintf(flog, "cmp key2=[%s]\n", key2);
             }
 
             k = memcmp(key1, key2, kofs);
@@ -122,18 +122,18 @@ void cmp_table(PGconn *conn, bool sync) {
                         memcpy(fcd1->record, fcd2->record, reclen);
                         op_rewrite(conn, fcd1);
                         if (dbg > 2) {
-                            fprintf(stderr, "%ld cmp rewrite [%s] %c%c %d\n", time(NULL), key1, fcd1->status[0], fcd1->status[1], fcd1->status[1]);
+                            fprintf(flog, "%ld cmp rewrite [%s] %c%c %d\n", time(NULL), key1, fcd1->status[0], fcd1->status[1], fcd1->status[1]);
                         }
                         memcpy(fcd1->record, tmp, reclen);
                     }
                 }
                 op_next_prev(conn, fcd1, 'n');
                 if (dbg > 2) {
-                    fprintf(stderr, "%ld cmp next bd %c%c %d\n", time(NULL), fcd1->status[0], fcd1->status[1], fcd1->status[1]);
+                    fprintf(flog, "%ld cmp next bd %c%c %d\n", time(NULL), fcd1->status[0], fcd1->status[1], fcd1->status[1]);
                 }
                 EXTFH(opcode, fcd2);
                 if (dbg > 2) {
-                    fprintf(stderr, "%ld cmp next isam %c%c %d\n", time(NULL), fcd2->status[0], fcd2->status[1], fcd2->status[1]);
+                    fprintf(flog, "%ld cmp next isam %c%c %d\n", time(NULL), fcd2->status[0], fcd2->status[1], fcd2->status[1]);
                 }
                 continue;
             }
@@ -149,13 +149,13 @@ void cmp_table(PGconn *conn, bool sync) {
                     memcpy(fcd1->record, fcd2->record, reclen);
                     op_write(conn, fcd1);
                     if (dbg > 2) {
-                        fprintf(stderr, "%ld cmp write [%s] %c%c %d\n", time(NULL), key1, fcd1->status[0], fcd1->status[1], fcd1->status[1]);
+                        fprintf(flog, "%ld cmp write [%s] %c%c %d\n", time(NULL), key1, fcd1->status[0], fcd1->status[1], fcd1->status[1]);
                     }
                     memcpy(fcd1->record, tmp, reclen);
                 }
                 EXTFH(opcode, fcd2);
                 if (dbg > 2) {
-                    fprintf(stderr, "%ld cmp next isam %c%c %d\n", time(NULL), fcd2->status[0], fcd2->status[1], fcd2->status[1]);
+                    fprintf(flog, "%ld cmp next isam %c%c %d\n", time(NULL), fcd2->status[0], fcd2->status[1], fcd2->status[1]);
                 }
                 continue;
             }
@@ -167,12 +167,12 @@ void cmp_table(PGconn *conn, bool sync) {
             if (sync) {
                 op_delete(conn, fcd1);
                 if (dbg > 2) {
-                    fprintf(stderr, "%ld cmp delete [%s] %c%c %d\n", time(NULL), key1, fcd1->status[0], fcd1->status[1], fcd1->status[1]);
+                    fprintf(flog, "%ld cmp delete [%s] %c%c %d\n", time(NULL), key1, fcd1->status[0], fcd1->status[1], fcd1->status[1]);
                 }
             }
             op_next_prev(conn, fcd1, 'n');
             if (dbg > 2) {
-                fprintf(stderr, "%ld cmp next bd %c%c %d\n", time(NULL), fcd1->status[0], fcd1->status[1], fcd1->status[1]);
+                fprintf(flog, "%ld cmp next bd %c%c %d\n", time(NULL), fcd1->status[0], fcd1->status[1], fcd1->status[1]);
             }
             continue;
 
@@ -184,12 +184,12 @@ void cmp_table(PGconn *conn, bool sync) {
             if (sync) {
                 op_delete(conn, fcd1);
                 if (dbg > 2) {
-                    fprintf(stderr, "%ld cmp delete [%s] %c%c %d\n", time(NULL), key1, fcd1->status[0], fcd1->status[1], fcd1->status[1]);
+                    fprintf(flog, "%ld cmp delete [%s] %c%c %d\n", time(NULL), key1, fcd1->status[0], fcd1->status[1], fcd1->status[1]);
                 }
             }
             op_next_prev(conn, fcd1, 'n');
             if (dbg > 2) {
-                fprintf(stderr, "%ld cmp next bd %c%c %d\n", time(NULL), fcd1->status[0], fcd1->status[1], fcd1->status[1]);
+                fprintf(flog, "%ld cmp next bd %c%c %d\n", time(NULL), fcd1->status[0], fcd1->status[1], fcd1->status[1]);
             }
             continue;
 
@@ -204,13 +204,13 @@ void cmp_table(PGconn *conn, bool sync) {
                 memcpy(fcd1->record, fcd2->record, reclen);
                 op_write(conn, fcd1);
                 if (dbg > 2) {
-                    fprintf(stderr, "%ld cmp write [%s] %c%c %d\n", time(NULL), key1, fcd1->status[0], fcd1->status[1], fcd1->status[1]);
+                    fprintf(flog, "%ld cmp write [%s] %c%c %d\n", time(NULL), key1, fcd1->status[0], fcd1->status[1], fcd1->status[1]);
                 }
                 memcpy(fcd1->record, tmp, reclen);
             }
             EXTFH(opcode, fcd2);
             if (dbg > 2) {
-                fprintf(stderr, "%ld cmp next isam %c%c %d\n", time(NULL), fcd2->status[0], fcd2->status[1], fcd2->status[1]);
+                fprintf(flog, "%ld cmp next isam %c%c %d\n", time(NULL), fcd2->status[0], fcd2->status[1], fcd2->status[1]);
             }
             continue;
         } 

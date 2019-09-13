@@ -52,7 +52,7 @@ list2_t *get_clones(char *tabname) {
         putshort(opcode, OP_OPEN_INPUT);
         EXTFH(opcode, &fcd);
         if (dbg > 2) {
-            fprintf(stderr, "%ld replica open %c%c %d\n", time(NULL), fcd.status[0], fcd.status[1], fcd.status[1]);
+            fprintf(flog, "%ld replica open %c%c %d\n", time(NULL), fcd.status[0], fcd.status[1], fcd.status[1]);
         }
         if (!memcmp(fcd.status, ST_OK, 2)) {
             fcd.open_mode = 0;
@@ -104,7 +104,7 @@ list2_t *get_clones(char *tabname) {
         clone.concat = *(fcd.record+pos);
         
         if (dbg > 2) {
-            fprintf(stderr, "%ld replica [%s] [%s] [%s] [%s] %c %c\n", time(NULL), clone.col1, clone.schema, clone.name, clone.col2, clone.key, clone.concat);
+            fprintf(flog, "%ld replica [%s] [%s] [%s] [%s] %c %c\n", time(NULL), clone.col1, clone.schema, clone.name, clone.col2, clone.key, clone.concat);
         }
         clones = list2_append(clones, &clone, sizeof(clone_t));
     }
@@ -166,11 +166,11 @@ void write_clone(table_t *tab, clone_t *clone, list2_t *clones) {
     replica_in_transaction = true;
 
     if (dbg > 1) {
-        fprintf(stderr, "%ld %s\n", time(NULL), sql);
+        fprintf(flog, "%ld %s\n", time(NULL), sql);
     }
     res = PQexec(conn2, sql);
     if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-        fprintf(stderr, "%ld Erro na execucao do comando: %s\n%s\n", time(NULL), PQerrorMessage(conn2), sql);
+        fprintf(flog, "%ld Erro na execucao do comando: %s\n%s\n", time(NULL), PQerrorMessage(conn2), sql);
         exit(-1);
     }
     PQclear(res);
@@ -245,11 +245,11 @@ void rewrite_clone(table_t *tab, clone_t *clone, list2_t *clones) {
     replica_in_transaction = true;
 
     if (dbg > 1) {
-        fprintf(stderr, "%ld %s\n", time(NULL), sql);
+        fprintf(flog, "%ld %s\n", time(NULL), sql);
     }
     res = PQexec(conn2, sql);
     if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-        fprintf(stderr, "%ld Erro na execucao do comando: %s\n%s\n", time(NULL), PQerrorMessage(conn2), sql);
+        fprintf(flog, "%ld Erro na execucao do comando: %s\n%s\n", time(NULL), PQerrorMessage(conn2), sql);
         exit(-1);
     }
     PQclear(res);
@@ -297,11 +297,11 @@ void delete_clone(table_t *tab, clone_t *clone, list2_t *clones) {
     replica_in_transaction = true;
 
     if (dbg > 1) {
-        fprintf(stderr, "%ld %s\n", time(NULL), sql);
+        fprintf(flog, "%ld %s\n", time(NULL), sql);
     }
     res = PQexec(conn2, sql);
     if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-        fprintf(stderr, "%ld Erro na execucao do comando: %s\n%s\n", time(NULL), PQerrorMessage(conn2), sql);
+        fprintf(flog, "%ld Erro na execucao do comando: %s\n%s\n", time(NULL), PQerrorMessage(conn2), sql);
         exit(-1);
     }
     PQclear(res);
@@ -365,7 +365,7 @@ void replica_commit() {
     replica_in_transaction = false;
 */
     if (dbg > 1) {
-        fprintf(stderr, "%ld replica commit", time(NULL));
+        fprintf(flog, "%ld replica commit", time(NULL));
     }
 }
 
@@ -377,6 +377,6 @@ void replica_rollback() {
     replica_in_transaction = false;
 */
     if (dbg > 1) {
-        fprintf(stderr, "%ld replica rollback", time(NULL));
+        fprintf(flog, "%ld replica rollback", time(NULL));
     }
 }

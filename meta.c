@@ -38,7 +38,7 @@ bool table_info(PGconn *conn, table_t *table, fcd_t *fcd) {
                 strcpy(table->api[i], PQgetvalue(res, i, 0));
                 if ((p = strchr(table->api[i], ' ')) != NULL) *p=0;
                 if (dbg > 0) {
-                    fprintf(stderr, "tabela_api [%s]\n", table->api[i]);
+                    fprintf(flog, "tabela_api [%s]\n", table->api[i]);
                 }
             }
         }
@@ -67,11 +67,11 @@ bool table_info(PGconn *conn, table_t *table, fcd_t *fcd) {
     // declara o cursor
     sprintf(sql, "declare cursor_columns cursor for  \nselect column_name,data_type,character_maximum_length,numeric_precision,numeric_scale\n    from information_schema.columns\n    where table_name = '%s'\n    order by ordinal_position", table->name);
     if (dbg > 1) {
-        fprintf(stderr, "%ld %s\n", time(NULL), sql);
+        fprintf(flog, "%ld %s\n", time(NULL), sql);
     }
     res = PQexec(conn, sql);
     if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-        fprintf(stderr, "%ld Erro na execucao do comando: %s\n%s\n",
+        fprintf(flog, "%ld Erro na execucao do comando: %s\n%s\n",
             time(NULL), PQerrorMessage(conn), sql);
         PQclear(res);
         return false;
@@ -106,12 +106,12 @@ bool table_info(PGconn *conn, table_t *table, fcd_t *fcd) {
             col.dec = 0;
 
         } else {
-            fprintf(stderr, "pendente type %s\n", aux);
+            fprintf(flog, "pendente type %s\n", aux);
             exit(-1);
         }
 
         if (dbg > 2) {
-            fprintf(stderr, "    %d %d %s %c %d\n", i, offset, col.name, col.tp, col.len);
+            fprintf(flog, "    %d %d %s %c %d\n", i, offset, col.name, col.tp, col.len);
         }
 
         PQclear(res);
@@ -153,11 +153,11 @@ char *get_schema(PGconn *conn, char *table) {
     // declara o cursor
     sprintf(sql, "declare cursor_tables cursor for  \nselect table_schema\n    from information_schema.tables\n    where table_name = '%s'", table);
     if (dbg > 1) {
-        fprintf(stderr, "%ld %s\n", time(NULL), sql);
+        fprintf(flog, "%ld %s\n", time(NULL), sql);
     }
     res = PQexec(conn, sql);
     if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-        fprintf(stderr, "%ld Erro na execucao do comando: %s\n%s\n",
+        fprintf(flog, "%ld Erro na execucao do comando: %s\n%s\n",
             time(NULL), PQerrorMessage(conn), sql);
         PQclear(res);
         strcpy(schema, "");
@@ -272,7 +272,7 @@ bool tabela_convertida(char *tabela) {
         char aux[33];
         memcpy(aux, fcd01.record, strlen(tabela));
         aux[strlen(tabela)] = 0;
-        fprintf(stderr, "%ld %s [%s] %c %c [%s] [%c]\n", time(NULL), fcd01.file_name, tabela, fcd01.status[0], fcd01.status[1], aux, fcd01.record[26]);
+        fprintf(flog, "%ld %s [%s] %c %c [%s] [%c]\n", time(NULL), fcd01.file_name, tabela, fcd01.status[0], fcd01.status[1], aux, fcd01.record[26]);
     }
 
     return (fcd01.status[0] == '0') && (fcd01.status[1] == '0') && !memcmp(fcd01.record, tabela, strlen(tabela))
@@ -356,7 +356,7 @@ bool nome_dicionario(char *tabela, char *nome) {
         if (strchr("0123456789", *p) != NULL) {
             *p = 0;
             if (dbg > 2) {
-                fprintf(stderr, "%ld prefixo [%s]\n", time(NULL), prefixo);
+                fprintf(flog, "%ld prefixo [%s]\n", time(NULL), prefixo);
             }
             break;
         }
@@ -379,7 +379,7 @@ bool nome_dicionario(char *tabela, char *nome) {
         if ((p = strchr(nome, ' ')) != NULL) *p=0;
     }
     if (dbg > 2) {
-        fprintf(stderr, "%ld %s dicionario [%s] %c %c [%s]\n", time(NULL), fcd02.file_name, tabela, fcd02.status[0], fcd02.status[1], nome);
+        fprintf(flog, "%ld %s dicionario [%s] %c %c [%s]\n", time(NULL), fcd02.file_name, tabela, fcd02.status[0], fcd02.status[1], nome);
     }
     return ret;
     

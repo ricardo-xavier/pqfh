@@ -25,7 +25,7 @@ void getkeys(fcd_t *fcd, table_t *tab) {
         // key definition area
         kda = fcd->kdb + 14 + (k * 16);
         ncomps = getshort(kda + 0);
-//fprintf(stderr, "k=%d ncomps=%d\n", k, ncomps);
+//fprintf(flog, "k=%d ncomps=%d\n", k, ncomps);
         cdaoffset = getshort(kda + 2);
 
         key.id = k;
@@ -104,9 +104,9 @@ void getkeys(fcd_t *fcd, table_t *tab) {
     if (dbg > 2) {
         for (ptr=tab->keys; ptr!=NULL; ptr=ptr->next) {
             _key_t *key = (_key_t *) ptr->buf;
-            fprintf(stderr, "%ld key %d %d %d\n", time(NULL), key->id, key->ncomps, key->ncols);
+            fprintf(flog, "%ld key %d %d %d\n", time(NULL), key->id, key->ncomps, key->ncols);
             for (c=0; c<key->ncols; c++) {
-                fprintf(stderr, "    %s\n", key->columns[c]->name);
+                fprintf(flog, "    %s\n", key->columns[c]->name);
             }
         }
     }
@@ -130,7 +130,7 @@ void adiciona_comp(unsigned char *record, _key_t key, int c, char *op, char *whe
     if (partial) {
         last--;
     }
-    //fprintf(stderr, "getwhere [%s] [%s] %d %d %d\n", where, col->name, partial, c, last);
+    //fprintf(flog, "getwhere [%s] [%s] %d %d %d\n", where, col->name, partial, c, last);
 
     if (c == last) {
         if (col->tp == 'n') {
@@ -209,7 +209,7 @@ void adiciona_comp_prepared(table_t *tab, _key_t key, int c, char *where, char c
     if (partial) {
         last--;
     }
-    //fprintf(stderr, "getwhereprep [%s] [%s] %d %d %d\n", where, col->name, partial, c, last);
+    //fprintf(flog, "getwhereprep [%s] [%s] %d %d %d\n", where, col->name, partial, c, last);
 
     if (c == last) {
         sprintf(aux, "%s = $%d", col->name, ++seq);

@@ -26,8 +26,8 @@ void op_delete(PGconn *conn, fcd_t *fcd) {
             char filename[257];
             memcpy(filename, (char *) fcd->file_name, fnlen);
             filename[fnlen] = 0;
-            fprintf(stderr, "%ld op_delete [%s] %d\n", time(NULL), filename, (int) fcd->open_mode);
-            fprintf(stderr, "%ld status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
+            fprintf(flog, "%ld op_delete [%s] %d\n", time(NULL), filename, (int) fcd->open_mode);
+            fprintf(flog, "%ld status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
         }
         return;
     }
@@ -37,7 +37,7 @@ void op_delete(PGconn *conn, fcd_t *fcd) {
     tab = (table_t *) fileid;
     op = OP_DELETE;
     if (dbg > 0 || DBG_UPD) {
-        fprintf(stderr, "%ld op_delete [%s]\n", time(NULL), tab->name);
+        fprintf(flog, "%ld op_delete [%s]\n", time(NULL), tab->name);
         dbg_record(fcd);
     }
 
@@ -46,14 +46,14 @@ void op_delete(PGconn *conn, fcd_t *fcd) {
     if (memcmp(fcd->status, ST_OK, 2)) {
         memcpy(fcd->status, ST_REC_NOT_FOUND, 2);
         if (dbg > 0 || DBG_UPD) {
-            fprintf(stderr, "%ld status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
+            fprintf(flog, "%ld status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
         }
         return;
     }
 
     strcpy(kbuf, getkbuf(fcd, 0, tab, &keylen));
     if (dbg > 1) {
-        fprintf(stderr, "%ld key %d %d [%s]\n", time(NULL), 0, keylen, kbuf);
+        fprintf(flog, "%ld key %d %d [%s]\n", time(NULL), 0, keylen, kbuf);
     }
     sprintf(stmt_name, "%s_%ld_del", tab->name, tab->timestamp);
 
@@ -68,13 +68,13 @@ void op_delete(PGconn *conn, fcd_t *fcd) {
         nParams = list2_size(tab->prms_delete);
 
         if (dbg > 1) {
-            fprintf(stderr, "%ld %s\n", time(NULL), sql);
+            fprintf(flog, "%ld %s\n", time(NULL), sql);
         }
         tab->del_prepared = true;
 
         res = PQprepare(conn, stmt_name, sql, nParams, NULL);
         if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-            fprintf(stderr, "%ld Erro na execucao do comando: %s\n%s\n", time(NULL), PQerrorMessage(conn), sql);
+            fprintf(flog, "%ld Erro na execucao do comando: %s\n%s\n", time(NULL), PQerrorMessage(conn), sql);
             exit(-1);
         }
         PQclear(res);
@@ -82,7 +82,7 @@ void op_delete(PGconn *conn, fcd_t *fcd) {
 
     // seta os parametros
     if (dbg > 2) {
-        fprintf(stderr, "%ld op_delete seta parametros para o delete\n", time(NULL));
+        fprintf(flog, "%ld op_delete seta parametros para o delete\n", time(NULL));
     }
     p = 0;
     for (ptr=tab->prms_delete; ptr!=NULL; ptr=ptr->next) {
@@ -94,7 +94,7 @@ void op_delete(PGconn *conn, fcd_t *fcd) {
         tab->lengths[p] = col->len;
         tab->formats[p] = 0;
         if (dbg > 2) {
-            fprintf(stderr, "    %d %s %c %d:%d,%d [%s]\n", p, col->name, col->tp, col->offset, col->len, col->dec, tab->bufs[p]);
+            fprintf(flog, "    %d %s %c %d:%d,%d [%s]\n", p, col->name, col->tp, col->offset, col->len, col->dec, tab->bufs[p]);
         }
         p++;
     }
@@ -102,7 +102,7 @@ void op_delete(PGconn *conn, fcd_t *fcd) {
 
     // executa o comando
     if (dbg > 2) {
-        fprintf(stderr, "%ld op_delete executa o delete\n", time(NULL));
+        fprintf(flog, "%ld op_delete executa o delete\n", time(NULL));
     }
     res =  PQexecPrepared(conn, stmt_name, nParams, tab->values, tab->lengths, tab->formats, 0);
     if (PQresultStatus(res) != PGRES_COMMAND_OK) {
@@ -111,7 +111,7 @@ void op_delete(PGconn *conn, fcd_t *fcd) {
             deadlock_log(PQerrorMessage(conn));
         }
         if (dbg > 0) {
-            fprintf(stderr, "%ld %s\n", time(NULL), PQerrorMessage(conn));
+            fprintf(flog, "%ld %s\n", time(NULL), PQerrorMessage(conn));
         }
     } else {
         if (tab->clones != NULL) {
@@ -123,7 +123,7 @@ void op_delete(PGconn *conn, fcd_t *fcd) {
     pending_commits++;
 
     if (dbg > 0 || DBG_UPD) {
-        fprintf(stderr, "%ld status=%c%c commits=%d\n\n", time(NULL), fcd->status[0], fcd->status[1], pending_commits);
+        fprintf(flog, "%ld status=%c%c commits=%d\n\n", time(NULL), fcd->status[0], fcd->status[1], pending_commits);
     }
 #ifdef API
     if (tab->api[0] && !memcmp(fcd->status, ST_OK, 2)) {

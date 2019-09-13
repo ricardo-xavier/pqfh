@@ -54,7 +54,6 @@ void carregaJvm() {
 
     JavaVMInitArgs vm_args;
     JavaVMOption options[3];
-fprintf(stderr, "============================================================CARREGAJVM\n");
 
     //.class, não aceita  .jar, pra usar jar tem q especificar um a um, então eu extrai os .jars com  winzip na pasta e classes.
     options[0].optionString = "-Djava.class.path=/u/java/classes"; //Caminho das  classes do usuário

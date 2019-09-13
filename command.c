@@ -12,7 +12,7 @@ void command(PGconn *conn, table_t *tab, fcd_t *fcd) {
     if ((p = strchr((char *) fcd->record, ' ')) != NULL) *p = 0;
 
     if (dbg > 0) {
-        fprintf(stderr, "%ld COMANDO PQFH: %s\n", time(NULL), fcd->record);
+        fprintf(flog, "%ld COMANDO PQFH: %s\n", time(NULL), fcd->record);
     }
 
     if (!memcmp(fcd->record, "WEAK:", 5)) {
@@ -61,6 +61,6 @@ void command(PGconn *conn, table_t *tab, fcd_t *fcd) {
 
     memcpy(fcd->status, ST_OK, 2);
     if (dbg > 0) {
-        fprintf(stderr, "%ld status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
+        fprintf(flog, "%ld status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
     }
 }

@@ -5,6 +5,8 @@
 #include <libpq-fe.h>
 #include <time.h>
 
+FILE *flog;
+
 #define bool unsigned char
 #define false 0
 #define true 1
@@ -136,6 +138,7 @@ typedef struct {
 #define OP_OPEN_INPUT    0xfa00
 #define OP_OPEN_OUTPUT   0xfa01
 #define OP_OPEN_IO       0xfa02
+#define OP_OPEN_EXTEND   0xfa03
 #define OP_WRITE         0xfaf3
 #define OP_REWRITE       0xfaf4
 #define OP_CLOSE         0xfa80

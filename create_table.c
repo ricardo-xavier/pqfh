@@ -16,11 +16,11 @@ void  create_table(PGconn *conn, table_t *tab, fcd_t *fcd, unsigned short opcode
     //sprintf(sql, "create table %s.%s as select * from %s.%s where 1=2", schema, tab->name, schema, tab->dictname);
     sprintf(sql, "create table %s.%s() INHERITS (%s.%s) WITH (OIDS=false)", schema, tab->name, schema, tab->dictname);
     if (dbg > 1) {
-        fprintf(stderr, "%ld %s\n", time(NULL), sql);
+        fprintf(flog, "%ld %s\n", time(NULL), sql);
     }
     res = PQexec(conn, sql);
     if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-        fprintf(stderr, "%ld Erro na execucao do comando: %s\n%s\n", time(NULL), PQerrorMessage(conn), sql);
+        fprintf(flog, "%ld Erro na execucao do comando: %s\n%s\n", time(NULL), PQerrorMessage(conn), sql);
         PQclear(res);
         return;
     }
@@ -28,11 +28,11 @@ void  create_table(PGconn *conn, table_t *tab, fcd_t *fcd, unsigned short opcode
 
     sprintf(sql, "declare cursor_indexes cursor for\n  select indexname,indexdef from pg_indexes where tablename='%s'", tab->dictname);
     if (dbg > 1) {
-        fprintf(stderr, "%ld %s\n", time(NULL), sql);
+        fprintf(flog, "%ld %s\n", time(NULL), sql);
     }
     res = PQexec(conn, sql);
     if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-        fprintf(stderr, "%ld Erro na execucao do comando: %s\n%s\n", time(NULL), PQerrorMessage(conn), sql);
+        fprintf(flog, "%ld Erro na execucao do comando: %s\n%s\n", time(NULL), PQerrorMessage(conn), sql);
         PQclear(res);
         return;
     }
@@ -47,7 +47,7 @@ void  create_table(PGconn *conn, table_t *tab, fcd_t *fcd, unsigned short opcode
         strcpy(indexname, PQgetvalue(res, 0, 0));
         strcpy(indexdef, PQgetvalue(res, 0, 1));
         if (dbg > 1) {
-            fprintf(stderr, "%ld [%s] [%s]\n", time(NULL), indexname, indexdef);
+            fprintf(flog, "%ld [%s] [%s]\n", time(NULL), indexname, indexdef);
         }
         len = strlen(indexname);
         if ((p = strstr(indexdef, indexname)) != NULL) {
@@ -70,13 +70,13 @@ void  create_table(PGconn *conn, table_t *tab, fcd_t *fcd, unsigned short opcode
             strcpy(indexdef, aux);
         }
         if (dbg > 1) {
-            fprintf(stderr, "%ld [%s]\n", time(NULL), indexdef);
+            fprintf(flog, "%ld [%s]\n", time(NULL), indexdef);
         }
         PQclear(res);
         res = PQexec(conn, indexdef);
         if (PQresultStatus(res) != PGRES_COMMAND_OK) {
             PQclear(res);
-            fprintf(stderr, "%ld Erro na execucao do comando: %s\n%s\n", time(NULL), PQerrorMessage(conn), indexdef);
+            fprintf(flog, "%ld Erro na execucao do comando: %s\n%s\n", time(NULL), PQerrorMessage(conn), indexdef);
         }
         PQclear(res);
     }
@@ -84,14 +84,14 @@ void  create_table(PGconn *conn, table_t *tab, fcd_t *fcd, unsigned short opcode
     res = PQexec(conn, "CLOSE cursor_indexes");
     if (PQresultStatus(res) != PGRES_COMMAND_OK) {
         PQclear(res);
-        fprintf(stderr, "%ld Erro na execucao do comando: %s\n%s\n", time(NULL), PQerrorMessage(conn), indexdef);
+        fprintf(flog, "%ld Erro na execucao do comando: %s\n%s\n", time(NULL), PQerrorMessage(conn), indexdef);
     }
     PQclear(res);
 
     res = PQexec(conn, "COMMIT");
     if (PQresultStatus(res) != PGRES_COMMAND_OK) {
         PQclear(res);
-        fprintf(stderr, "%ld Erro na execucao do comando: %s\n%s\n", time(NULL), PQerrorMessage(conn), indexdef);
+        fprintf(flog, "%ld Erro na execucao do comando: %s\n%s\n", time(NULL), PQerrorMessage(conn), indexdef);
     }
     PQclear(res);
 

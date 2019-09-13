@@ -26,8 +26,8 @@ void op_start(PGconn *conn, fcd_t *fcd, char *op) {
             char filename[257];
             memcpy(filename, (char *) fcd->file_name, fnlen);
             filename[fnlen] = 0;
-            fprintf(stderr, "%ld op_start %s [%s] %d\n", time(NULL), op, filename, (int) fcd->open_mode);
-            fprintf(stderr, "%ld status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
+            fprintf(flog, "%ld op_start %s [%s] %d\n", time(NULL), op, filename, (int) fcd->open_mode);
+            fprintf(flog, "%ld status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
         }
         return;
     }
@@ -39,20 +39,20 @@ void op_start(PGconn *conn, fcd_t *fcd, char *op) {
 
     tab = (table_t *) fileid;
     if (dbg > 0) {
-        fprintf(stderr, "%ld op_start %s [%s]\n", time(NULL), op, tab->name);
+        fprintf(flog, "%ld op_start %s [%s]\n", time(NULL), op, tab->name);
     }
 
     eof_start = false;
     keyid = getshort(fcd->key_id);
     strcpy(kbuf, getkbuf(fcd, keyid, tab, &keylen));
     if (dbg > 1) {
-        fprintf(stderr, "%ld key %d %d [%s]\n", time(NULL), keyid, keylen, kbuf);
+        fprintf(flog, "%ld key %d %d [%s]\n", time(NULL), keyid, keylen, kbuf);
     }
 
     // performance
     // se ja foi feito um read next com a mesma chave nao executa novamente
     if (dbg > 2) {
-        fprintf(stderr, "%ld op_start verifica se foi feito um read next/prev com a mesma chave\n", time(NULL));
+        fprintf(flog, "%ld op_start verifica se foi feito um read next/prev com a mesma chave\n", time(NULL));
     }
     if (
             ((op[0] != '<') && (keyid == tab->key_next) && !memcmp(kbuf, tab->buf_next, keylen)) ||
@@ -62,7 +62,7 @@ void op_start(PGconn *conn, fcd_t *fcd, char *op) {
         }
         memcpy(fcd->status, ST_OK, 2);
         if (dbg > 0) {
-            fprintf(stderr, "%ld status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
+            fprintf(flog, "%ld status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
         }
         return;
     }
@@ -70,7 +70,7 @@ void op_start(PGconn *conn, fcd_t *fcd, char *op) {
     // se o acesso for feito como entidade fraca faz um read com a chave parcial para ver se exxiste algum registro
     if (is_weak(tab->name)) {
         if (dbg > 2) {
-            fprintf(stderr, "%ld op_start verifica se existe algum registro na tabela fraca\n", time(NULL));
+            fprintf(flog, "%ld op_start verifica se existe algum registro na tabela fraca\n", time(NULL));
         }
         partial = true;
         op_read_random(conn, fcd, false);
@@ -79,7 +79,7 @@ void op_start(PGconn *conn, fcd_t *fcd, char *op) {
             eof_start = true;
             partial = false;
             if (dbg > 0) {
-                fprintf(stderr, "%ld status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
+                fprintf(flog, "%ld status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
             }
             return;
         }
@@ -100,7 +100,7 @@ void op_start(PGconn *conn, fcd_t *fcd, char *op) {
         tab->name, tab->timestamp,  tab->schema, tab->name, where, order);
 
     if (dbg > 1) {
-        fprintf(stderr, "%ld %s\n", time(NULL), sql);
+        fprintf(flog, "%ld %s\n", time(NULL), sql);
     }
 
     if (dbg_times > 1) {
@@ -109,7 +109,7 @@ void op_start(PGconn *conn, fcd_t *fcd, char *op) {
 
     res = PQexec(conn, sql);
     if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-        fprintf(stderr, "%ld Erro na execucao do comando: %s\n%s\n", time(NULL), PQerrorMessage(conn), sql);
+        fprintf(flog, "%ld Erro na execucao do comando: %s\n%s\n", time(NULL), PQerrorMessage(conn), sql);
         PQclear(res);
         exit(-1);
     }
@@ -119,9 +119,10 @@ void op_start(PGconn *conn, fcd_t *fcd, char *op) {
         gettimeofday(&tv3, NULL);
         long tempo1 = ((tv3.tv_sec * 1000000) + tv3.tv_usec) - ((tv1.tv_sec * 1000000) + tv1.tv_usec);
         long tempo2 = ((tv3.tv_sec * 1000000) + tv3.tv_usec) - ((tv2.tv_sec * 1000000) + tv2.tv_usec);
-        fprintf(stderr, "%ld op_start %s [%s] tempo=%ld %ld\n", time(NULL), op, tab->name, tempo1, tempo2);
+        fprintf(flog, "%ld op_start %s [%s] tempo=%ld %ld\n", time(NULL), op, tab->name, tempo1, tempo2);
     }
 
+    tab->first = false;
     if (op[0] != '<') {
         tab->key_next = keyid;
         op_next_prev(conn, fcd, 'n');
@@ -136,6 +137,6 @@ void op_start(PGconn *conn, fcd_t *fcd, char *op) {
     }
     //memcpy(fcd->status, ST_OK, 2);
     if (dbg > 0) {
-        fprintf(stderr, "%ld status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
+        fprintf(flog, "%ld status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
     }
 }

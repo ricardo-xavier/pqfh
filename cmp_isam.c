@@ -36,7 +36,7 @@ void cmp_isam(PGconn *conn, char *filename2) {
     filename1[strlen(filename2)] = 0;
 
     if (dbg > 0) {
-        fprintf(stderr, "%ld cmp_isam [%s] [%s]\n", time(NULL), filename1, filename2);
+        fprintf(flog, "%ld cmp_isam [%s] [%s]\n", time(NULL), filename1, filename2);
     }
 
     if ((p = strrchr(filename1, '/')) == NULL) {
@@ -62,7 +62,7 @@ void cmp_isam(PGconn *conn, char *filename2) {
     putshort(opcode, OP_OPEN_INPUT);
     EXTFH(opcode, fcd2);
     if (dbg > 2) {
-        fprintf(stderr, "%ld cmpisam open [%s] %c%c %d\n", time(NULL), filename2, fcd2->status[0], fcd2->status[1], fcd2->status[1]);
+        fprintf(flog, "%ld cmpisam open [%s] %c%c %d\n", time(NULL), filename2, fcd2->status[0], fcd2->status[1], fcd2->status[1]);
     }
 
     kda = fcd1->kdb + 14 ;
@@ -79,25 +79,25 @@ void cmp_isam(PGconn *conn, char *filename2) {
     memset(fcd1->record, 0, reclen);
     EXTFH(opcode, fcd1);
     if (dbg > 2) {
-        fprintf(stderr, "%ld cmpisam start [%s] %c%c %d\n", time(NULL), filename1, fcd1->status[0], fcd1->status[1], fcd1->status[1]);
+        fprintf(flog, "%ld cmpisam start [%s] %c%c %d\n", time(NULL), filename1, fcd1->status[0], fcd1->status[1], fcd1->status[1]);
     }
 
     memset(fcd2->record, 0, reclen);
     EXTFH(opcode, fcd2);
     if (dbg > 2) {
-        fprintf(stderr, "%ld cmpisam start [%s] %c%c %d\n", time(NULL), filename2, fcd2->status[0], fcd2->status[1], fcd2->status[1]);
+        fprintf(flog, "%ld cmpisam start [%s] %c%c %d\n", time(NULL), filename2, fcd2->status[0], fcd2->status[1], fcd2->status[1]);
     }
 
     putshort(opcode, OP_READ_NEXT);
 
     EXTFH(opcode, fcd1);
     if (dbg > 2) {
-        fprintf(stderr, "%ld cmpisam next [%s] %c%c %d\n", time(NULL), filename1, fcd1->status[0], fcd1->status[1], fcd1->status[1]);
+        fprintf(flog, "%ld cmpisam next [%s] %c%c %d\n", time(NULL), filename1, fcd1->status[0], fcd1->status[1], fcd1->status[1]);
     }
 
     EXTFH(opcode, fcd2);
     if (dbg > 2) {
-        fprintf(stderr, "%ld cmpisam next [%s] %c%c %d\n", time(NULL), filename2, fcd2->status[0], fcd2->status[1], fcd2->status[1]);
+        fprintf(flog, "%ld cmpisam next [%s] %c%c %d\n", time(NULL), filename2, fcd2->status[0], fcd2->status[1], fcd2->status[1]);
     }
 
     while (!memcmp(fcd1->status, ST_OK, 2) || !memcmp(fcd2->status, ST_OK, 2)) {
@@ -114,8 +114,8 @@ void cmp_isam(PGconn *conn, char *filename2) {
             key1[kofs] = 0;
             key2[kofs] = 0;
             if (dbg > 2) {
-                fprintf(stderr, "cmpisam key1=[%s]\n", key1);
-                fprintf(stderr, "cmpisam key2=[%s]\n", key2);
+                fprintf(flog, "cmpisam key1=[%s]\n", key1);
+                fprintf(flog, "cmpisam key2=[%s]\n", key2);
             }
 
             k = memcmp(key1, key2, kofs);
@@ -132,11 +132,11 @@ void cmp_isam(PGconn *conn, char *filename2) {
                 }
                 EXTFH(opcode, fcd1);
                 if (dbg > 2) {
-                    fprintf(stderr, "%ld cmpisam next [%s] %c%c %d\n", time(NULL), filename1, fcd1->status[0], fcd1->status[1], fcd1->status[1]);
+                    fprintf(flog, "%ld cmpisam next [%s] %c%c %d\n", time(NULL), filename1, fcd1->status[0], fcd1->status[1], fcd1->status[1]);
                 }
                 EXTFH(opcode, fcd2);
                 if (dbg > 2) {
-                    fprintf(stderr, "%ld cmpisam next [%s] %c%c %d\n", time(NULL), filename2, fcd2->status[0], fcd2->status[1], fcd2->status[1]);
+                    fprintf(flog, "%ld cmpisam next [%s] %c%c %d\n", time(NULL), filename2, fcd2->status[0], fcd2->status[1], fcd2->status[1]);
                 }
                 continue;
             }
@@ -148,7 +148,7 @@ void cmp_isam(PGconn *conn, char *filename2) {
                 fprintf(f, "\n");
                 EXTFH(opcode, fcd2);
                 if (dbg > 2) {
-                    fprintf(stderr, "%ld cmpisam next [%s] %c%c %d\n", time(NULL), filename2, fcd2->status[0], fcd2->status[1], fcd2->status[1]);
+                    fprintf(flog, "%ld cmpisam next [%s] %c%c %d\n", time(NULL), filename2, fcd2->status[0], fcd2->status[1], fcd2->status[1]);
                 }
                 continue;
             }
@@ -159,7 +159,7 @@ void cmp_isam(PGconn *conn, char *filename2) {
             fprintf(f, "\n");
             EXTFH(opcode, fcd1);
             if (dbg > 2) {
-                fprintf(stderr, "%ld cmpisam next [%s] %c%c %d\n", time(NULL), filename1, fcd1->status[0], fcd1->status[1], fcd1->status[1]);
+                fprintf(flog, "%ld cmpisam next [%s] %c%c %d\n", time(NULL), filename1, fcd1->status[0], fcd1->status[1], fcd1->status[1]);
             }
             continue;
 
@@ -170,7 +170,7 @@ void cmp_isam(PGconn *conn, char *filename2) {
             fprintf(f, "\n");
             EXTFH(opcode, fcd1);
             if (dbg > 2) {
-                fprintf(stderr, "%ld cmpisam next [%s] %c%c %d\n", time(NULL), filename1, fcd1->status[0], fcd1->status[1], fcd1->status[1]);
+                fprintf(flog, "%ld cmpisam next [%s] %c%c %d\n", time(NULL), filename1, fcd1->status[0], fcd1->status[1], fcd1->status[1]);
             }
             continue;
 
@@ -181,7 +181,7 @@ void cmp_isam(PGconn *conn, char *filename2) {
             fprintf(f, "\n");
             EXTFH(opcode, fcd2);
             if (dbg > 2) {
-                fprintf(stderr, "%ld cmpisam next [%s] %c%c %d\n", time(NULL), filename2, fcd2->status[0], fcd2->status[1], fcd2->status[1]);
+                fprintf(flog, "%ld cmpisam next [%s] %c%c %d\n", time(NULL), filename2, fcd2->status[0], fcd2->status[1], fcd2->status[1]);
             }
             continue;
         } 
