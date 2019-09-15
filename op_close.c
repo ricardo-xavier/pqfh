@@ -3,6 +3,7 @@
 #include "pqfh.h"
 
 extern int dbg;
+extern bool reopen;
 list2_t *weak;
 
 bool op_close(PGconn *conn, fcd_t *fcd) {
@@ -26,7 +27,7 @@ bool op_close(PGconn *conn, fcd_t *fcd) {
 
     tab = (table_t *) fileid;
     if (dbg > 0) {
-        fprintf(flog, "%ld op_close [%s] %d\n", time(NULL), tab->name, (int) fcd->open_mode);
+        fprintf(flog, "%ld op_close [%s] %d [%s]\n", time(NULL), tab->name, (int) fcd->open_mode, fcd->sign);
     }
 
     if (!strcmp(tab->name, "pqfh")) {
@@ -50,10 +51,14 @@ bool op_close(PGconn *conn, fcd_t *fcd) {
         unlock(fcd);
     }
 
-    deallocate(conn, tab);
+    if (!reopen || memcmp(fcd->sign, "PQFH", 4)) {
+        deallocate(conn, tab);
+    }
     close_cursor(conn, tab);
 
-    free_tab(tab);
+    if (!reopen || memcmp(fcd->sign, "PQFH", 4)) {
+        free_tab(tab);
+    }
     fcd->open_mode = 128;
     memcpy(fcd->status, ST_OK, 2);
     if (dbg > 0) {

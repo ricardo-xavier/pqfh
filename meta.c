@@ -23,7 +23,6 @@ bool table_info(PGconn *conn, table_t *table, fcd_t *fcd) {
     int        i, offset, oid;
     column_t   col;
     unsigned short reclen;
-    bool convertida;
 
     nome_dicionario(table->name, table->dictname);
 
@@ -45,8 +44,8 @@ bool table_info(PGconn *conn, table_t *table, fcd_t *fcd) {
         PQclear(res);
     }
 
-    convertida = tabela_convertida(table->dictname);
-    if (!convertida) {
+    table->convertida = tabela_convertida(table->dictname);
+    if (!table->convertida) {
         fcd->isam = 'S';
         return false;
     }

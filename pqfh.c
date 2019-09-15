@@ -23,6 +23,7 @@ int dbg_cmp=-1;
 bool force_bd;
 char *api=NULL;
 char mode='I';
+bool reopen=false;
 
 int pending_commits = 0;
 pthread_t thread_id;
@@ -35,13 +36,13 @@ extern bool replica_in_transaction;
 
 extern fcd_t *fcd_open;
 
-#define VERSAO "v2.6.1 13/09/2019"
+#define VERSAO "v2.7.0 14/09/2019"
 
 bool in_transaction=false;
 
 void commit() {
     PGresult *res;
-    if (dbg > 0 || (dbg_upd > 0)) {
+    if (dbg > 0 || (dbg_upd > 0) || (dbg_times > 0)) {
         fprintf(flog, "%ld commit %d %s\n", time(NULL), pending_commits, in_transaction ? "TRANSACAO" : "AUTO_COMMIT");
     }
     res = PQexec(conn, "COMMIT");
@@ -114,8 +115,13 @@ void unlock(fcd_t *fcd) {
     res = PQexec(conn, sql);
     PQclear(res);
     tab->advisory_lock = 0;
+/*
     pending_commits++;
+    if (dbg > 0 || (dbg_upd > 0) || (dbg_times > 0)) {
+        fprintf(stderr, "commit unlock\n");
+    }
     commit();
+*/
 }
 
 long tempo_total=0, tempo_open=0, tempo_close=0, tempo_start=0, tempo_next_prev=0, tempo_read=0, 
@@ -149,10 +155,9 @@ void get_debug() {
     } else {
         dbg_upd = atoi(env);
     }
-    if ((dbg > 0) || (dbg_upd > 0))  {
-        if (logname == NULL) {
-            flog = stderr;
-        } else {
+    flog = stderr;
+    if ((dbg > 0) || (dbg_upd > 0) || (dbg_times > 0))  {
+        if (logname != NULL) {
             flog = fopen(logname, "w");
             if (flog == NULL) {
                 flog = stderr;
@@ -185,6 +190,12 @@ void get_debug() {
         api = NULL;
     } else {
         api = env;
+    }
+    env = getenv("PQFH_REOPEN");
+    if (env == NULL) {
+        reopen = false;
+    } else {
+        reopen = env[0] == 'S';
     }
 }
 
@@ -440,9 +451,11 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
 
         case OP_CLOSE:
             open_mode = fcd->open_mode; 
+/*
             if (pending_commits > 0) {
                 commit();
             }
+*/
             if (op_close(conn, fcd)) {
                 break;
             }
@@ -599,16 +612,16 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
             tempo_close += tempo;
             qtde_close++;
             if (dbg_times > 0) {
-                fprintf(flog, "tempo_total=%ld %d\n", tempo_total, qtde_total);
-                fprintf(flog, "tempo_open=%ld %d\n", tempo_open, qtde_open);
-                fprintf(flog, "tempo_close=%ld %d\n", tempo_close, qtde_close);
-                fprintf(flog, "tempo_start=%ld %d\n", tempo_start, qtde_start);
-                fprintf(flog, "tempo_next_prev=%ld %d\n", tempo_next_prev, qtde_next_prev);
-                fprintf(flog, "tempo_read=%ld %d\n", tempo_read, qtde_read);
-                fprintf(flog, "tempo_write=%ld %d\n", tempo_write, qtde_write);
-                fprintf(flog, "tempo_rewrite=%ld %d\n", tempo_rewrite, qtde_rewrite);
-                fprintf(flog, "tempo_delete=%ld %d\n", tempo_delete, qtde_delete);
-                fprintf(flog, "tempo_isam=%ld %d\n", tempo_isam, qtde_isam);
+                fprintf(stderr, "tempo_total=%ld %d\n", tempo_total, qtde_total);
+                fprintf(stderr, "tempo_open=%ld %d\n", tempo_open, qtde_open);
+                fprintf(stderr, "tempo_close=%ld %d\n", tempo_close, qtde_close);
+                fprintf(stderr, "tempo_start=%ld %d\n", tempo_start, qtde_start);
+                fprintf(stderr, "tempo_next_prev=%ld %d\n", tempo_next_prev, qtde_next_prev);
+                fprintf(stderr, "tempo_read=%ld %d\n", tempo_read, qtde_read);
+                fprintf(stderr, "tempo_write=%ld %d\n", tempo_write, qtde_write);
+                fprintf(stderr, "tempo_rewrite=%ld %d\n", tempo_rewrite, qtde_rewrite);
+                fprintf(stderr, "tempo_delete=%ld %d\n", tempo_delete, qtde_delete);
+                fprintf(stderr, "tempo_isam=%ld %d\n", tempo_isam, qtde_isam);
             }
             break;
 
@@ -725,3 +738,4 @@ bool is_weak(char *table) {
 // 2.5.3  - 11/09 - gravar o log do cmp com fwrite
 // 2.6.0  - 12/09 - PQFH_LOGNAME
 // 2.6.1  - 13/09 - zerar o first antes do start
+// 2.7.0  - 14/09 - reopen e nao fazer commit no close

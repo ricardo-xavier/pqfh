@@ -22,6 +22,7 @@ FILE *flog;
 
 typedef struct {
     char    name[MAX_NAME_LEN+1];
+    bool    convertida;
     char    schema[MAX_NAME_LEN+1];
     char    dictname[MAX_NAME_LEN+1];
     list2_t *columns;
@@ -131,7 +132,7 @@ typedef struct {
     unsigned char file_id[4];       /* 79 */
     unsigned char filler_9[10];     /* 83 */
     unsigned char ignore_lock;      /* 93 */
-    unsigned char filler_10[5];     /* 94 */
+    unsigned char sign[5];          /* 94 */
     unsigned char isam;             /* 99 */
 } fcd_t;
 
@@ -225,5 +226,8 @@ void thread_api_start(char cmd, table_t *tab, fcd_t *fcd);
 void pqfh_call_java(char *endereco, char *operacao, char *metodo, char *json, char *bearer);
 
 extern void EXTFH(unsigned char *opcode, fcd_t *fcd);
+
+bool get_cache(table_t *table);
+void put_cache(table_t *table);
 
 #endif
