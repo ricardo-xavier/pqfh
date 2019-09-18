@@ -140,7 +140,8 @@ void thread_api_start(char cmd, table_t *tab, fcd_t *fcd) {
     int a;
 
     reclen = getshort(fcd->rec_len);
-    strcpy((char *) tabela, tab->name);
+    memset((char *) tabela, ' ', 20);
+    memcpy((char *) tabela, tab->name, strlen(tab->name));
     memcpy((char *) entrada, fcd->record, reclen);
     entrada[reclen] = 0;
     cobcall((cobchar_t *) "converteapi", 3, argv);

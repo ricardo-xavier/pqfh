@@ -68,6 +68,10 @@ void op_read_random(PGconn *conn, fcd_t *fcd, bool with_lock) {
         ignore_lock = (fcd->ignore_lock & 0x01) == 0x01;
         lock_automatic = (fcd->lock_mode & 0x02) == 0x02;
         lock = (fcd->open_mode > 0) && lock_automatic && !ignore_lock;
+#ifdef IGNORELOCK
+        lock = false;
+        with_lock = false;
+#endif
 
         getwhere_prepared(tab, keyid, where, 0, 's');
         if (lock || with_lock) {

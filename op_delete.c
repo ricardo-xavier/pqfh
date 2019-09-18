@@ -40,6 +40,7 @@ void op_delete(PGconn *conn, fcd_t *fcd) {
         fprintf(flog, "%ld op_delete [%s]\n", time(NULL), tab->name);
         dbg_record(fcd);
     }
+    tab->restart = 0;
 
     // verifica se o registro existe
     op_read_random(conn, fcd, false);

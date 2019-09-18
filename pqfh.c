@@ -36,7 +36,7 @@ extern bool replica_in_transaction;
 
 extern fcd_t *fcd_open;
 
-#define VERSAO "v2.7.0 14/09/2019"
+#define VERSAO "v2.7.5 17/09/2019"
 
 bool in_transaction=false;
 
@@ -115,8 +115,8 @@ void unlock(fcd_t *fcd) {
     res = PQexec(conn, sql);
     PQclear(res);
     tab->advisory_lock = 0;
-/*
     pending_commits++;
+/*
     if (dbg > 0 || (dbg_upd > 0) || (dbg_times > 0)) {
         fprintf(stderr, "commit unlock\n");
     }
@@ -155,18 +155,6 @@ void get_debug() {
     } else {
         dbg_upd = atoi(env);
     }
-    flog = stderr;
-    if ((dbg > 0) || (dbg_upd > 0) || (dbg_times > 0))  {
-        if (logname != NULL) {
-            flog = fopen(logname, "w");
-            if (flog == NULL) {
-                flog = stderr;
-            } else {
-                setbuf(flog, NULL);
-            }
-        }
-        fprintf(flog, "%ld pqfh %s\n", time(NULL), VERSAO);
-    }
     env = getenv("PQFH_DBG_TIMES");
     if (env == NULL) {
         dbg_times = 0;
@@ -178,6 +166,18 @@ void get_debug() {
         dbg_cmp = 0;
     } else {
         dbg_cmp = atoi(env);
+    }
+    flog = stderr;
+    if ((dbg > 0) || (dbg_upd > 0) || (dbg_times > 0) || (dbg_cmp > 0))  {
+        if (logname != NULL) {
+            flog = fopen(logname, "w");
+            if (flog == NULL) {
+                flog = stderr;
+            } else {
+                setbuf(flog, NULL);
+            }
+        }
+        fprintf(flog, "%ld pqfh %s\n", time(NULL), VERSAO);
     }
     env = getenv("PQFH_FORCE_BD");
     if (env == NULL) {
@@ -739,3 +739,6 @@ bool is_weak(char *table) {
 // 2.6.0  - 12/09 - PQFH_LOGNAME
 // 2.6.1  - 13/09 - zerar o first antes do start
 // 2.7.0  - 14/09 - reopen e nao fazer commit no close
+// 2.7.2  - 16/09 - setar pending_commits no unlock, mas nao fazer commit
+// 2.7.4  - 17/09 - zerar o restart no rewrite e no delete
+// 2.7.5  - 18/09 - passar espacos no nome da tabela para o converteapi

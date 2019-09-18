@@ -1,9 +1,11 @@
 #include <stdlib.h>
 #include <string.h>
+#include <sys/time.h>
 #include "pqfh.h"
 
 extern int dbg;
 extern int dbg_upd;
+extern int dbg_times;
 extern int pending_commits;
 extern char backup[MAX_REC_LEN+1];
 
@@ -19,6 +21,7 @@ bool op_rewrite(PGconn *conn, fcd_t *fcd) {
     PGresult       *res;
     char           where[4097], stmt_name[65];
     short          op;
+    struct timeval tv1, tv2, tv3;
 
     if (fcd->open_mode == 128) {
         memcpy(fcd->status, ST_NOT_OPENED_UPDEL, 2);
@@ -33,6 +36,10 @@ bool op_rewrite(PGconn *conn, fcd_t *fcd) {
         return false;
     }
 
+    if (dbg_times > 1) {
+        gettimeofday(&tv1, NULL);
+    }
+
     fileid = getint(fcd->file_id);
     reclen = getshort(fcd->rec_len);
 
@@ -42,6 +49,7 @@ bool op_rewrite(PGconn *conn, fcd_t *fcd) {
         fprintf(flog, "%ld op_rewrite [%s]\n", time(NULL), tab->name);
         dbg_record(fcd);
     }
+    tab->restart = 0;
 
     keyid = getshort(fcd->key_id);
     putshort(fcd->key_id, 0);
@@ -190,11 +198,23 @@ bool op_rewrite(PGconn *conn, fcd_t *fcd) {
 
     nParams = p;
 
+    if (dbg_times > 1) {
+        gettimeofday(&tv2, NULL);
+    }
+
     // executa o comando
     if (dbg > 2) {
         fprintf(flog, "%ld op_rewrite executa o update\n", time(NULL));
     }
     res =  PQexecPrepared(conn, stmt_name, nParams, tab->values, tab->lengths, tab->formats, 0);
+
+    if (dbg_times > 1) {
+        gettimeofday(&tv3, NULL);
+        long tempo1 = ((tv3.tv_sec * 1000000) + tv3.tv_usec) - ((tv1.tv_sec * 1000000) + tv1.tv_usec);
+        long tempo2 = ((tv3.tv_sec * 1000000) + tv3.tv_usec) - ((tv2.tv_sec * 1000000) + tv2.tv_usec);
+        fprintf(flog, "%ld op_rewrite [%s] tempo=%ld %ld\n", time(NULL), tab->name, tempo1, tempo2);
+    }
+
     if (PQresultStatus(res) != PGRES_COMMAND_OK) {
         memcpy(fcd->status, ST_REC_NOT_FOUND, 2);
         if (strstr(PQerrorMessage(conn), "deadlock")) {
