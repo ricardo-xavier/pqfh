@@ -50,6 +50,8 @@ bool op_rewrite(PGconn *conn, fcd_t *fcd) {
         dbg_record(fcd);
     }
     tab->restart = 0;
+    tab->key_next = -1;
+    tab->key_prev = -1;
 
     keyid = getshort(fcd->key_id);
     putshort(fcd->key_id, 0);

@@ -41,6 +41,8 @@ void op_delete(PGconn *conn, fcd_t *fcd) {
         dbg_record(fcd);
     }
     tab->restart = 0;
+    tab->key_next = -1;
+    tab->key_prev = -1;
 
     // verifica se o registro existe
     op_read_random(conn, fcd, false);

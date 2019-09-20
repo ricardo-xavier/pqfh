@@ -36,7 +36,7 @@ extern bool replica_in_transaction;
 
 extern fcd_t *fcd_open;
 
-#define VERSAO "v2.7.5 17/09/2019"
+#define VERSAO "v2.7.6 19/09/2019"
 
 bool in_transaction=false;
 
@@ -742,3 +742,4 @@ bool is_weak(char *table) {
 // 2.7.2  - 16/09 - setar pending_commits no unlock, mas nao fazer commit
 // 2.7.4  - 17/09 - zerar o restart no rewrite e no delete
 // 2.7.5  - 18/09 - passar espacos no nome da tabela para o converteapi
+// 2.7.6  - 19/09 - alem do restart, zerar tambem o key_next e key_prev
