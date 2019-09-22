@@ -5,7 +5,7 @@
 
 extern int dbg;
 extern bool reopen;
-fcd_t *fcd_open;
+extern fcd_t *fcd_open;
 table_t *tab_open;
 
 bool op_open(PGconn *conn, fcd_t *fcd, unsigned short opcode) {
@@ -39,6 +39,7 @@ bool op_open(PGconn *conn, fcd_t *fcd, unsigned short opcode) {
         return false;
     }
 
+#ifndef ISAM
     if (reopen && !memcmp(fcd->sign, "PQFH", 4)) {
         fileid = getint(fcd->file_id);
         tab = (table_t *) fileid;
@@ -89,6 +90,7 @@ bool op_open(PGconn *conn, fcd_t *fcd, unsigned short opcode) {
         }
         return false;
     }
+#endif
 
     // aloca e inicializa a tabela
     tab = (table_t *) malloc(sizeof(table_t));
@@ -124,6 +126,7 @@ bool op_open(PGconn *conn, fcd_t *fcd, unsigned short opcode) {
     fileid = (int) tab;
     putint(fcd->file_id, fileid);
 
+#ifndef ISAM
     if (strcmp(tab->name, "pqfh")) {
         if (table_info(conn, tab, fcd)) {
             fcd->open_mode = opcode - 0xfa00;
@@ -145,9 +148,12 @@ bool op_open(PGconn *conn, fcd_t *fcd, unsigned short opcode) {
         }
         strcpy((char *) fcd->sign, "PQFH");
     } else {
+#endif
         fcd->open_mode = opcode - 0xfa00;
         memcpy(fcd->status, ST_OK, 2);
+#ifndef ISAM
     }
+#endif
 
     if (dbg > 0) {
         fprintf(flog, "%ld status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);

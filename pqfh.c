@@ -14,16 +14,22 @@
 // insert into tabela_api values('sp05a51', 'planoGerencial');
 //
 
-PGconn *conn=NULL;
-PGconn *conn2=NULL;
+#define VERSAO "v2.8.0 22/09/2019"
+
 int dbg=-1;
 int dbg_upd=-1;
 int dbg_times=-1;
 int dbg_cmp=-1;
+char mode='I';
 bool force_bd;
 char *api=NULL;
-char mode='I';
 bool reopen=false;
+int seqcmd=0;
+fcd_t *fcd_open;
+
+PGconn *conn=NULL;
+#ifndef ISAM
+PGconn *conn2=NULL;
 
 int pending_commits = 0;
 pthread_t thread_id;
@@ -33,10 +39,6 @@ char backup[MAX_REC_LEN+1];
 
 list2_t *weak=NULL;
 extern bool replica_in_transaction;
-
-extern fcd_t *fcd_open;
-
-#define VERSAO "v2.7.6 19/09/2019"
 
 bool in_transaction=false;
 
@@ -123,6 +125,7 @@ void unlock(fcd_t *fcd) {
     commit();
 */
 }
+#endif
 
 long tempo_total=0, tempo_open=0, tempo_close=0, tempo_start=0, tempo_next_prev=0, tempo_read=0, 
     tempo_write=0, tempo_rewrite=0, tempo_delete=0, tempo_isam=0;
@@ -207,20 +210,23 @@ void dbg_status(fcd_t *fcd) {
     fprintf(flog, "st=%c%c [%s]\n", fcd->status[0], fcd->status[1], aux);
 }
 
-int seqcmd=0;
 
 void pqfh(unsigned char *opcode, fcd_t *fcd) {
 
-    char           *conninfo;
+    struct timeval tv1, tv2;
     unsigned short op;
+    short          reclen, fnlen;
+    char           filename[257], record[MAX_REC_LEN+1];
+    long           tempo;
+
+#ifndef ISAM
+    char           *conninfo;
     unsigned char  open_mode;
     PGresult       *res;
     bool           ret;
-    char           filename[257], record[MAX_REC_LEN+1], undo[MAX_REC_LEN+1];
-    short          reclen, fnlen;
+    char           undo[MAX_REC_LEN+1];
     char           st[2];
-    struct timeval tv1, tv2;
-    long tempo;
+#endif
 
     gettimeofday(&tv1, NULL);
     if (dbg == -1) {
@@ -233,6 +239,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
     memcpy(filename, fcd->file_name, fnlen);
     filename[fnlen] = 0;
 
+#ifndef ISAM
     if ((conn == NULL) && (mode != 'I')) {
         // conecta ao banco de dados e configura a conexao
         conninfo = getenv("CONECTA_BD");
@@ -299,6 +306,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
         pthread_mutex_init(&lock, NULL);
         pthread_create(&thread_id, NULL, thread_commit, NULL);
     }
+#endif
 
     op = getshort(opcode);
     reclen = getshort(fcd->rec_len);
@@ -355,6 +363,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
         return;
     }
 
+#ifndef ISAM
     if ((mode == 'A') && (fcd->isam != 'S') && strcmp(filename, "pqfh")
             && ((op == OP_WRITE) || (op == OP_REWRITE) || (op == OP_DELETE))) {
 
@@ -412,8 +421,8 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
     }
 
     pthread_mutex_lock(&lock);
+#endif
     switch (op) {
-
         case OP_OPEN_INPUT:
         case OP_OPEN_OUTPUT:
         case OP_OPEN_IO:
@@ -431,6 +440,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
             if (mode == 'B') {
                 break;
             }
+#ifndef ISAM
             if (!memcmp(fcd->status, ST_OK, 2)) {
                 // open com sucesso no banco
                 // executa o open no isam
@@ -447,8 +457,10 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
                     memcpy(fcd->status, st, 2);
                 }
             }
+#endif
             break;
 
+#ifndef ISAM
         case OP_CLOSE:
             open_mode = fcd->open_mode; 
 /*
@@ -534,11 +546,13 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
                 replica_commit();
             }
             break;
+#endif
 
         case OP_WRITE:
             if (op_write(conn, fcd)) {
                 break; // command
             }
+#ifndef ISAM
             if ((mode != 'B') && memcmp(fcd->status, ST_OK, 2)) {
 
                 // erro no insert do banco
@@ -556,8 +570,10 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
             if (replica_in_transaction) {
                 replica_commit();
             }
+#endif
             break;
 
+#ifndef ISAM
         case OP_DELETE:
             op_delete(conn, fcd);
             if ((mode != 'B') && memcmp(fcd->status, ST_OK, 2)) {
@@ -586,6 +602,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
                 replica_commit();
             }
             break;
+#endif
 
         default:
             fprintf(flog, "Comando nao implementado: %04x\n", op);
@@ -665,10 +682,12 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
     if (dbg_cmp > 0) {
         dbg_status(fcd);
     }
+#ifndef ISAM
     pthread_mutex_unlock(&lock);
-
+#endif
 }
 
+#ifndef ISAM
 bool is_weak(char *table) {
     list2_t *ptr;
     char    *tab;
@@ -681,6 +700,7 @@ bool is_weak(char *table) {
     }
     return false;
 }
+#endif
 
 // 1.9.0  - 30/06 - weak
 // 1.9.1  - 06/07 - verificar se a tabela esta aberta em todas as operacoes
@@ -743,3 +763,4 @@ bool is_weak(char *table) {
 // 2.7.4  - 17/09 - zerar o restart no rewrite e no delete
 // 2.7.5  - 18/09 - passar espacos no nome da tabela para o converteapi
 // 2.7.6  - 19/09 - alem do restart, zerar tambem o key_next e key_prev
+// 2.8.0  - 22/09 - pqfh isam

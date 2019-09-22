@@ -8,13 +8,13 @@ extern int dbg_upd;
 extern int pending_commits;
 
 bool op_write(PGconn *conn, fcd_t *fcd) {
-
-    unsigned short keyid; 
     table_t        *tab;
-    char           stmt_name[65], prefixo[7];
     unsigned int   fileid;
+#ifndef ISAM
     column_t       *col;
+    char           stmt_name[65], prefixo[7];
     char           sql[4097], aux[257];
+    unsigned short keyid; 
     int            p;
     list2_t        *ptr;
     PGresult       *res;
@@ -32,21 +32,25 @@ bool op_write(PGconn *conn, fcd_t *fcd) {
         }
         return false;
     }
+#endif
 
     fileid = getint(fcd->file_id);
 
     tab = (table_t *) fileid;
+#ifndef ISAM
     op = OP_WRITE;
     if (dbg > 0 || DBG_UPD) {
         fprintf(flog, "%ld op_write [%s]\n", time(NULL), tab->name);
         dbg_record(fcd);
     }
+#endif
 
     if (!strcmp(tab->name, "pqfh")) {
         command(conn, tab, fcd);
         return true;
     }
 
+#ifndef ISAM
     keyid = getshort(fcd->key_id);
     putshort(fcd->key_id, 0);
 
@@ -191,6 +195,7 @@ bool op_write(PGconn *conn, fcd_t *fcd) {
     if (tab->api[0] && !memcmp(fcd->status, ST_OK, 2)) {
         thread_api_start('i', tab, fcd);
     }
+#endif
 #endif
     return false;
 

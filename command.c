@@ -3,11 +3,16 @@
 #include "pqfh.h"
 
 extern int dbg;
+#ifndef ISAM
 extern list2_t *weak;
+#endif
 
 void command(PGconn *conn, table_t *tab, fcd_t *fcd) {
-    char *p, *q, aux[257];
+    char *p, aux[257];
+#ifndef ISAM
     unsigned short reclen;
+    char *q;
+#endif
 
     if ((p = strchr((char *) fcd->record, ' ')) != NULL) *p = 0;
 
@@ -15,6 +20,7 @@ void command(PGconn *conn, table_t *tab, fcd_t *fcd) {
         fprintf(flog, "%ld COMANDO PQFH: %s\n", time(NULL), fcd->record);
     }
 
+#ifndef ISAM
     if (!memcmp(fcd->record, "WEAK:", 5)) {
         strcpy(aux, (char *) fcd->record+5);
         if ((p = strchr(aux, ' ')) != NULL) *p = 0;
@@ -34,19 +40,22 @@ void command(PGconn *conn, table_t *tab, fcd_t *fcd) {
     if (!memcmp(fcd->record, "LOAD", 4)) {
         load_table(conn);
     }
+#endif
 
     if (!memcmp(fcd->record, "CMPISAM", 7)) {
         strcpy(aux, (char *) fcd->record+8);
         if ((p = strchr(aux, ' ')) != NULL) *p = 0;
         cmp_isam(conn, aux);
-
+#ifndef ISAM
     } else if (!memcmp(fcd->record, "CMP", 3)) {
         cmp_table(conn, false);
 
     } else if (!memcmp(fcd->record, "SYNC", 4)) {
         cmp_table(conn, true);
+#endif
     }
 
+#ifndef ISAM
     if (!memcmp(fcd->record, "BEGIN TRANSACTION", 17)) {
         pqfh_begin_transaction();
     }
@@ -58,6 +67,7 @@ void command(PGconn *conn, table_t *tab, fcd_t *fcd) {
     if (!memcmp(fcd->record, "ROLLBACK", 8)) {
         pqfh_rollback();
     }
+#endif
 
     memcpy(fcd->status, ST_OK, 2);
     if (dbg > 0) {

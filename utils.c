@@ -4,6 +4,7 @@
 
 extern int dbg;
 
+#ifndef ISAM
 void deadlock_log(char *msg) {
     char log[257], cmd[257];
     FILE *f;
@@ -94,6 +95,7 @@ void close_cursor(PGconn *conn, table_t *tab) {
     }
     PQclear(res);
 }
+#endif
 
 extern int dbg_upd;
 
