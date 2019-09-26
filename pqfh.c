@@ -142,6 +142,7 @@ char get_mode() {
     fd = open(".pqfh", O_RDONLY);
     read(fd, &mode, 1); 
     close(fd);
+#ifndef ISAM
     if (mode == 'a') {
         mode = 'A';
         force_partial = true;
@@ -150,6 +151,7 @@ char get_mode() {
         mode = 'B';
         force_partial = true;
     }
+#endif
     return mode;
 }
 
