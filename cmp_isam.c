@@ -123,11 +123,11 @@ void cmp_isam(PGconn *conn, char *filename2) {
                 // chaves iguais - compara registros
                 if (memcmp(fcd1->record, fcd2->record, reclen)) {
                     // registros diferentes
-                    fprintf(f, ">");
-                    fwrite(fcd1->record, reclen, 1, f);
-                    fprintf(f, "\n");
                     fprintf(f, "<");
                     fwrite(fcd2->record, reclen, 1, f);
+                    fprintf(f, "\n");
+                    fprintf(f, ">");
+                    fwrite(fcd1->record, reclen, 1, f);
                     fprintf(f, "\n");
                 }
                 EXTFH(opcode, fcd1);

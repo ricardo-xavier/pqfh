@@ -14,7 +14,7 @@
 // insert into tabela_api values('sp05a51', 'planoGerencial');
 //
 
-#define VERSAO "v2.8.0 22/09/2019"
+#define VERSAO "v2.9.1 26/09/2019"
 
 int dbg=-1;
 int dbg_upd=-1;
@@ -39,6 +39,7 @@ char backup[MAX_REC_LEN+1];
 
 list2_t *weak=NULL;
 extern bool replica_in_transaction;
+extern bool force_partial;
 
 bool in_transaction=false;
 
@@ -141,6 +142,14 @@ char get_mode() {
     fd = open(".pqfh", O_RDONLY);
     read(fd, &mode, 1); 
     close(fd);
+    if (mode == 'a') {
+        mode = 'A';
+        force_partial = true;
+    }
+    if (mode == 'b') {
+        mode = 'B';
+        force_partial = true;
+    }
     return mode;
 }
 
@@ -764,3 +773,6 @@ bool is_weak(char *table) {
 // 2.7.5  - 18/09 - passar espacos no nome da tabela para o converteapi
 // 2.7.6  - 19/09 - alem do restart, zerar tambem o key_next e key_prev
 // 2.8.0  - 22/09 - pqfh isam
+// 2.8.1  - 23/09 - inversao dos registros no cmp isam
+// 2.9.0  - 26/09 - chave parcial
+// 2.9.1  - 26/09 - comando PARTIAL

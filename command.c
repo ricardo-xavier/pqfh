@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include "pqfh.h"
 
 extern int dbg;
@@ -66,6 +67,12 @@ void command(PGconn *conn, table_t *tab, fcd_t *fcd) {
 
     if (!memcmp(fcd->record, "ROLLBACK", 8)) {
         pqfh_rollback();
+    }
+
+    if (!memcmp(fcd->record, "PARTIAL:", 8)) {
+        strcpy(aux, (char *) fcd->record+8);
+        if ((p = strchr(aux, ' ')) != NULL) *p = 0;
+        set_partial(atoi(aux));
     }
 #endif
 

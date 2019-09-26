@@ -58,6 +58,8 @@ typedef struct {
     char api_root[MAX_APIS][MAX_NAME_LEN+1];
     list2_t *columns_api[MAX_APIS];
 
+    int partial_key;
+
 } table_t;
 
 typedef struct {
@@ -221,6 +223,7 @@ void load_table(PGconn *conn);
 void cmp_table(PGconn *conn, bool sync);
 void cmp_isam(PGconn *conn, char *filename);
 void truncate_table(PGconn *conn, char *tabname);
+void set_partial(int ncomps);
 
 void thread_api_start(char cmd, table_t *tab, fcd_t *fcd);
 void pqfh_call_java(char *endereco, char *operacao, char *metodo, char *json, char *bearer);

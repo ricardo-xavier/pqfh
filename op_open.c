@@ -7,6 +7,7 @@ extern int dbg;
 extern bool reopen;
 extern fcd_t *fcd_open;
 table_t *tab_open;
+int ncomps=0;
 
 bool op_open(PGconn *conn, fcd_t *fcd, unsigned short opcode) {
 
@@ -122,6 +123,8 @@ bool op_open(PGconn *conn, fcd_t *fcd, unsigned short opcode) {
         tab->api[a][0] = 0;
         tab->columns_api[a] = NULL;
     }
+    tab->partial_key = ncomps;
+    ncomps = 0;
 
     fileid = (int) tab;
     putint(fcd->file_id, fileid);
@@ -160,4 +163,8 @@ bool op_open(PGconn *conn, fcd_t *fcd, unsigned short opcode) {
     }
 
     return !strcmp(tab->name, "pqfh");
+}
+
+void set_partial(int _ncomps) {
+    ncomps = _ncomps;
 }

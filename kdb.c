@@ -4,7 +4,9 @@
 #include "list2.h"
 
 extern int dbg;
-extern bool partial;
+extern bool partial_weak;
+int partial_key=0;
+bool force_partial=false;
 
 void getkeys(fcd_t *fcd, table_t *tab) {
 
@@ -112,12 +114,17 @@ void getkeys(fcd_t *fcd, table_t *tab) {
     }
 }
 
-void adiciona_comp(unsigned char *record, _key_t key, int c, char *op, char *where, char *order) {
+void adiciona_comp(unsigned char *record, _key_t key, int c, char *_op, char *where, char *order) {
 
-    char aux[257];
+    char aux[257], op[3];
     unsigned char  buf[257];
     column_t *col;
     int last;
+
+    strcpy(op, _op);
+    if (partial_key > 0) {
+        strcpy(op, "=");
+    }
 
     col = key.columns[c];
     memcpy(buf, record+col->offset, col->len);
@@ -127,10 +134,15 @@ void adiciona_comp(unsigned char *record, _key_t key, int c, char *op, char *whe
     }
 
     last = key.ncols - 1;
-    if (partial) {
+    if (partial_weak) {
         last--;
     }
-    //fprintf(flog, "getwhere [%s] [%s] %d %d %d\n", where, col->name, partial, c, last);
+    if (partial_key > 0) {
+        last = partial_key - 1;
+    }
+    if (dbg > 2) {
+        fprintf(flog, "getwhere [%s] [%s] partial=%d\n", where, col->name, partial_key);
+    }
 
     if (c == last) {
         if (col->tp == 'n') {
@@ -143,7 +155,14 @@ void adiciona_comp(unsigned char *record, _key_t key, int c, char *op, char *whe
         if (op[0] == '<') {
             strcat(order, " desc");
         }
-        if (partial) {
+        if (partial_key > 0) {
+            for (c=partial_key+1; c<key.ncols; c++) {
+                col = key.columns[c];
+                strcat(order, ",");
+                strcat(order, col->name);
+            }
+        }
+        if (partial_weak) {
             col = key.columns[c+1];
             strcat(order, ",");
             strcat(order, col->name);
@@ -189,7 +208,12 @@ void getwhere(unsigned char *record, table_t *table, int keyid, char *op, char *
     for (ptr=table->keys, k=0; ptr!=NULL; ptr=ptr->next, k++) {
         if (k == keyid) {
             key = (_key_t *) ptr->buf;
+            partial_key = table->partial_key;
+            if (force_partial && !memcmp(table->name, "intori", 6) && (keyid == 1)) {
+                partial_key = 2;
+            }
             adiciona_comp(record, *key, 0, op, where, order);
+            partial_key = 0;
             break;
         }
     }
@@ -206,10 +230,10 @@ void adiciona_comp_prepared(table_t *tab, _key_t key, int c, char *where, char c
     col = key.columns[c];
     col->p = seq;
     last = key.ncols - 1;
-    if (partial) {
+    if (partial_weak) {
         last--;
     }
-    //fprintf(flog, "getwhereprep [%s] [%s] %d %d %d\n", where, col->name, partial, c, last);
+    //fprintf(flog, "getwhereprep [%s] [%s] %d %d %d\n", where, col->name, partial_weak, c, last);
 
     if (c == last) {
         sprintf(aux, "%s = $%d", col->name, ++seq);

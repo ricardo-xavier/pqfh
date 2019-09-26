@@ -6,7 +6,7 @@
 
 extern int dbg;
 extern int dbg_times;
-extern bool partial;
+extern bool partial_weak;
 
 void op_read_random(PGconn *conn, fcd_t *fcd, bool with_lock) {
 
@@ -151,7 +151,7 @@ void op_read_random(PGconn *conn, fcd_t *fcd, bool with_lock) {
             fprintf(flog, "%ld %d %s\n", time(NULL), PQresultStatus(res), PQerrorMessage(conn));
         }
     } else {
-        if (!partial) {
+        if (!partial_weak) {
             pq2cob(tab, res, fcd->record, reclen);
         }
         memcpy(fcd->status, ST_OK, 2);

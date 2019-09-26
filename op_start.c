@@ -6,7 +6,7 @@
 extern int dbg;
 extern int dbg_times;
 
-bool partial=false;
+bool partial_weak=false;
 bool eof_start=false;
 
 void op_start(PGconn *conn, fcd_t *fcd, char *op) {
@@ -72,27 +72,27 @@ void op_start(PGconn *conn, fcd_t *fcd, char *op) {
         if (dbg > 2) {
             fprintf(flog, "%ld op_start verifica se existe algum registro na tabela fraca\n", time(NULL));
         }
-        partial = true;
+        partial_weak = true;
         op_read_random(conn, fcd, false);
         if (memcmp(fcd->status, ST_OK, 2)) {
             memcpy(fcd->status, ST_REC_NOT_FOUND, 2);
             eof_start = true;
-            partial = false;
+            partial_weak = false;
             if (dbg > 0) {
                 fprintf(flog, "%ld status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
             }
             return;
         }
-        partial = false;
+        partial_weak = false;
     }
 
     close_cursor(conn, tab);
     tab->cursor = true;
 
     if (is_weak(tab->name)) {
-        partial = true;
+        partial_weak = true;
         getwhere(fcd->record, tab, keyid, "=", where, order);
-        partial = false;
+        partial_weak = false;
     } else {
         getwhere(fcd->record, tab, keyid, op, where, order);
     }

@@ -54,10 +54,11 @@ list2_t *list2_remove(list2_t *list, list2_t *item) {
     }
 
     if (item->next == NULL) {
+        ptr = item->prior;
         item->prior->next = NULL;
         item->prior = NULL;
         list2_remove(NULL, item);
-        return item->prior;
+        return ptr;
     }
 
     if (item->prior == NULL) {
