@@ -14,7 +14,7 @@
 // insert into tabela_api values('sp05a51', 'planoGerencial');
 //
 
-#define VERSAO "v2.9.1 26/09/2019"
+#define VERSAO "v2.9.4 02/01/2019"
 
 int dbg=-1;
 int dbg_upd=-1;
@@ -778,3 +778,5 @@ bool is_weak(char *table) {
 // 2.8.1  - 23/09 - inversao dos registros no cmp isam
 // 2.9.0  - 26/09 - chave parcial
 // 2.9.1  - 26/09 - comando PARTIAL
+// 2.9.2  - 02/10 - problema com filename
+// 2.9.4  - 02/10 - ignore lock no cmp_isam

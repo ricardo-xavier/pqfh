@@ -29,6 +29,7 @@ void cmp_isam(PGconn *conn, char *filename2) {
         return;
     }
     fcd1 = fcd_open;
+    fcd1->ignore_lock |= 0x01;
     fcd2 = malloc(sizeof(fcd_t));
     memcpy(fcd2, fcd1, sizeof(fcd_t));
 
@@ -50,6 +51,8 @@ void cmp_isam(PGconn *conn, char *filename2) {
     }
 
     fcd2->open_mode = 128;
+    fcd2->ignore_lock |= 0x01;
+    fcd2->file_name = malloc(strlen(filename2) + 1);
     memcpy(fcd2->file_name, filename2, strlen(filename2));
     putshort(fcd2->file_name_len, strlen(filename2));
 
@@ -188,6 +191,7 @@ void cmp_isam(PGconn *conn, char *filename2) {
 
     }
     fclose(f);
+    free(fcd2->file_name);
     free(fcd2);
 
 }
