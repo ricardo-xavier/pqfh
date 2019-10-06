@@ -52,7 +52,8 @@ void op_read_random(PGconn *conn, fcd_t *fcd, bool with_lock) {
 
 /*
     bool lock_exclusive = (fcd->lock_mode & 0x01) == 0x01;
-    bool lock_manual = (fcd->lock_mode & 0x01) == 0x01;
+    bool lock_automatic = (fcd->lock_mode & 0x02) == 0x02;
+    bool lock_manual = (fcd->lock_mode & 0x04) == 0x04;
 */
 
     keyid = getshort(fcd->key_id);

@@ -7,15 +7,16 @@ extern int dbg;
 extern int dbg_upd;
 extern int dbg_times;
 extern int pending_commits;
-extern char backup[MAX_REC_LEN+1];
 
 bool op_rewrite(PGconn *conn, fcd_t *fcd) {
 
     unsigned int   fileid;
-    unsigned short reclen, keyid, keylen; 
+    unsigned short keyid, keylen; 
     table_t        *tab;
     column_t       *col;
-    char           record[MAX_REC_LEN+1], kbuf[MAX_KEY_LEN+1], sql[4097], aux[257];
+    char           record[MAX_REC_LEN+1];
+    unsigned short reclen;
+    char           kbuf[MAX_KEY_LEN+1], sql[4097], aux[257];
     int            p, nParams;
     list2_t        *ptr;
     PGresult       *res;
@@ -41,7 +42,6 @@ bool op_rewrite(PGconn *conn, fcd_t *fcd) {
     }
 
     fileid = getint(fcd->file_id);
-    reclen = getshort(fcd->rec_len);
 
     tab = (table_t *) fileid;
     op = OP_REWRITE;
@@ -55,6 +55,7 @@ bool op_rewrite(PGconn *conn, fcd_t *fcd) {
 
     keyid = getshort(fcd->key_id);
     putshort(fcd->key_id, 0);
+    reclen = getshort(fcd->rec_len);
     memcpy(record, fcd->record, reclen);
 
     // performance
@@ -79,7 +80,6 @@ bool op_rewrite(PGconn *conn, fcd_t *fcd) {
         return true;
     }
 
-    memcpy(backup, fcd->record, reclen);
     memcpy(fcd->record, record, reclen);
 
     strcpy(kbuf, getkbuf(fcd, 0, tab, &keylen));

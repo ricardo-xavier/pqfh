@@ -4,6 +4,7 @@
 #include "pqfh.h"
 
 extern int dbg;
+extern bool lock_manual;
 #ifndef ISAM
 extern list2_t *weak;
 #endif
@@ -73,6 +74,14 @@ void command(PGconn *conn, table_t *tab, fcd_t *fcd) {
         strcpy(aux, (char *) fcd->record+8);
         if ((p = strchr(aux, ' ')) != NULL) *p = 0;
         set_partial(atoi(aux));
+    }
+
+    if (!memcmp(fcd->record, "LOCK_MANUAL", 11)) {
+        lock_manual = true;
+    }
+
+    if (!memcmp(fcd->record, "LOCK_AUTOMATIC", 14)) {
+        lock_manual = false;
     }
 #endif
 

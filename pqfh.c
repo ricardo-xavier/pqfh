@@ -14,18 +14,20 @@
 // insert into tabela_api values('sp05a51', 'planoGerencial');
 //
 
-#define VERSAO "v2.9.4 02/01/2019"
+#define VERSAO "v2.10.0 06/10/2019"
 
 int dbg=-1;
 int dbg_upd=-1;
 int dbg_times=-1;
 int dbg_cmp=-1;
+int dbg_lock=-1;
 char mode='I';
 bool force_bd;
 char *api=NULL;
 bool reopen=false;
 int seqcmd=0;
 fcd_t *fcd_open;
+bool lock_manual=true;
 
 PGconn *conn=NULL;
 #ifndef ISAM
@@ -34,8 +36,6 @@ PGconn *conn2=NULL;
 int pending_commits = 0;
 pthread_t thread_id;
 pthread_mutex_t lock;
-
-char backup[MAX_REC_LEN+1];
 
 list2_t *weak=NULL;
 extern bool replica_in_transaction;
@@ -129,9 +129,9 @@ void unlock(fcd_t *fcd) {
 #endif
 
 long tempo_total=0, tempo_open=0, tempo_close=0, tempo_start=0, tempo_next_prev=0, tempo_read=0, 
-    tempo_write=0, tempo_rewrite=0, tempo_delete=0, tempo_isam=0;
+    tempo_write=0, tempo_rewrite=0, tempo_delete=0, tempo_isam=0, tempo_cobolpost=0;
 int  qtde_total=0, qtde_open=0, qtde_close=0, qtde_start=0, qtde_next_prev=0, qtde_read=0, 
-    qtde_write=0, qtde_rewrite=0, qtde_delete=0, qtde_isam=0;
+    qtde_write=0, qtde_rewrite=0, qtde_delete=0, qtde_isam=0, qtde_cobolpost=0;
 
 char get_mode() {
     int  fd;
@@ -146,10 +146,12 @@ char get_mode() {
     if (mode == 'a') {
         mode = 'A';
         force_partial = true;
+        lock_manual = true;
     }
     if (mode == 'b') {
         mode = 'B';
         force_partial = true;
+        lock_manual = false;
     }
 #endif
     return mode;
@@ -181,8 +183,14 @@ void get_debug() {
     } else {
         dbg_cmp = atoi(env);
     }
+    env = getenv("PQFH_DBG_LOCK");
+    if (env == NULL) {
+        dbg_lock = 0;
+    } else {
+        dbg_lock = atoi(env);
+    }
     flog = stderr;
-    if ((dbg > 0) || (dbg_upd > 0) || (dbg_times > 0) || (dbg_cmp > 0))  {
+    if ((dbg > 0) || (dbg_upd > 0) || (dbg_times > 0) || (dbg_cmp > 0) || (dbg_lock > 0))  {
         if (logname != NULL) {
             flog = fopen(logname, "w");
             if (flog == NULL) {
@@ -221,6 +229,23 @@ void dbg_status(fcd_t *fcd) {
     fprintf(flog, "st=%c%c [%s]\n", fcd->status[0], fcd->status[1], aux);
 }
 
+void mostra_tempos() {
+    if (dbg_times == 0) {
+        return;
+    }
+    fprintf(stderr, "tempo_total=%ld %d\n", tempo_total, qtde_total);
+    fprintf(stderr, "tempo_open=%ld %d\n", tempo_open, qtde_open);
+    fprintf(stderr, "tempo_close=%ld %d\n", tempo_close, qtde_close);
+    fprintf(stderr, "tempo_start=%ld %d\n", tempo_start, qtde_start);
+    fprintf(stderr, "tempo_next_prev=%ld %d\n", tempo_next_prev, qtde_next_prev);
+    fprintf(stderr, "tempo_read=%ld %d\n", tempo_read, qtde_read);
+    fprintf(stderr, "tempo_write=%ld %d\n", tempo_write, qtde_write);
+    fprintf(stderr, "tempo_rewrite=%ld %d\n", tempo_rewrite, qtde_rewrite);
+    fprintf(stderr, "tempo_delete=%ld %d\n", tempo_delete, qtde_delete);
+    fprintf(stderr, "tempo_isam=%ld %d\n", tempo_isam, qtde_isam);
+    fprintf(stderr, "tempo_cobolpost=%ld %d\n", tempo_cobolpost, qtde_cobolpost);
+}
+
 
 void pqfh(unsigned char *opcode, fcd_t *fcd) {
 
@@ -249,6 +274,17 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
     fnlen = getshort(fcd->file_name_len);
     memcpy(filename, fcd->file_name, fnlen);
     filename[fnlen] = 0;
+    op = getshort(opcode);
+
+    if (lock_manual) {
+        fcd->lock_mode &= ~0x02;
+        fcd->lock_mode |= 0x04;    
+        if (op == OP_READ_LOCK) {
+            fcd->ignore_lock |= 0x01;
+        } else {
+            fcd->ignore_lock &= ~0x01;
+        }
+    }
 
 #ifndef ISAM
     if ((conn == NULL) && (mode != 'I')) {
@@ -319,7 +355,6 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
     }
 #endif
 
-    op = getshort(opcode);
     reclen = getshort(fcd->rec_len);
 
     if (dbg_cmp > 0) {
@@ -355,6 +390,12 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
         qtde_total++;
         if (dbg_cmp > 0) {
             dbg_status(fcd);
+        }
+        if ((dbg_lock > 0) && (fcd->status[0] == '9')) {
+            fprintf(stderr, "%ld EXTFH %04x [%s] lock: status=%c%c\n", time(NULL), op, filename, fcd->status[0], fcd->status[1]);        
+        }        
+        if (op == OP_CLOSE) {
+            mostra_tempos();
         }
 #ifdef API
         if ((api != NULL) && (mode != 'I'))  {
@@ -639,18 +680,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
         case OP_CLOSE:
             tempo_close += tempo;
             qtde_close++;
-            if (dbg_times > 0) {
-                fprintf(stderr, "tempo_total=%ld %d\n", tempo_total, qtde_total);
-                fprintf(stderr, "tempo_open=%ld %d\n", tempo_open, qtde_open);
-                fprintf(stderr, "tempo_close=%ld %d\n", tempo_close, qtde_close);
-                fprintf(stderr, "tempo_start=%ld %d\n", tempo_start, qtde_start);
-                fprintf(stderr, "tempo_next_prev=%ld %d\n", tempo_next_prev, qtde_next_prev);
-                fprintf(stderr, "tempo_read=%ld %d\n", tempo_read, qtde_read);
-                fprintf(stderr, "tempo_write=%ld %d\n", tempo_write, qtde_write);
-                fprintf(stderr, "tempo_rewrite=%ld %d\n", tempo_rewrite, qtde_rewrite);
-                fprintf(stderr, "tempo_delete=%ld %d\n", tempo_delete, qtde_delete);
-                fprintf(stderr, "tempo_isam=%ld %d\n", tempo_isam, qtde_isam);
-            }
+            mostra_tempos();
             break;
 
         case OP_START_GT:
@@ -693,6 +723,9 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
     if (dbg_cmp > 0) {
         dbg_status(fcd);
     }
+    if ((dbg_lock > 0) && (fcd->status[0] == '9')) {
+        fprintf(stderr, "%ld %04x [%s] lock: status=%c%c\n", time(NULL), op, filename, fcd->status[0], fcd->status[1]);        
+    }        
 #ifndef ISAM
     pthread_mutex_unlock(&lock);
 #endif
@@ -780,3 +813,4 @@ bool is_weak(char *table) {
 // 2.9.1  - 26/09 - comando PARTIAL
 // 2.9.2  - 02/10 - problema com filename
 // 2.9.4  - 02/10 - ignore lock no cmp_isam
+// 2.10.0 - 06/10 - lock manual

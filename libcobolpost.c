@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <sys/times.h>
 #include <libpq-fe.h>
 
 #ifdef PQFH
@@ -12,6 +13,11 @@ void pqfh_sql_next(int *p_registro, char *p_linha);
 #endif
 
 extern int dbg;
+extern int dbg_times;
+extern FILE *flog;
+
+extern long tempo_cobolpost, tempo_total;
+extern int qtde_cobolpost, qtde_total;
 
 static PGconn *conn=NULL;
 PGresult *res;
@@ -33,19 +39,32 @@ executa_sql(char *query, char *p_retorno, int *p_registros, char *p_linha) {
 	char *s_retorno;
 	char *s_linha;
 	char *s_linha_aux;
-        char *s_linha_ret;
-        char *s_linha_fim;
+    char *s_linha_ret;
+    char *s_linha_fim;
 	int  i_registros;
 	int  i_campos;
 	int  i;
-        int  i_r;
-        int  i_tamanho;	
+    int  i_r;
+    int  i_tamanho;	
+    struct timeval tv1, tv2;
 
     if (dbg > 0) {
         fprintf(stderr, "%ld cobolpost executa_sql [%s]\n", time(NULL), query);
     }
 #ifdef PQFH
+    if (dbg_times > 1) {
+        gettimeofday(&tv1, NULL);
+    }
 	pqfh_executa_sql(conn, query, p_retorno, p_registros, p_linha);
+    if (dbg_times > 1) {
+        gettimeofday(&tv2, NULL);
+        long tempo = ((tv2.tv_sec * 1000000) + tv2.tv_usec) - ((tv1.tv_sec * 1000000) + tv1.tv_usec);
+        fprintf(flog, "%ld cobolpost executa_sql [%s] tempo=%ld\n", time(NULL), query, tempo);
+        tempo_cobolpost += tempo;
+        tempo_total += tempo;
+        qtde_cobolpost++;
+        qtde_total++;
+    }
 	return;
 #endif
 	res = PQexec(conn, s_query);
@@ -98,18 +117,32 @@ executa_sql_next(int *p_registro, char *p_linha) {
 	char *s_retorno;
 	char *s_linha;
 	char *s_linha_aux;
-        char *s_linha_ret;
-        char *s_linha_fim;
+    char *s_linha_ret;
+    char *s_linha_fim;
 	int  i_registros;
 	int  i_campos;
 	int  i;
-        int  i_r;
-        int  i_tamanho;	        	
+    int  i_r;
+    int  i_tamanho;	        	
+    struct timeval tv1, tv2;
+
     if (dbg > 0) {
         fprintf(stderr, "%ld cobolpost next %d\n", time(NULL), *p_registro);
     }
 #ifdef PQFH
+    if (dbg_times > 1) {
+        gettimeofday(&tv1, NULL);
+    }
 	pqfh_sql_next(p_registro, p_linha);
+    if (dbg_times > 1) {
+        gettimeofday(&tv2, NULL);
+        long tempo = ((tv2.tv_sec * 1000000) + tv2.tv_usec) - ((tv1.tv_sec * 1000000) + tv1.tv_usec);
+        fprintf(flog, "%ld cobolpost next %d tempo=%ld\n", time(NULL), *p_registro, tempo);
+        tempo_cobolpost += tempo;
+        tempo_total += tempo;
+        qtde_cobolpost++;
+        qtde_total++;
+    }
 	return;
 #endif
 	    

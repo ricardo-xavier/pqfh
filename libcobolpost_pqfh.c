@@ -4,7 +4,7 @@
 
 extern int dbg;
 extern int dbg_times;
-PGresult *res;
+PGresult *res=NULL;
 
 void monta_linha(int linha, char *p_linha) {
 
@@ -58,6 +58,10 @@ void pqfh_executa_sql(PGconn *conn, char *query, char *p_retorno, int *p_registr
         fprintf(stderr, "%ld executa_sql [%s]\n", time(NULL), query);
     }    
 
+    if (res != NULL) {
+        PQclear(res);
+    }
+
     res = PQexec(conn, query);
 
     if ((PQresultStatus(res) != PGRES_TUPLES_OK) || (PQntuples(res) == 0))  {
@@ -73,7 +77,6 @@ void pqfh_executa_sql(PGconn *conn, char *query, char *p_retorno, int *p_registr
 
     }
 
-    PQclear(res);
 }
 
 void pqfh_sql_next(int *p_registro, char *p_linha) {
