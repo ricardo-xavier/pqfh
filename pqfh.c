@@ -14,7 +14,7 @@
 // insert into tabela_api values('sp05a51', 'planoGerencial');
 //
 
-#define VERSAO "v2.10.0 06/10/2019"
+#define VERSAO "v3.0.1 09/10/2019"
 
 int dbg=-1;
 int dbg_upd=-1;
@@ -28,6 +28,7 @@ bool reopen=false;
 int seqcmd=0;
 fcd_t *fcd_open;
 bool lock_manual=true;
+bool executed=false;
 
 PGconn *conn=NULL;
 #ifndef ISAM
@@ -45,7 +46,7 @@ bool in_transaction=false;
 
 void commit() {
     PGresult *res;
-    if (dbg > 0 || (dbg_upd > 0) || (dbg_times > 0)) {
+    if (dbg > 0 || (dbg_upd > 0) || (dbg_times > 0) || ((dbg_cmp > 0) && (pending_commits > 0))) {
         fprintf(flog, "%ld commit %d %s\n", time(NULL), pending_commits, in_transaction ? "TRANSACAO" : "AUTO_COMMIT");
     }
     res = PQexec(conn, "COMMIT");
@@ -221,12 +222,12 @@ void get_debug() {
     }
 }
 
-void dbg_status(fcd_t *fcd) {
+void dbg_status(char *msg, fcd_t *fcd) {
     short reclen = getshort(fcd->rec_len);
     char aux[MAX_REC_LEN+1];
     memcpy(aux, fcd->record, reclen);
     aux[reclen] = 0;
-    fprintf(flog, "st=%c%c [%s]\n", fcd->status[0], fcd->status[1], aux);
+    fprintf(flog, "%s st=%c%c [%s] exec=%d\n\n", msg, fcd->status[0], fcd->status[1], aux, executed);
 }
 
 void mostra_tempos() {
@@ -254,14 +255,14 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
     short          reclen, fnlen;
     char           filename[257], record[MAX_REC_LEN+1];
     long           tempo;
+    unsigned char  open_mode;
+    char           st[2];
 
 #ifndef ISAM
     char           *conninfo;
-    unsigned char  open_mode;
     PGresult       *res;
     bool           ret;
     char           undo[MAX_REC_LEN+1];
-    char           st[2];
 #endif
 
     gettimeofday(&tv1, NULL);
@@ -269,12 +270,17 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
         get_debug();
     }
     mode = get_mode();
+    executed = false;
 
     // pega o nome do arquivo para gravar no log
     fnlen = getshort(fcd->file_name_len);
     memcpy(filename, fcd->file_name, fnlen);
     filename[fnlen] = 0;
     op = getshort(opcode);
+
+    if ((mode == 'W') && (op == OP_OPEN_IO)) {
+        fcd->isam = 0;
+    }        
 
     if (lock_manual) {
         fcd->lock_mode &= ~0x02;
@@ -363,7 +369,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
         fprintf(flog, "%ld cmd=%d %04x [%s] [%s]\n", time(NULL), ++seqcmd, op, filename, record);
     }
 
-    if (((mode == 'I') || (fcd->isam == 'S')) && memcmp(filename, "pqfh", 4)) {
+    if (((mode == 'I') || (mode == 'W') || (fcd->isam == 'S')) && memcmp(filename, "pqfh", 4)) {
 #ifdef API
         unsigned int fileid = getint(fcd->file_id);
         table_t *tab;
@@ -388,8 +394,8 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
         tempo_total += tempo;
         qtde_isam++;
         qtde_total++;
-        if (dbg_cmp > 0) {
-            dbg_status(fcd);
+        if ((dbg_cmp > 0) && (mode != 'W')) {
+            dbg_status("ISAM", fcd);
         }
         if ((dbg_lock > 0) && (fcd->status[0] == '9')) {
             fprintf(stderr, "%ld EXTFH %04x [%s] lock: status=%c%c\n", time(NULL), op, filename, fcd->status[0], fcd->status[1]);        
@@ -412,8 +418,22 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
             }
         }
 #endif
-        return;
+        if (mode != 'W') {
+            return;
+        } else if (memcmp(fcd->status, ST_OK, 1)) {
+            if (dbg_cmp > 0) {
+                dbg_status("ISAM", fcd);
+            }
+            return;
+        }    
     }
+
+    if ((mode == 'W') && (fcd->isam == 'S')) {
+        if (dbg_cmp > 0) {
+            dbg_status("ISAM", fcd);
+        }
+        return;
+    }        
 
 #ifndef ISAM
     if ((mode == 'A') && (fcd->isam != 'S') && strcmp(filename, "pqfh")
@@ -474,14 +494,44 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
 
     pthread_mutex_lock(&lock);
 #endif
+    memcpy(st, fcd->status, 2);
+    open_mode = fcd->open_mode;
     switch (op) {
         case OP_OPEN_INPUT:
         case OP_OPEN_OUTPUT:
-        case OP_OPEN_IO:
         case OP_OPEN_EXTEND:
+            if (mode == 'W') {
+                fcd->isam = 'S';    
+                if (dbg_cmp > 0) {
+                    dbg_status("ISAM", fcd);
+                }
+                break;
+            }        
+        case OP_OPEN_IO:
+            if (mode == 'W') {
+                fcd->open_mode = 128;
+            }    
             if (op_open(conn, fcd, op)) {
+                if (mode == 'W') {
+                    fcd->open_mode = open_mode;
+                    memcpy(fcd->status, st, 2);
+                    if (dbg_cmp > 0) {
+                        dbg_status("ISAM", fcd);
+                    }
+                }    
                 break; // command
             }
+            if (mode == 'W') {
+                if ((dbg_cmp > 0) && (fcd->isam != 'S')) {
+                    dbg_status("BANCO", fcd);
+                }
+                fcd->open_mode = open_mode;
+                memcpy(fcd->status, st, 2);
+                if ((dbg_cmp > 0) && (fcd->isam == 'S')) {
+                    dbg_status("BANCO", fcd);
+                }
+                break;
+            }        
             if (fcd->isam == 'S') {
                 EXTFH(opcode, fcd);
                 if (dbg > 0) {
@@ -514,15 +564,32 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
 
 #ifndef ISAM
         case OP_CLOSE:
-            open_mode = fcd->open_mode; 
+            if (mode == 'W') {
+                fcd->open_mode = 2;
+            }    
 /*
             if (pending_commits > 0) {
                 commit();
             }
 */
             if (op_close(conn, fcd)) {
+                if (mode == 'W') {    
+                    fcd->open_mode = open_mode;
+                    memcpy(fcd->status, st, 2);
+                    if (dbg_cmp > 0) {
+                        dbg_status("ISAM", fcd);
+                    }
+                }    
                 break;
             }
+            if (mode == 'W') {    
+                if (dbg_cmp > 0) {
+                    dbg_status("BANCO", fcd);
+                }
+                fcd->open_mode = open_mode;
+                memcpy(fcd->status, st, 2);
+                break; 
+            }    
             if (mode == 'B') {
                 break;
             }
@@ -531,47 +598,114 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
             break;
 
         case OP_START_GT:
+            if (mode == 'W') {
+                if (dbg_cmp > 0) {
+                    dbg_status("ISAM", fcd);
+                }
+                break;
+            }    
             op_start(conn, fcd, ">");
             break;
 
         case OP_START_GE:
+            if (mode == 'W') {
+                if (dbg_cmp > 0) {
+                    dbg_status("ISAM", fcd);
+                }
+                break;
+            }    
             op_start(conn, fcd, ">=");
             break;
 
         case OP_START_LT:
+            if (mode == 'W') {
+                if (dbg_cmp > 0) {
+                    dbg_status("ISAM", fcd);
+                }
+                break;
+            }    
             op_start(conn, fcd, "<");
             break;
 
         case OP_START_LE:
+            if (mode == 'W') {
+                if (dbg_cmp > 0) {
+                    dbg_status("ISAM", fcd);
+                }
+                break;
+            }    
             op_start(conn, fcd, "<=");
             break;
 
         case OP_START_EQ:
+            if (mode == 'W') {
+                if (dbg_cmp > 0) {
+                    dbg_status("ISAM", fcd);
+                }
+                break;
+            }    
             op_start(conn, fcd, "=");
             break;
 
         case OP_READ_NEXT:
+            if (mode == 'W') {
+                if (dbg_cmp > 0) {
+                    dbg_status("ISAM", fcd);
+                }
+                break;
+            }    
             op_next_prev(conn, fcd, 'n');
             break;
 
         case OP_READ_PREVIOUS:
+            if (mode == 'W') {
+                if (dbg_cmp > 0) {
+                    dbg_status("ISAM", fcd);
+                }
+                break;
+            }    
             op_next_prev(conn, fcd, 'p');
             break;
 
         case OP_READ_LOCK:
+            if (mode == 'W') {
+                if (dbg_cmp > 0) {
+                    dbg_status("ISAM", fcd);
+                }
+                break;
+            }    
             op_read_random(conn, fcd, true);
             break;
 
         case OP_UNLOCK:
+            if (mode == 'W') {
+                if (dbg_cmp > 0) {
+                    dbg_status("ISAM", fcd);
+                }
+                break;
+            }    
             unlock(fcd);
             break;
 
         case OP_READ_RANDOM:
+            if (mode == 'W') {
+                if (dbg_cmp > 0) {
+                    dbg_status("ISAM", fcd);
+                }
+                break;
+            }    
             op_read_random(conn, fcd, false);
             break;
 
         case OP_REWRITE:
             ret = op_rewrite(conn, fcd);
+            if (mode == 'W') {    
+                if (dbg_cmp > 0) {
+                    dbg_status("BANCO", fcd);
+                }
+                memcpy(fcd->status, st, 2);
+                break;
+            }    
             if ((mode != 'B') && (!ret || memcmp(fcd->status, ST_OK, 2))) {
 
                 // erro no update do banco
@@ -602,8 +736,21 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
 
         case OP_WRITE:
             if (op_write(conn, fcd)) {
+                if (mode == 'W') {    
+                    if (dbg_cmp > 0) {
+                        dbg_status("BANCO", fcd);
+                    }
+                    memcpy(fcd->status, st, 2);
+                }    
                 break; // command
             }
+            if (mode == 'W') {    
+                if (dbg_cmp > 0) {
+                    dbg_status("BANCO", fcd);
+                }
+                memcpy(fcd->status, st, 2);
+                break;
+            }    
 #ifndef ISAM
             if ((mode != 'B') && memcmp(fcd->status, ST_OK, 2)) {
 
@@ -628,6 +775,13 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
 #ifndef ISAM
         case OP_DELETE:
             op_delete(conn, fcd);
+            if (mode == 'W') {    
+                if (dbg_cmp > 0) {
+                    dbg_status("BANCO", fcd);
+                }
+                memcpy(fcd->status, st, 2);
+                break;
+            }    
             if ((mode != 'B') && memcmp(fcd->status, ST_OK, 2)) {
 
                 // erro no delete do banco
@@ -688,40 +842,58 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
         case OP_START_LT:
         case OP_START_LE:
         case OP_START_EQ:
+            if (mode == 'W') {
+                break;
+            }    
             tempo_start += tempo;
             qtde_start++;
             break;
 
         case OP_READ_NEXT:
         case OP_READ_PREVIOUS:
+            if (mode == 'W') {
+                break;
+            }    
             tempo_next_prev += tempo;
             qtde_next_prev++;
             break;
 
         case OP_READ_RANDOM:
+            if (mode == 'W') {
+                break;
+            }    
             tempo_read += tempo;
             qtde_read++;
             break;
 
         case OP_REWRITE:
+            if (mode == 'W') {
+                break;
+            }    
             tempo_rewrite += tempo;
             qtde_rewrite++;
             break;
 
         case OP_WRITE:
+            if (mode == 'W') {
+                break;
+            }    
             tempo_write += tempo;
             qtde_write++;
             break;
 
         case OP_DELETE:
+            if (mode == 'W') {
+                break;
+            }    
             tempo_delete += tempo;
             qtde_delete++;
             break;
 
     }
 
-    if (dbg_cmp > 0) {
-        dbg_status(fcd);
+    if ((mode != 'W') && (dbg_cmp > 0)) {
+        dbg_status("", fcd);
     }
     if ((dbg_lock > 0) && (fcd->status[0] == '9')) {
         fprintf(stderr, "%ld %04x [%s] lock: status=%c%c\n", time(NULL), op, filename, fcd->status[0], fcd->status[1]);        
@@ -814,3 +986,5 @@ bool is_weak(char *table) {
 // 2.9.2  - 02/10 - problema com filename
 // 2.9.4  - 02/10 - ignore lock no cmp_isam
 // 2.10.0 - 06/10 - lock manual
+// 3.0.0  - 07/10 - modo w
+// 3.0.1  - 09/10 - cmp isam com nomes de arquivo de tamanhos diferentes

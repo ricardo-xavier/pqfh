@@ -7,6 +7,56 @@ extern int dbg;
 extern fcd_t *fcd_open;
 extern table_t *tab_open;
 
+int reccmp(unsigned char *recbd, unsigned char *recisam, int reclen, table_t *tab) {
+
+    list2_t *ptr;
+    column_t *col;    
+    unsigned char buf_isam[MAX_REC_LEN+1];
+    unsigned char buf_bd[MAX_REC_LEN+1];
+    int c, i;
+        
+    for (ptr=tab->columns; ptr!=NULL; ptr=ptr->next) {
+
+        col = (column_t *) ptr->buf;
+        memcpy(buf_bd, recbd+col->offset, col->len);
+        buf_bd[col->len] = 0;
+        memcpy(buf_isam, recisam+col->offset, col->len);
+        buf_isam[col->len] = 0;
+
+        c = memcmp(buf_isam, buf_bd, col->len);
+        if (c != 0) {
+            if (col->tp == 's') {
+                for (i=0; i<col->len; i++) {
+                    if (buf_isam[i] == 0) {
+                        buf_isam[i] = ' ';
+                    }
+                }        
+                c = memcmp(buf_isam, buf_bd, col->len);
+            } else {
+                for (i=0; i<col->len; i++) {
+                    if ((buf_isam[i] == 0) || (buf_isam[i] == ' ')) {
+                        buf_isam[i] = '0';
+                    }
+                }        
+                c = memcmp(buf_isam, buf_bd, col->len);
+            }        
+        }
+
+        if ((dbg > 1) && (c != 0)) {
+            fprintf(stderr, "cmp=%d\n", c);    
+            fprintf(flog, "%s %c %d:%d,%d [%s]\n", col->name, col->tp, col->offset, col->len, col->dec, buf_isam);
+            fprintf(flog, "%s %c %d:%d,%d [%s]\n", col->name, col->tp, col->offset, col->len, col->dec, buf_bd);
+        }
+
+        if (c != 0) {
+            return c;
+        }        
+
+    }
+
+    return 0;
+}
+
 void cmp_table(PGconn *conn, bool sync) {
 
     fcd_t *fcd1, *fcd2;
@@ -107,7 +157,7 @@ void cmp_table(PGconn *conn, bool sync) {
             k = memcmp(key1, key2, kofs);
             if (!k) {
                 // chaves iguais - compara registros
-                if (memcmp(fcd1->record, fcd2->record, reclen)) {
+                if (reccmp(fcd1->record, fcd2->record, reclen, tab_open)) {
                     // registros diferentes
                     fprintf(f, ">");
                     fwrite(fcd1->record, reclen, 1, f);

@@ -14,6 +14,7 @@ void pqfh_sql_next(int *p_registro, char *p_linha);
 
 extern int dbg;
 extern int dbg_times;
+extern int dbg_cmp;
 extern FILE *flog;
 
 extern long tempo_cobolpost, tempo_total;
@@ -48,7 +49,7 @@ executa_sql(char *query, char *p_retorno, int *p_registros, char *p_linha) {
     int  i_tamanho;	
     struct timeval tv1, tv2;
 
-    if (dbg > 0) {
+    if ((dbg > 0) || (dbg_cmp > 2)) {
         fprintf(stderr, "%ld cobolpost executa_sql [%s]\n", time(NULL), query);
     }
 #ifdef PQFH
@@ -126,7 +127,7 @@ executa_sql_next(int *p_registro, char *p_linha) {
     int  i_tamanho;	        	
     struct timeval tv1, tv2;
 
-    if (dbg > 0) {
+    if ((dbg > 0) || (dbg_cmp > 2)) {
         fprintf(stderr, "%ld cobolpost next %d\n", time(NULL), *p_registro);
     }
 #ifdef PQFH

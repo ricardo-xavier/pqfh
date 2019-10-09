@@ -7,6 +7,7 @@ extern int dbg;
 extern int dbg_upd;
 extern int dbg_times;
 extern int pending_commits;
+extern bool executed;
 
 bool op_rewrite(PGconn *conn, fcd_t *fcd) {
 
@@ -61,7 +62,7 @@ bool op_rewrite(PGconn *conn, fcd_t *fcd) {
     // performance
     // verifica se o registro mudou antes de fazer o update
     if (dbg > 2) {
-        fprintf(flog, "%ld op_rewrite verifica se o registro existe\n", time(NULL));
+        fprintf(flog, "%ld op_rewrite verifica se o registro existe no banco\n", time(NULL));
     }
     op_read_random(conn, fcd, false);
     if (memcmp(fcd->status, ST_OK, 2)) {
@@ -209,6 +210,7 @@ bool op_rewrite(PGconn *conn, fcd_t *fcd) {
         fprintf(flog, "%ld op_rewrite executa o update\n", time(NULL));
     }
     res =  PQexecPrepared(conn, stmt_name, nParams, tab->values, tab->lengths, tab->formats, 0);
+    executed = true;
 
     if (dbg_times > 1) {
         gettimeofday(&tv3, NULL);

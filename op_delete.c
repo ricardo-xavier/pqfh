@@ -4,6 +4,7 @@
 
 extern int dbg;
 extern int dbg_upd;
+extern bool executed;
 
 extern int pending_commits;
 
@@ -108,6 +109,7 @@ void op_delete(PGconn *conn, fcd_t *fcd) {
         fprintf(flog, "%ld op_delete executa o delete\n", time(NULL));
     }
     res =  PQexecPrepared(conn, stmt_name, nParams, tab->values, tab->lengths, tab->formats, 0);
+    executed = true;
     if (PQresultStatus(res) != PGRES_COMMAND_OK) {
         memcpy(fcd->status, ST_REC_NOT_FOUND, 2);
         if (strstr(PQerrorMessage(conn), "deadlock")) {

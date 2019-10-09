@@ -18,6 +18,7 @@ void cmp_isam(PGconn *conn, char *filename2) {
     short reclen;
     unsigned short cdaoffset, ncomps;
     unsigned char  *kda, *cda;
+    unsigned short fnlen;
     int ofs[MAX_COMPS];
     int len[MAX_COMPS];
     char key1[257], key2[257];
@@ -33,8 +34,10 @@ void cmp_isam(PGconn *conn, char *filename2) {
     fcd2 = malloc(sizeof(fcd_t));
     memcpy(fcd2, fcd1, sizeof(fcd_t));
 
-    memcpy(filename1, fcd1->file_name, strlen(filename2));
-    filename1[strlen(filename2)] = 0;
+    fnlen = getshort(fcd1->file_name_len);
+    memcpy(filename1, fcd1->file_name, fnlen);
+    filename1[fnlen] = 0;
+    if ((p = strchr(filename1, ' ')) != NULL) *p = 0;
 
     if (dbg > 0) {
         fprintf(flog, "%ld cmp_isam [%s] [%s]\n", time(NULL), filename1, filename2);

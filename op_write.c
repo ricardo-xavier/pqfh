@@ -4,6 +4,7 @@
 
 extern int dbg;
 extern int dbg_upd;
+extern bool executed;
 
 extern int pending_commits;
 
@@ -56,7 +57,7 @@ bool op_write(PGconn *conn, fcd_t *fcd) {
 
     // verifica se o registro ja existe
     if (dbg > 2) {
-        fprintf(flog, "%ld op_write verifica se o registro existe\n", time(NULL));
+        fprintf(flog, "%ld op_write verifica se o registro existe no banco\n", time(NULL));
     }
     op_read_random(conn, fcd, false);
     if (!memcmp(fcd->status, ST_OK, 2)) {
@@ -169,6 +170,7 @@ bool op_write(PGconn *conn, fcd_t *fcd) {
         fprintf(flog, "%ld op_write executa o insert\n", time(NULL));
     }
     res =  PQexecPrepared(conn, stmt_name, p, tab->values, tab->lengths, tab->formats, 0);
+    executed = true;
     if (PQresultStatus(res) != PGRES_COMMAND_OK) {
         memcpy(fcd->status, ST_ERROR, 2);
         if (strstr(PQerrorMessage(conn), "deadlock")) {
