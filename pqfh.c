@@ -14,7 +14,7 @@
 // insert into tabela_api values('sp05a51', 'planoGerencial');
 //
 
-#define VERSAO "v3.0.1 09/10/2019"
+#define VERSAO "v3.0.3 12/10/2019"
 
 int dbg=-1;
 int dbg_upd=-1;
@@ -282,6 +282,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
         fcd->isam = 0;
     }        
 
+    /*
     if (lock_manual) {
         fcd->lock_mode &= ~0x02;
         fcd->lock_mode |= 0x04;    
@@ -291,6 +292,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
             fcd->ignore_lock &= ~0x01;
         }
     }
+    */
 
 #ifndef ISAM
     if ((conn == NULL) && (mode != 'I')) {
@@ -428,7 +430,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
         }    
     }
 
-    if ((mode == 'W') && (fcd->isam == 'S')) {
+    if ((mode == 'W') && (fcd->isam == 'S') && strcmp(filename, "pqfh")) {
         if (dbg_cmp > 0) {
             dbg_status("ISAM", fcd);
         }
@@ -988,3 +990,5 @@ bool is_weak(char *table) {
 // 2.10.0 - 06/10 - lock manual
 // 3.0.0  - 07/10 - modo w
 // 3.0.1  - 09/10 - cmp isam com nomes de arquivo de tamanhos diferentes
+// 3.0.2  - 11/10 - retirar lock manual forcado
+// 3.0.3  - 12/10 - sync e cmp com W

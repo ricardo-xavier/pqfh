@@ -133,6 +133,7 @@ void op_start(PGconn *conn, fcd_t *fcd, char *op) {
         tab->first = true;
     }
     if (!memcmp(fcd->status, ST_EOF, 2)) {
+        tab->first = false;
         memcpy(fcd->status, ST_REC_NOT_FOUND, 2);
     }
     //memcpy(fcd->status, ST_OK, 2);

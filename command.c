@@ -5,11 +5,12 @@
 
 extern int dbg;
 extern bool lock_manual;
+extern char mode;
 #ifndef ISAM
 extern list2_t *weak;
 #endif
 
-void command(PGconn *conn, table_t *tab, fcd_t *fcd) {
+void command(PGconn *conn, fcd_t *fcd) {
     char *p, aux[257];
 #ifndef ISAM
     unsigned short reclen;
@@ -30,6 +31,8 @@ void command(PGconn *conn, table_t *tab, fcd_t *fcd) {
     }
 
     if (!memcmp(fcd->record, "COPY:", 5)) {
+        char salva_mode = mode;
+        mode = 'B';   
         reclen = getshort(fcd->rec_len);
         memcpy(aux, fcd->record, reclen);
         aux[reclen] = 0;
@@ -37,10 +40,16 @@ void command(PGconn *conn, table_t *tab, fcd_t *fcd) {
         q = strchr(p, ':');
         *q++ = 0;
         copy_table(conn, p, q);
+        commit();
+        mode = salva_mode;
     }
 
     if (!memcmp(fcd->record, "LOAD", 4)) {
+        char salva_mode = mode;
+        mode = 'B';   
         load_table(conn);
+        commit();
+        mode = salva_mode;
     }
 #endif
 
@@ -50,10 +59,17 @@ void command(PGconn *conn, table_t *tab, fcd_t *fcd) {
         cmp_isam(conn, aux);
 #ifndef ISAM
     } else if (!memcmp(fcd->record, "CMP", 3)) {
+        char salva_mode = mode;
+        mode = 'B';   
         cmp_table(conn, false);
+        mode = salva_mode;
 
     } else if (!memcmp(fcd->record, "SYNC", 4)) {
+        char salva_mode = mode;
+        mode = 'B';   
         cmp_table(conn, true);
+        commit();
+        mode = salva_mode;
 #endif
     }
 
@@ -63,7 +79,7 @@ void command(PGconn *conn, table_t *tab, fcd_t *fcd) {
     }
 
     if (!memcmp(fcd->record, "COMMIT", 6)) {
-        pqfh_commit();
+        commit();
     }
 
     if (!memcmp(fcd->record, "ROLLBACK", 8)) {

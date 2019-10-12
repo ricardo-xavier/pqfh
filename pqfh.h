@@ -197,7 +197,7 @@ void replica_rollback();
 
 void commit();
 bool is_weak(char *table);
-void command(PGconn *conn, table_t *tab, fcd_t *fcd);
+void command(PGconn *conn, fcd_t *fcd);
 void pqfh_begin_transaction();
 void pqfh_commit();
 void pqfh_rollback();

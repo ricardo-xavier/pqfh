@@ -21,6 +21,11 @@ bool op_write(PGconn *conn, fcd_t *fcd) {
     PGresult       *res;
     short          op;
 
+    if (!memcmp(fcd->file_name, "pqfh", 4)) {
+        command(conn, fcd);
+        return true;
+    }
+
     if (fcd->open_mode == 128) {
         memcpy(fcd->status, ST_NOT_OPENED_WRITE, 2);
         if (dbg > 0) {
@@ -45,11 +50,6 @@ bool op_write(PGconn *conn, fcd_t *fcd) {
         dbg_record(fcd);
     }
 #endif
-
-    if (!strcmp(tab->name, "pqfh")) {
-        command(conn, tab, fcd);
-        return true;
-    }
 
 #ifndef ISAM
     keyid = getshort(fcd->key_id);
