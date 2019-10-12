@@ -10,7 +10,7 @@ extern int pending_commits;
 
 bool op_write(PGconn *conn, fcd_t *fcd) {
 #ifndef ISAM
-    rnsigned int   fileid;
+    unsigned int   fileid;
     table_t        *tab;
     column_t       *col;
     char           stmt_name[65], prefixo[7];
