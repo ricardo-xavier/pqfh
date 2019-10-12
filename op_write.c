@@ -9,9 +9,9 @@ extern bool executed;
 extern int pending_commits;
 
 bool op_write(PGconn *conn, fcd_t *fcd) {
-    table_t        *tab;
-    unsigned int   fileid;
 #ifndef ISAM
+    rnsigned int   fileid;
+    table_t        *tab;
     column_t       *col;
     char           stmt_name[65], prefixo[7];
     char           sql[4097], aux[257];
@@ -20,12 +20,14 @@ bool op_write(PGconn *conn, fcd_t *fcd) {
     list2_t        *ptr;
     PGresult       *res;
     short          op;
+#endif    
 
     if (!memcmp(fcd->file_name, "pqfh", 4)) {
         command(conn, fcd);
         return true;
     }
 
+#ifndef ISAM
     if (fcd->open_mode == 128) {
         memcpy(fcd->status, ST_NOT_OPENED_WRITE, 2);
         if (dbg > 0) {
@@ -38,12 +40,10 @@ bool op_write(PGconn *conn, fcd_t *fcd) {
         }
         return false;
     }
-#endif
 
     fileid = getint(fcd->file_id);
 
     tab = (table_t *) fileid;
-#ifndef ISAM
     op = OP_WRITE;
     if (dbg > 0 || DBG_UPD) {
         fprintf(flog, "%ld op_write [%s]\n", time(NULL), tab->name);
