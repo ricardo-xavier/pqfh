@@ -7,6 +7,7 @@
 extern int dbg;
 extern int dbg_times;
 extern bool partial_weak;
+extern char mode;
 
 void op_read_random(PGconn *conn, fcd_t *fcd, bool with_lock) {
 

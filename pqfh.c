@@ -405,9 +405,11 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
         if (op == OP_CLOSE) {
             mostra_tempos();
         }
+#ifndef ISAM
         if (op == OP_UNLOCK) {
             pqfh_commit();
         }
+#endif
 #ifdef API
         if ((api != NULL) && (mode != 'I'))  {
             switch (op) {
