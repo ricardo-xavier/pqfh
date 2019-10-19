@@ -19,7 +19,7 @@ bool nome_dicionario(char *tabela, char *nome);
 bool table_info(PGconn *conn, table_t *table, fcd_t *fcd) {
 
     PGresult   *res;
-    char       sql[4097], aux[33], *p;
+    char       sql[MAX_REC_LEN+1], aux[33], *p;
     int        i, offset, oid;
     column_t   col;
     unsigned short reclen;
@@ -142,7 +142,7 @@ bool table_info(PGconn *conn, table_t *table, fcd_t *fcd) {
 char *get_schema(PGconn *conn, char *table) {
 
     PGresult   *res;
-    char       sql[4097];
+    char       sql[MAX_REC_LEN+1];
 
     if (force_bd) {
         strcpy(schema, "public");

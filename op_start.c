@@ -13,10 +13,10 @@ void op_start(PGconn *conn, fcd_t *fcd, char *op) {
 
     unsigned int   fileid;
     unsigned short keyid, keylen;
-    char           sql[4097], kbuf[MAX_KEY_LEN+1];
+    char           sql[MAX_REC_LEN+1], kbuf[MAX_KEY_LEN+1];
     table_t        *tab;
     PGresult       *res;
-    char           where[4097], order[257];
+    char           where[MAX_REC_LEN+1], order[257];
     struct timeval tv1, tv2, tv3;
 
     if (fcd->open_mode == 128) {

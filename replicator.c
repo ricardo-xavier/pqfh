@@ -114,7 +114,7 @@ list2_t *get_clones(char *tabname) {
 
 void write_clone(table_t *tab, clone_t *clone, list2_t *clones) {
     list2_t *ptr, *ptrcol;
-    char  sql[4097];
+    char  sql[MAX_REC_LEN+1];
     int   seq=0;
     clone_t *c;
     column_t *col;
@@ -178,7 +178,7 @@ void write_clone(table_t *tab, clone_t *clone, list2_t *clones) {
 
 void rewrite_clone(table_t *tab, clone_t *clone, list2_t *clones) {
     list2_t *ptr, *ptrcol;
-    char  sql[4097];
+    char  sql[MAX_REC_LEN+1];
     int   seq=0, seq2=0;
     clone_t *c;
     column_t *col;
@@ -257,7 +257,7 @@ void rewrite_clone(table_t *tab, clone_t *clone, list2_t *clones) {
 
 void delete_clone(table_t *tab, clone_t *clone, list2_t *clones) {
     list2_t *ptr, *ptrcol;
-    char  sql[4097];
+    char  sql[MAX_REC_LEN+1];
     int   seq=0;
     clone_t *c;
     column_t *col;

@@ -8,7 +8,7 @@ void pq2cob(table_t *tab, PGresult *res, unsigned char *record, unsigned short r
     list2_t  *ptr;
     column_t *col;
     int      c=0, offset=0, len;
-    char     aux[4097], *p;
+    char     aux[MAX_REC_LEN+1], *p;
 
     for (ptr=tab->columns; ptr!=NULL; ptr=ptr->next) {
         col = (column_t *) ptr->buf;

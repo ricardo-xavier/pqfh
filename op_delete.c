@@ -14,7 +14,7 @@ void op_delete(PGconn *conn, fcd_t *fcd) {
     unsigned short keylen; 
     table_t        *tab;
     column_t       *col;
-    char           sql[4097], where[4097], kbuf[MAX_COL_LEN+1], stmt_name[65];
+    char           sql[MAX_REC_LEN+1], where[MAX_REC_LEN+1], kbuf[MAX_COL_LEN+1], stmt_name[65];
     int            p, nParams;
     list2_t        *ptr;
     PGresult       *res;

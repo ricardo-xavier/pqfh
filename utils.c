@@ -18,7 +18,7 @@ void deadlock_log(char *msg) {
 
 void deallocate(PGconn *conn, table_t *tab) {
     PGresult *res;
-    char     sql[4097];
+    char     sql[MAX_REC_LEN+1];
     int      k;
 
     for (k=0; k<MAX_KEYS; k++) {
@@ -78,7 +78,7 @@ void deallocate(PGconn *conn, table_t *tab) {
 
 void close_cursor(PGconn *conn, table_t *tab) {
     PGresult *res;
-    char     sql[4097];
+    char     sql[MAX_REC_LEN+1];
 
     if (!tab->cursor) {
         return;

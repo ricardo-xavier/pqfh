@@ -17,11 +17,11 @@ bool op_rewrite(PGconn *conn, fcd_t *fcd) {
     column_t       *col;
     char           record[MAX_REC_LEN+1];
     unsigned short reclen;
-    char           kbuf[MAX_KEY_LEN+1], sql[4097], aux[257];
+    char           kbuf[MAX_KEY_LEN+1], sql[MAX_REC_LEN+1], aux[257];
     int            p, nParams;
     list2_t        *ptr;
     PGresult       *res;
-    char           where[4097], stmt_name[65];
+    char           where[MAX_REC_LEN+1], stmt_name[65];
     short          op;
     struct timeval tv1, tv2, tv3;
 
@@ -54,10 +54,10 @@ bool op_rewrite(PGconn *conn, fcd_t *fcd) {
     tab->key_next = -1;
     tab->key_prev = -1;
 
-    keyid = getshort(fcd->key_id);
-    putshort(fcd->key_id, 0);
     reclen = getshort(fcd->rec_len);
     memcpy(record, fcd->record, reclen);
+    keyid = getshort(fcd->key_id);
+    putshort(fcd->key_id, 0);
 
     // performance
     // verifica se o registro mudou antes de fazer o update
@@ -75,6 +75,7 @@ bool op_rewrite(PGconn *conn, fcd_t *fcd) {
     }
     if (!memcmp(record, fcd->record, reclen)) {
         memcpy(fcd->status, ST_OK, 2);
+        putshort(fcd->key_id, keyid);
         if (dbg > 0 || DBG_UPD) {
             fprintf(flog, "%ld status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
         }

@@ -14,14 +14,13 @@ bool op_write(PGconn *conn, fcd_t *fcd) {
     table_t        *tab;
     column_t       *col;
     char           stmt_name[65], prefixo[7];
-    char           sql[4097], aux[257];
+    char           sql[MAX_REC_LEN+1], aux[257];
     unsigned short keyid; 
     int            p;
     list2_t        *ptr;
     PGresult       *res;
     short          op;
 #endif    
-
     if (!memcmp(fcd->file_name, "pqfh", 4)) {
         command(conn, fcd);
         return true;

@@ -14,7 +14,7 @@
 // insert into tabela_api values('sp05a51', 'planoGerencial');
 //
 
-#define VERSAO "v3.0.3 12/10/2019"
+#define VERSAO "v3.0.6 18/10/2019"
 
 int dbg=-1;
 int dbg_upd=-1;
@@ -58,7 +58,7 @@ void commit() {
 
 void *thread_commit(void *vargp) {
     while (true) {
-        sleep(1); 
+        sleep(1);
         if (dbg > 1) {
             fprintf(flog, "%ld pending_commits %d %s\n", time(NULL), pending_commits, in_transaction ? "TRANSACAO" : "AUTO_COMMIT");
         }
@@ -400,10 +400,13 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
             dbg_status("ISAM", fcd);
         }
         if ((dbg_lock > 0) && (fcd->status[0] == '9')) {
-            fprintf(stderr, "%ld EXTFH %04x [%s] lock: status=%c%c\n", time(NULL), op, filename, fcd->status[0], fcd->status[1]);        
+            fprintf(flog, "%ld EXTFH %04x [%s] lock: status=%c%c\n", time(NULL), op, filename, fcd->status[0], fcd->status[1]);        
         }        
         if (op == OP_CLOSE) {
             mostra_tempos();
+        }
+        if (op == OP_UNLOCK) {
+            pqfh_commit();
         }
 #ifdef API
         if ((api != NULL) && (mode != 'I'))  {
@@ -898,7 +901,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
         dbg_status("", fcd);
     }
     if ((dbg_lock > 0) && (fcd->status[0] == '9')) {
-        fprintf(stderr, "%ld %04x [%s] lock: status=%c%c\n", time(NULL), op, filename, fcd->status[0], fcd->status[1]);        
+        fprintf(flog, "%ld %04x [%s] lock: status=%c%c\n", time(NULL), op, filename, fcd->status[0], fcd->status[1]);        
     }        
 #ifndef ISAM
     pthread_mutex_unlock(&lock);
@@ -992,3 +995,6 @@ bool is_weak(char *table) {
 // 3.0.1  - 09/10 - cmp isam com nomes de arquivo de tamanhos diferentes
 // 3.0.2  - 11/10 - retirar lock manual forcado
 // 3.0.3  - 12/10 - sync e cmp com W
+// 3.0.4  - 15/10 - compilado sem ignorelock
+// 3.0.5  - 16/10 - forcar commit no unlock do isam
+// 3.0.6  - 18/10 - limite do sql no load e nao fazer lock no random em modo W

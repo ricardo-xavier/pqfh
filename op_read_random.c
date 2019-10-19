@@ -12,7 +12,7 @@ void op_read_random(PGconn *conn, fcd_t *fcd, bool with_lock) {
 
     unsigned int   fileid ;
     unsigned short keyid, reclen, keylen;
-    char           kbuf[MAX_KEY_LEN+1], sql[257], stmt_name[65], where[4097];
+    char           kbuf[MAX_KEY_LEN+1], sql[257], stmt_name[65], where[MAX_REC_LEN+1];
     int            nParams, p;
     table_t        *tab;
     column_t       *col;
@@ -75,7 +75,7 @@ void op_read_random(PGconn *conn, fcd_t *fcd, bool with_lock) {
 #endif
 
         getwhere_prepared(tab, keyid, where, 0, 's');
-        if (lock || with_lock) {
+        if ((lock || with_lock) && (mode != 'W')) {
             if ((tab->oid > 0) && (atoi(kbuf) > 0)) {
                 char result[9];
                 sprintf(sql, "SELECT pg_try_advisory_lock(%d, %d)", tab->oid, atoi(kbuf));
