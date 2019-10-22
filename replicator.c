@@ -51,6 +51,9 @@ list2_t *get_clones(char *tabname) {
 
         putshort(opcode, OP_OPEN_INPUT);
         EXTFH(opcode, &fcd);
+        if (fcd.status[0] == '9') {
+            errorisam("replicator", opcode, &fcd);    
+        }        
         if (dbg > 2) {
             fprintf(flog, "%ld replica open %c%c %d\n", time(NULL), fcd.status[0], fcd.status[1], fcd.status[1]);
         }
@@ -68,10 +71,16 @@ list2_t *get_clones(char *tabname) {
 
     putshort(opcode, OP_START_GE);
     EXTFH(opcode, &fcd);
+    if (fcd.status[0] == '9') {
+        errorisam("replicator", opcode, &fcd);    
+    }        
 
     while (true) {
         putshort(opcode, OP_READ_NEXT);
         EXTFH(opcode, &fcd);
+        if (fcd.status[0] == '9') {
+            errorisam("replicator", opcode, &fcd);    
+        }        
 
         if (memcmp(fcd.status, ST_OK, 2)) {
             break;
@@ -170,6 +179,7 @@ void write_clone(table_t *tab, clone_t *clone, list2_t *clones) {
     }
     res = PQexec(conn2, sql);
     if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+        errorbd(sql, res);    
         fprintf(flog, "%ld Erro na execucao do comando: %s\n%s\n", time(NULL), PQerrorMessage(conn2), sql);
         exit(-1);
     }
@@ -249,6 +259,7 @@ void rewrite_clone(table_t *tab, clone_t *clone, list2_t *clones) {
     }
     res = PQexec(conn2, sql);
     if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+        errorbd(sql, res);    
         fprintf(flog, "%ld Erro na execucao do comando: %s\n%s\n", time(NULL), PQerrorMessage(conn2), sql);
         exit(-1);
     }
@@ -301,6 +312,7 @@ void delete_clone(table_t *tab, clone_t *clone, list2_t *clones) {
     }
     res = PQexec(conn2, sql);
     if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+        errorbd(sql, res);    
         fprintf(flog, "%ld Erro na execucao do comando: %s\n%s\n", time(NULL), PQerrorMessage(conn2), sql);
         exit(-1);
     }

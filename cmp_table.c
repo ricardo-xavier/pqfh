@@ -98,6 +98,9 @@ void cmp_table(PGconn *conn, bool sync) {
 
     putshort(opcode, OP_OPEN_INPUT);
     EXTFH(opcode, fcd_isam);
+    if (fcd_isam->status[0] == '9') {
+        errorisam("cmp", opcode, fcd_isam);    
+    }        
     if (dbg > 2) {
         fprintf(flog, "%ld cmp open isam %c%c %d\n\n", time(NULL), fcd_isam->status[0], fcd_isam->status[1], fcd_isam->status[1]);
     }
@@ -121,6 +124,9 @@ void cmp_table(PGconn *conn, bool sync) {
     putshort(opcode, OP_START_GT);
     memset(fcd_isam->record, 0, reclen);
     EXTFH(opcode, fcd_isam);
+    if (fcd_isam->status[0] == '9') {
+        errorisam("cmp", opcode, fcd_isam);    
+    }        
     if (dbg > 2) {
         fprintf(flog, "%ld cmp start isam %c%c %d\n\n", time(NULL), fcd_isam->status[0], fcd_isam->status[1], fcd_isam->status[1]);
     }
@@ -133,6 +139,9 @@ void cmp_table(PGconn *conn, bool sync) {
 
     putshort(opcode, OP_READ_NEXT);
     EXTFH(opcode, fcd_isam);
+    if (fcd_isam->status[0] == '9') {
+        errorisam("cmp", opcode, fcd_isam);    
+    }        
     if (dbg > 2) {
         fprintf(flog, "%ld cmp next isam %c%c %d\n\n", time(NULL), fcd_isam->status[0], fcd_isam->status[1], fcd_isam->status[1]);
     }
@@ -196,6 +205,9 @@ void cmp_table(PGconn *conn, bool sync) {
                     fprintf(flog, "%ld cmp next bd %c%c %d\n", time(NULL), fcd_bd->status[0], fcd_bd->status[1], fcd_bd->status[1]);
                 }
                 EXTFH(opcode, fcd_isam);
+                if (fcd_isam->status[0] == '9') {
+                    errorisam("cmp", opcode, fcd_isam);    
+                }        
                 if (dbg > 2) {
                     fprintf(flog, "%ld cmp next isam %c%c %d\n\n", time(NULL), fcd_isam->status[0], fcd_isam->status[1], fcd_isam->status[1]);
                 }
@@ -219,6 +231,9 @@ void cmp_table(PGconn *conn, bool sync) {
                     memcpy(fcd_bd->record, tmp, reclen);
                 }
                 EXTFH(opcode, fcd_isam);
+                if (fcd_isam->status[0] == '9') {
+                    errorisam("cmp", opcode, fcd_isam);    
+                }        
                 if (dbg > 2) {
                     fprintf(flog, "%ld cmp next isam %c%c %d\n\n", time(NULL), fcd_isam->status[0], fcd_isam->status[1], fcd_isam->status[1]);
                 }
@@ -279,6 +294,9 @@ void cmp_table(PGconn *conn, bool sync) {
                 memcpy(fcd_bd->record, tmp, reclen);
             }
             EXTFH(opcode, fcd_isam);
+            if (fcd_isam->status[0] == '9') {
+                errorisam("cmp", opcode, fcd_isam);    
+            }        
             if (dbg > 2) {
                 fprintf(flog, "%ld cmp next isam %c%c %d\n", time(NULL), fcd_isam->status[0], fcd_isam->status[1], fcd_isam->status[1]);
             }

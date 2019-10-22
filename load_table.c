@@ -33,18 +33,27 @@ void  load_table(PGconn *conn) {
 
     putshort(opcode, OP_OPEN_INPUT);
     EXTFH(opcode, fcd);
+    if (fcd->status[0] == '9') {
+        errorisam("load", opcode, fcd);    
+    }        
     if (dbg > 2) {
         fprintf(flog, "%ld load open %c%c %d\n", time(NULL), fcd->status[0], fcd->status[1], fcd->status[1]);
     }
 
     putshort(opcode, OP_START_GT);
     EXTFH(opcode, fcd);
+    if (fcd->status[0] == '9') {
+        errorisam("load", opcode, fcd);    
+    }        
     if (dbg > 2) {
         fprintf(flog, "%ld load start %c%c %d\n", time(NULL), fcd->status[0], fcd->status[1], fcd->status[1]);
     }
 
     putshort(opcode, OP_READ_NEXT);
     EXTFH(opcode, fcd);
+    if (fcd->status[0] == '9') {
+        errorisam("load", opcode, fcd);    
+    }        
     if (dbg > 2) {
         fprintf(flog, "%ld load next %c%c %d\n", time(NULL), fcd->status[0], fcd->status[1], fcd->status[1]);
     }
@@ -58,6 +67,9 @@ void  load_table(PGconn *conn) {
 
         putshort(opcode, OP_READ_NEXT);
         EXTFH(opcode, fcd);
+        if (fcd->status[0] == '9') {
+            errorisam("load", opcode, fcd);    
+        }        
         if (dbg > 2) {
             fprintf(flog, "%ld load next %c%c %d\n", time(NULL), fcd->status[0], fcd->status[1], fcd->status[1]);
         }

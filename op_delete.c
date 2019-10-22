@@ -111,6 +111,7 @@ void op_delete(PGconn *conn, fcd_t *fcd) {
     res =  PQexecPrepared(conn, stmt_name, nParams, tab->values, tab->lengths, tab->formats, 0);
     executed = true;
     if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+        errorbd(stmt_name, res);    
         memcpy(fcd->status, ST_REC_NOT_FOUND, 2);
         if (strstr(PQerrorMessage(conn), "deadlock")) {
             deadlock_log(PQerrorMessage(conn));

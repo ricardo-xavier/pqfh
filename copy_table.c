@@ -47,6 +47,7 @@ void  copy_table(PGconn *conn, char *_source, char *_dest) {
     }
     res = PQexec(conn, sql);
     if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+        errorbd(sql, res);    
         fprintf(flog, "%ld Erro na execucao do comando: %s\n%s\n", time(NULL), PQerrorMessage(conn), sql);
         PQclear(res);
         return;
@@ -72,6 +73,7 @@ void  truncate_table(PGconn *conn, char *_tabname) {
     }
     res = PQexec(conn, sql);
     if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+        errorbd(sql, res);    
         fprintf(flog, "%ld Erro na execucao do comando: %s\n%s\n", time(NULL), PQerrorMessage(conn), sql);
         PQclear(res);
         return;

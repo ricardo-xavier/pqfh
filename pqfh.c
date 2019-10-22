@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/time.h>
+#include <sys/stat.h>
 #include "pqfh.h"
 
 // referencias:
@@ -14,7 +15,7 @@
 // insert into tabela_api values('sp05a51', 'planoGerencial');
 //
 
-#define VERSAO "v3.0.6 18/10/2019"
+#define VERSAO "v3.1.1 21/10/2019"
 
 int dbg=-1;
 int dbg_upd=-1;
@@ -50,6 +51,9 @@ void commit() {
         fprintf(flog, "%ld commit %d %s\n", time(NULL), pending_commits, in_transaction ? "TRANSACAO" : "AUTO_COMMIT");
     }
     res = PQexec(conn, "COMMIT");
+    if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+        errorbd("COMMIT", res);    
+    }
     PQclear(res);
     res = PQexec(conn, "BEGIN");
     PQclear(res);
@@ -93,6 +97,9 @@ void pqfh_rollback() {
         fprintf(flog, "%ld rollback %d %s\n", time(NULL), pending_commits, in_transaction ? "TRANSACAO" : "AUTO_COMMIT");
     }
     res = PQexec(conn, "ROLLBACK");
+    if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+        errorbd("ROLLBACK", res);    
+    }
     PQclear(res);
     res = PQexec(conn, "BEGIN");
     PQclear(res);
@@ -221,6 +228,54 @@ void get_debug() {
         reopen = env[0] == 'S';
     }
 }
+
+void errorisam(char *msg, unsigned char *opcode, fcd_t *fcd) {
+    FILE *f;
+    char user[257], *u, filename[257];
+    short fnlen;
+    unsigned short op;
+    if (mode != 'W') {
+        return;
+    }    
+    umask(0);
+    if ((f = fopen("pqfh.err", "a")) == NULL) {
+        return;
+    }
+    u = getenv("USER");
+    if (u == NULL) {
+        strcpy(user, "");
+    } else {
+        strcpy(user, u);
+    }    
+    fnlen = getshort(fcd->file_name_len);
+    memcpy(filename, fcd->file_name, fnlen);
+    filename[fnlen] = 0;
+    op = getshort(opcode);
+    fprintf(f, "%ld [%s] [%s] %04x %c%c\n\n", time(NULL), user, filename, op, fcd->status[0], fcd->status[1]);
+    fclose(f);
+}
+
+#ifndef ISAM
+void errorbd(char *command, PGresult *res) {
+    FILE *f;
+    char user[257], *u;
+    if (mode != 'W') {
+        return;
+    }    
+    umask(0);
+    if ((f = fopen("pqfh.err", "a")) == NULL) {
+        return;
+    }
+    u = getenv("USER");
+    if (u == NULL) {
+        strcpy(user, "");
+    } else {
+        strcpy(user, u);
+    }    
+    fprintf(f, "%ld [%s]\n%s\n%s\n\n", time(NULL), user, command, PQerrorMessage(conn));
+    fclose(f);
+}
+#endif
 
 void dbg_status(char *msg, fcd_t *fcd) {
     short reclen = getshort(fcd->rec_len);
@@ -384,6 +439,9 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
             dbg_record(fcd);
         }
         EXTFH(opcode, fcd);
+        if (fcd->status[0] == '9') {
+            errorisam("pqfh", opcode, fcd);    
+        }        
         if (dbg > 0 || DBG_UPD) {
             fprintf(flog, "%ld EXTFH status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
         }
@@ -455,6 +513,9 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
                 fprintf(flog, "%ld EXTFH %04x [%s]\n", time(NULL), OP_READ_RANDOM, filename);
             }
             EXTFH(opcode, fcd);
+            if (fcd->status[0] == '9') {
+                errorisam("pqfh", opcode, fcd);    
+            }        
             if (dbg > 0) {
                 fprintf(flog, "%ld EXTFH status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
             }
@@ -483,6 +544,9 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
             dbg_record(fcd);
         }
         EXTFH(opcode, fcd);
+        if (fcd->status[0] == '9') {
+            errorisam("pqfh", opcode, fcd);    
+        }        
         if (dbg > 0 || DBG_UPD) {
             fprintf(flog, "%ld EXTFH status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
         }
@@ -541,6 +605,9 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
             }        
             if (fcd->isam == 'S') {
                 EXTFH(opcode, fcd);
+                if (fcd->status[0] == '9') {
+                    errorisam("pqfh", opcode, fcd);    
+                }        
                 if (dbg > 0) {
                     fprintf(flog, "%ld EXTFH status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
                 }
@@ -555,6 +622,9 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
                 // executa o open no isam
                 fcd->open_mode = 128;
                 EXTFH(opcode, fcd);
+                if (fcd->status[0] == '9') {
+                    errorisam("pqfh", opcode, fcd);    
+                }        
                 if (memcmp(fcd->status, ST_OK, 2)) {
                     // erro no isam
                     // fecha e retorna o erro do isam
@@ -602,6 +672,9 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
             }
             fcd->open_mode = open_mode; 
             EXTFH(opcode, fcd);
+            if (fcd->status[0] == '9') {
+                errorisam("pqfh", opcode, fcd);    
+            }        
             break;
 
         case OP_START_GT:
@@ -728,6 +801,9 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
                 // regrava o registro anterior
                 memcpy(fcd->record, undo, reclen);
                 EXTFH(opcode, fcd);
+                if (fcd->status[0] == '9') {
+                    errorisam("pqfh", opcode, fcd);    
+                }        
 
                 // restaura o registro atual e o status
                 memcpy(fcd->record, record, reclen);
@@ -769,6 +845,9 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
                 memcpy(st, fcd->status, 2);
                 putshort(opcode, OP_DELETE);
                 EXTFH(opcode, fcd);
+                if (fcd->status[0] == '9') {
+                    errorisam("pqfh", opcode, fcd);    
+                }        
                 putshort(opcode, OP_WRITE);
                 memcpy(fcd->status, st, 2);
                 break;
@@ -804,6 +883,9 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
                 // insere o registro novamente no isam
                 putshort(opcode, OP_WRITE);
                 EXTFH(opcode, fcd);
+                if (fcd->status[0] == '9') {
+                    errorisam("pqfh", opcode, fcd);    
+                }        
                 putshort(opcode, OP_DELETE);
 
                 // restaura o registro atual e o status
@@ -1000,3 +1082,4 @@ bool is_weak(char *table) {
 // 3.0.4  - 15/10 - compilado sem ignorelock
 // 3.0.5  - 16/10 - forcar commit no unlock do isam
 // 3.0.6  - 18/10 - limite do sql no load e nao fazer lock no random em modo W
+// 3.1.1  - 21/10 - correcoes no load

@@ -20,6 +20,8 @@ bool op_write(PGconn *conn, fcd_t *fcd) {
     list2_t        *ptr;
     PGresult       *res;
     short          op;
+    char           *ptrch;
+
 #endif    
     if (!memcmp(fcd->file_name, "pqfh", 4)) {
         command(conn, fcd);
@@ -142,7 +144,7 @@ bool op_write(PGconn *conn, fcd_t *fcd) {
                 tab->bufs[p][col->len] = 0;
             }
             if ((fcd->record[col->offset + col->len - 1] & 0x40) == 0x40) {
-                tab->bufs[p][0] = '-';
+                tab->bufs[p][0] = col->len > 1 ? '-' : '0';
                 if (col->dec > 0) {
                     tab->bufs[p][col->len] &= ~0x40;
                 } else {
@@ -152,6 +154,11 @@ bool op_write(PGconn *conn, fcd_t *fcd) {
             if (!tab->bufs[p][0]) {
                 strcpy(tab->bufs[p], "0");
             }
+            for (ptrch=tab->bufs[p]; *ptrch; ptrch++) {
+                if (strchr("0123456789-.", *ptrch) == NULL) {
+                    *ptrch = '0';
+                }    
+            }        
         } else {
             memcpy(tab->bufs[p], fcd->record+col->offset, col->len);
             tab->bufs[p][col->len] = 0;
@@ -171,6 +178,7 @@ bool op_write(PGconn *conn, fcd_t *fcd) {
     res =  PQexecPrepared(conn, stmt_name, p, tab->values, tab->lengths, tab->formats, 0);
     executed = true;
     if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+        errorbd(stmt_name, res);    
         memcpy(fcd->status, ST_ERROR, 2);
         if (strstr(PQerrorMessage(conn), "deadlock")) {
             deadlock_log(PQerrorMessage(conn));

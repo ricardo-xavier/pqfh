@@ -20,6 +20,7 @@ void  create_table(PGconn *conn, table_t *tab, fcd_t *fcd, unsigned short opcode
     }
     res = PQexec(conn, sql);
     if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+        errorbd(sql, res);    
         fprintf(flog, "%ld Erro na execucao do comando: %s\n%s\n", time(NULL), PQerrorMessage(conn), sql);
         PQclear(res);
         return;
@@ -75,6 +76,7 @@ void  create_table(PGconn *conn, table_t *tab, fcd_t *fcd, unsigned short opcode
         PQclear(res);
         res = PQexec(conn, indexdef);
         if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+            errorbd(indexdef, res);    
             PQclear(res);
             fprintf(flog, "%ld Erro na execucao do comando: %s\n%s\n", time(NULL), PQerrorMessage(conn), indexdef);
         }
@@ -90,6 +92,7 @@ void  create_table(PGconn *conn, table_t *tab, fcd_t *fcd, unsigned short opcode
 
     res = PQexec(conn, "COMMIT");
     if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+        errorbd("COMMIT", res);    
         PQclear(res);
         fprintf(flog, "%ld Erro na execucao do comando: %s\n%s\n", time(NULL), PQerrorMessage(conn), indexdef);
     }

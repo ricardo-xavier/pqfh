@@ -15,7 +15,7 @@ FILE *flog;
 #define MAX_KEY_LEN  256
 #define MAX_NAME_LEN 30
 #define MAX_REC_LEN  19624
-#define MAX_COLS     256
+#define MAX_COLS     512
 #define MAX_KEYS     16
 #define MAX_COMPS    16
 #define MAX_APIS     4
@@ -203,6 +203,8 @@ void pqfh_commit();
 void pqfh_rollback();
 void unlock(fcd_t *fcd);
 void get_debug();
+void errorisam(char *msg, unsigned char *opcode, fcd_t *fcd);
+void errorbd(char *command, PGresult *res);
 
 void deadlock_log(char *msg);
 void deallocate(PGconn *conn, table_t *tab);
