@@ -11,8 +11,9 @@ bool force_partial=false;
 void getkeys(fcd_t *fcd, table_t *tab) {
 
     unsigned short nkeys;
-    unsigned short cdaoffset, ncomps, offset, len, k, c;
+    unsigned short cdaoffset, ncomps, offset, k, c;
     unsigned char  *kda, *cda;
+    int len;
     list2_t *ptr;
     column_t *col;
     _key_t key;
@@ -27,7 +28,6 @@ void getkeys(fcd_t *fcd, table_t *tab) {
         // key definition area
         kda = fcd->kdb + 14 + (k * 16);
         ncomps = getshort(kda + 0);
-//fprintf(flog, "k=%d ncomps=%d\n", k, ncomps);
         cdaoffset = getshort(kda + 2);
 
         key.id = k;
@@ -85,7 +85,6 @@ void getkeys(fcd_t *fcd, table_t *tab) {
 
                         ptr = ptr->next;
                         while ((len > 0) && (ptr != NULL)) {
-                            col = (column_t *) ptr->buf;
                             col = (column_t *) ptr->buf;
                             if (k == 0) {
                                 col->pk = true;

@@ -15,7 +15,7 @@
 // insert into tabela_api values('sp05a51', 'planoGerencial');
 //
 
-#define VERSAO "v3.1.1 21/10/2019"
+#define VERSAO "v3.2.1 22/10/2019"
 
 int dbg=-1;
 int dbg_upd=-1;
@@ -229,16 +229,42 @@ void get_debug() {
     }
 }
 
+FILE *erropen() {
+    time_t t;
+    struct tm *tm;
+    int today, tomorow;
+    char filename[257];
+
+    umask(0);
+    t = time(NULL);
+    tm = localtime(&t);
+    today = tm->tm_wday;
+    tomorow = today + 1;
+    if (tomorow > 6) {
+        tomorow = 0;
+    }        
+
+    sprintf(filename, "pqfh_%d.err", tomorow);
+    if (access(filename, F_OK) != -1) {
+        unlink(filename);
+    }        
+
+    sprintf(filename, "pqfh_%d.err", today);
+    return fopen(filename, "a");
+
+}
+
 void errorisam(char *msg, unsigned char *opcode, fcd_t *fcd) {
     FILE *f;
     char user[257], *u, filename[257];
     short fnlen;
     unsigned short op;
+
     if (mode != 'W') {
         return;
     }    
-    umask(0);
-    if ((f = fopen("pqfh.err", "a")) == NULL) {
+    
+    if ((f = erropen()) == NULL) {
         return;
     }
     u = getenv("USER");
@@ -259,11 +285,12 @@ void errorisam(char *msg, unsigned char *opcode, fcd_t *fcd) {
 void errorbd(char *command, PGresult *res) {
     FILE *f;
     char user[257], *u;
+
     if (mode != 'W') {
         return;
     }    
-    umask(0);
-    if ((f = fopen("pqfh.err", "a")) == NULL) {
+
+    if ((f = erropen()) == NULL) {
         return;
     }
     u = getenv("USER");
@@ -1083,3 +1110,4 @@ bool is_weak(char *table) {
 // 3.0.5  - 16/10 - forcar commit no unlock do isam
 // 3.0.6  - 18/10 - limite do sql no load e nao fazer lock no random em modo W
 // 3.1.1  - 21/10 - correcoes no load
+// 3.2.0  - 22/10 - gravar o log por dia da semana
