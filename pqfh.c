@@ -15,7 +15,7 @@
 // insert into tabela_api values('sp05a51', 'planoGerencial');
 //
 
-#define VERSAO "v3.2.1 22/10/2019"
+#define VERSAO "v3.3.4 31/10/2019"
 
 int dbg=-1;
 int dbg_upd=-1;
@@ -144,6 +144,7 @@ int  qtde_total=0, qtde_open=0, qtde_close=0, qtde_start=0, qtde_next_prev=0, qt
 char get_mode() {
     int  fd;
     char mode='I';
+
     if (access(".pqfh", F_OK) == -1) {
         return 'I';
     }
@@ -328,7 +329,6 @@ void mostra_tempos() {
     fprintf(stderr, "tempo_isam=%ld %d\n", tempo_isam, qtde_isam);
     fprintf(stderr, "tempo_cobolpost=%ld %d\n", tempo_cobolpost, qtde_cobolpost);
 }
-
 
 void pqfh(unsigned char *opcode, fcd_t *fcd) {
 
@@ -1111,3 +1111,5 @@ bool is_weak(char *table) {
 // 3.0.6  - 18/10 - limite do sql no load e nao fazer lock no random em modo W
 // 3.1.1  - 21/10 - correcoes no load
 // 3.2.0  - 22/10 - gravar o log por dia da semana
+// 3.3.2  - 31/10 - ncomps aumentado para 32
+// 3.3.3  - 31/10 - carregar os metadados depois do create table

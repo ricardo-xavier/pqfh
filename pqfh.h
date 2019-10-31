@@ -17,7 +17,7 @@ FILE *flog;
 #define MAX_REC_LEN  19624
 #define MAX_COLS     512
 #define MAX_KEYS     16
-#define MAX_COMPS    16
+#define MAX_COMPS    32
 #define MAX_APIS     4
 
 typedef struct {

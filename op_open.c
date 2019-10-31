@@ -83,6 +83,7 @@ bool op_open(PGconn *conn, fcd_t *fcd, unsigned short opcode) {
                         fprintf(flog, "%ld reopen create [%s]\n", time(NULL), tab->name);
                     }
                     create_table(conn, tab, fcd, opcode);
+                    table_info(conn, tab, fcd);
                 } 
             }
         }
@@ -141,6 +142,7 @@ bool op_open(PGconn *conn, fcd_t *fcd, unsigned short opcode) {
             memcpy(fcd->status, ST_FILE_NOT_FOUND, 2);
             if ((fcd->isam != 'S') && (opcode != OP_OPEN_INPUT) && strcmp(tab->name, tab->dictname)) {
                 create_table(conn, tab, fcd, opcode);
+                table_info(conn, tab, fcd);
             } 
         }
         if (fcd->isam == 'S') {

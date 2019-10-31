@@ -293,7 +293,7 @@ bool tabela_convertida(char *tabela) {
  *        organization is indexed
  *        access mode is dynamic
  *        record key is pg0102sigla
- *        alternate record key is pg0102tabela.
+ *        alternate record key is pg0102tabela,pg0102sigla.
  *
  */
 bool nome_dicionario(char *tabela, char *nome) {
@@ -325,15 +325,15 @@ bool nome_dicionario(char *tabela, char *nome) {
         fcd02.record = malloc(257);
         putshort(fcd02.rec_len, 256);
 
-        fcd02.kdb = malloc(66);
-        memset(fcd02.kdb, 0, 66);
-        putshort(fcd02.kdb+0, 66);
+        fcd02.kdb = malloc(76);
+        memset(fcd02.kdb, 0, 76);
+        putshort(fcd02.kdb+0, 76);
         putshort(fcd02.kdb+6, 2);
 
         putshort(fcd02.kdb+14+0, 1);
         putshort(fcd02.kdb+14+2, 46);
 
-        putshort(fcd02.kdb+14+16+0, 1);
+        putshort(fcd02.kdb+14+16+0, 2);
         putshort(fcd02.kdb+14+16+2, 56);
 
         putint(fcd02.kdb+46+2, 0);
@@ -341,6 +341,9 @@ bool nome_dicionario(char *tabela, char *nome) {
 
         putint(fcd02.kdb+56+2, 10);
         putint(fcd02.kdb+56+6, 20);
+
+        putint(fcd02.kdb+66+2, 0);
+        putint(fcd02.kdb+66+6, 10);
 
         putshort(opcode, OP_OPEN_INPUT);
         EXTFH(opcode, &fcd02);
