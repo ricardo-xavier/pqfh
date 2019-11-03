@@ -4,7 +4,6 @@
 #include "pqfh.h"
 
 extern int dbg;
-extern bool reopen;
 extern fcd_t *fcd_open;
 table_t *tab_open;
 int ncomps=0;
@@ -28,8 +27,7 @@ bool op_open(PGconn *conn, fcd_t *fcd, unsigned short opcode) {
     }
     
     if (dbg > 0) {
-        fcd->sign[4] = 0;
-        fprintf(flog, "%ld op_open [%s] %04x %d [%s]\n", time(NULL), filename, opcode, (int) fcd->open_mode, fcd->sign);
+        fprintf(flog, "%ld op_open [%s] %04x %d %c\n", time(NULL), filename, opcode, (int) fcd->open_mode, fcd->sign);
     }
 
     if (fcd->open_mode != 128) {
@@ -39,60 +37,6 @@ bool op_open(PGconn *conn, fcd_t *fcd, unsigned short opcode) {
         }
         return false;
     }
-
-#ifndef ISAM
-    if (reopen && !memcmp(fcd->sign, "PQFH", 4)) {
-        fileid = getint(fcd->file_id);
-        tab = (table_t *) fileid;
-
-        if (!strcmp(filename, tab->name)) {
-            // mesmo nome externo
-            fcd->open_mode = opcode - 0xfa00;
-            if (opcode == OP_OPEN_OUTPUT) {
-                if (dbg > 0) {
-                    fprintf(flog, "%ld reopen truncate [%s]\n", time(NULL), tab->name);
-                }
-                truncate_table(conn, tab->name);
-            }
-            memcpy(fcd->status, ST_OK, 2);
-
-        } else {
-            // mudou o nome externo
-            char schema[257];
-            strcpy(schema, get_schema(conn, filename));
-            if (dbg > 0) {
-                fprintf(flog, "%ld reopen schema [%s] [%s] [%s]\n", time(NULL), tab->name, filename, schema);
-            }
-            strcpy(tab->name, filename);
-            if (schema[0]) {
-                // a tabela existe no banco
-                fcd->open_mode = opcode - 0xfa00;
-                if (opcode == OP_OPEN_OUTPUT) {
-                    if (dbg > 0) {
-                        fprintf(flog, "%ld reopen truncate [%s]\n", time(NULL), tab->name);
-                    }
-                    truncate_table(conn, tab->name);
-                }
-                memcpy(fcd->status, ST_OK, 2);
-            } else {
-
-                // a tabela nao existe no banco
-                memcpy(fcd->status, ST_FILE_NOT_FOUND, 2);
-                if ((fcd->isam != 'S') && (opcode != OP_OPEN_INPUT) && strcmp(tab->name, tab->dictname)) {
-                    if (dbg > 0) {
-                        fprintf(flog, "%ld reopen create [%s]\n", time(NULL), tab->name);
-                    }
-                    create_table(conn, tab, fcd, opcode);
-                    table_info(conn, tab, fcd);
-                } 
-            }
-        }
-        if (dbg > 0) {
-            fprintf(flog, "%ld status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
-        }
-        return false;
-    }
-#endif
 
     // aloca e inicializa a tabela
     tab = (table_t *) malloc(sizeof(table_t));
@@ -151,7 +95,7 @@ bool op_open(PGconn *conn, fcd_t *fcd, unsigned short opcode) {
 #endif
             return false;
         }
-        strcpy((char *) fcd->sign, "PQFH");
+        fcd->sign = 'P';
     } else {
 #endif
         fcd->open_mode = opcode - 0xfa00;

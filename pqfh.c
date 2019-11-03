@@ -15,7 +15,7 @@
 // insert into tabela_api values('sp05a51', 'planoGerencial');
 //
 
-#define VERSAO "v3.3.4 31/10/2019"
+#define VERSAO "v3.4.0 03/11/2019"
 
 int dbg=-1;
 int dbg_upd=-1;
@@ -25,11 +25,11 @@ int dbg_lock=-1;
 char mode='I';
 bool force_bd;
 char *api=NULL;
-bool reopen=false;
 int seqcmd=0;
 fcd_t *fcd_open;
 bool lock_manual=true;
 bool executed=false;
+char table_mode=0;
 
 PGconn *conn=NULL;
 #ifndef ISAM
@@ -222,12 +222,6 @@ void get_debug() {
     } else {
         api = env;
     }
-    env = getenv("PQFH_REOPEN");
-    if (env == NULL) {
-        reopen = false;
-    } else {
-        reopen = env[0] == 'S';
-    }
 }
 
 FILE *erropen() {
@@ -359,6 +353,14 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
     memcpy(filename, fcd->file_name, fnlen);
     filename[fnlen] = 0;
     op = getshort(opcode);
+
+    if ((op >= OP_OPEN_INPUT) && (op <= OP_OPEN_EXTEND)) {
+        fcd->mode = table_mode;
+    }        
+    if (fcd->mode && (strchr("ABWI", fcd->mode) != NULL)) {
+        mode = fcd->mode;
+    }        
+    table_mode = 0;
 
     if ((mode == 'W') && (op == OP_OPEN_IO)) {
         fcd->isam = 0;
@@ -1113,3 +1115,4 @@ bool is_weak(char *table) {
 // 3.2.0  - 22/10 - gravar o log por dia da semana
 // 3.3.2  - 31/10 - ncomps aumentado para 32
 // 3.3.3  - 31/10 - carregar os metadados depois do create table
+// 3.4.0  - 03/11 - modo de execucao por tabela - remocao do reopen

@@ -6,6 +6,7 @@
 extern int dbg;
 extern bool lock_manual;
 extern char mode;
+extern char table_mode;
 #ifndef ISAM
 extern list2_t *weak;
 #endif
@@ -28,6 +29,10 @@ void command(PGconn *conn, fcd_t *fcd) {
         strcpy(aux, (char *) fcd->record+5);
         if ((p = strchr(aux, ' ')) != NULL) *p = 0;
         weak = list2_append(weak, aux, strlen(aux)+1);
+    }
+
+    if (!memcmp(fcd->record, "MODE:", 5)) {
+        table_mode = fcd->record[5];    
     }
 
     if (!memcmp(fcd->record, "COPY:", 5)) {

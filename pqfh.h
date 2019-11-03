@@ -134,7 +134,9 @@ typedef struct {
     unsigned char file_id[4];       /* 79 */
     unsigned char filler_9[10];     /* 83 */
     unsigned char ignore_lock;      /* 93 */
-    unsigned char sign[5];          /* 94 */
+    unsigned char mode;             /* 94 */
+    unsigned char filler_10[3];     /* 95 */
+    unsigned char sign;             /* 98 */
     unsigned char isam;             /* 99 */
 } fcd_t;
 
