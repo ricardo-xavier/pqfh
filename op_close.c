@@ -50,12 +50,12 @@ bool op_close(PGconn *conn, fcd_t *fcd) {
         unlock(fcd);
     }
 
-    if (fcd->sign != 'P') {
+    if (fcd->sign == 'P') {
         deallocate(conn, tab);
     }
     close_cursor(conn, tab);
 
-    if (fcd->sign != 'P') {
+    if (fcd->sign == 'P') {
         free_tab(tab);
     }
     fcd->open_mode = 128;

@@ -15,7 +15,7 @@
 // insert into tabela_api values('sp05a51', 'planoGerencial');
 //
 
-#define VERSAO "v3.4.0 03/11/2019"
+#define VERSAO "v3.4.2 05/11/2019"
 
 int dbg=-1;
 int dbg_upd=-1;
@@ -356,6 +356,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
 
     if ((op >= OP_OPEN_INPUT) && (op <= OP_OPEN_EXTEND)) {
         fcd->mode = table_mode;
+        fcd->isam = 0;
     }        
     if (fcd->mode && (strchr("ABWI", fcd->mode) != NULL)) {
         mode = fcd->mode;
@@ -1116,3 +1117,5 @@ bool is_weak(char *table) {
 // 3.3.2  - 31/10 - ncomps aumentado para 32
 // 3.3.3  - 31/10 - carregar os metadados depois do create table
 // 3.4.0  - 03/11 - modo de execucao por tabela - remocao do reopen
+// 3.4.1  - 04/11 - alteracao do byte da fcd utilizado para armazenar o modo de execucao da tabela
+// 3.4.2  - 05/11 - correcao no teste do sign no close
