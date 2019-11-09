@@ -3,46 +3,40 @@
 #include <string.h>
 #include <stdlib.h>
 
-#define MEMFH_PAGELEN 4096
+#include "memfh.h"
 
-#define MEMFH_MAX_ITEMS(keylen) ((MEMFH_PAGELEN - 8) / (keylen + sizeof(char *)))
-
-typedef struct memfh_data_s {
-    struct memfh_data_s *next;
-    char *record;
-} memfh_data_t;    
-
-typedef struct memfh_idx_s {
-    char tp;
-    char filler[3];
-    int  n;    
-    char buf[MEMFH_PAGELEN-8];
-} memfh_idx_t;    
-
-typedef struct memfh_hdr_s {
-    char *filename;    
-    int   count;
-    int   reclen;
-    int   keylen;
-    memfh_data_t *head;
-    memfh_data_t *tail;
-    memfh_idx_t *idx;
-} memfh_hdr_t;    
-
-memfh_hdr_t *memfh_open(char *filename, int reclen, int keylen) {
+memfh_hdr_t *memfh_open(char *filename, int reclen, int nkeys, int **keys) {
 
     memfh_hdr_t *hdr;
 
+    fprintf(stderr, "===== memfh_open [%s] %d %d\n", filename, reclen, nkeys);
+    for (int k=0; k<nkeys; k++) {
+        fprintf(stderr, "%d %d\n", k, keys[k][0]);    
+        for (int c=0; c<keys[k][0]; c++) {
+            fprintf(stderr, "    %d:%d\n", keys[k][1+c*2], keys[k][1+c*2+1]);        
+        }        
+    }        
     hdr = malloc(sizeof(memfh_hdr_t));
     hdr->filename = strdup(filename);
     hdr->count = 0;
     hdr->reclen = reclen;
-    hdr->keylen = keylen;
+    hdr->nkeys = nkeys;
+    hdr->keys = keys;
     hdr->head = NULL;
     hdr->tail = NULL;
-    hdr->idx = malloc(sizeof(memfh_idx_t));
-    hdr->idx->tp = 0;
-    hdr->idx->n = 0;
+
+    hdr->idx = malloc(nkeys * sizeof(memfh_idx_t *));
+
+    // aloca a pk
+    hdr->idx[0] = malloc(sizeof(memfh_idx_t));
+    hdr->idx[0]->tp = 0;
+    hdr->idx[0]->n = 0;
+    hdr->idx[0]->next = NULL;
+
+    // as outras chaves serao alocadas sob demanda
+    for (int k=1; k<nkeys; k++) {
+        hdr->idx[k] = NULL;
+    }    
 
     return hdr;        
 }        
@@ -51,16 +45,47 @@ void memfh_close(memfh_hdr_t *hdr) {
 
     memfh_data_t *data, *next;
 
+    if (hdr == NULL) {
+        return;
+    }    
+
     data = hdr->head;
     while (data != NULL) {
-        free(data->record);
+        if (data->record != NULL) {    
+            free(data->record);
+            data->record = NULL;
+        }    
         next = data->next;
         free(data);    
         data = next;
     }
 
-    free(hdr->idx);
-    free(hdr->filename);
+    if (hdr->idx != NULL) {
+        for (int k=0; k<hdr->nkeys; k++) {
+            if (hdr->idx[k] != NULL) {
+                free(hdr->idx[k]);
+                hdr->idx[k] = NULL;
+            }
+        }
+        free(hdr->idx);
+        hdr->idx = NULL;
+    }    
+
+    if (hdr->keys != NULL) {
+        for (int k=0; k<hdr->nkeys; k++) {
+            if (hdr->keys[k] != NULL) {
+                free(hdr->keys[k]);
+                hdr->keys[k] = NULL;
+            }
+        }
+        free(hdr->keys);
+        hdr->keys = NULL;
+    }    
+
+    if (hdr->filename != NULL) {
+        free(hdr->filename);
+        hdr->filename = NULL;
+    }    
     free(hdr);
 }        
 
@@ -68,6 +93,10 @@ void memfh_list(memfh_hdr_t *hdr) {
 
     memfh_data_t *data;
     int i=0;
+
+    if (hdr == NULL) {
+        return;
+    }    
 
     data = hdr->head;
     while (data != NULL) {
@@ -77,60 +106,11 @@ void memfh_list(memfh_hdr_t *hdr) {
 
 }        
 
-void memfh_idx_list(memfh_hdr_t *hdr, memfh_idx_t *idx) {
-
-    char *ptr, key[257], *record;
-
-    fprintf(stderr, "idx n=%d\n", idx->n);    
-    ptr = idx->buf;
-    for (int i=0; i<idx->n; i++) {
-        memcpy(key, ptr, hdr->keylen);
-        key[hdr->keylen] = 0;    
-        memcpy(&record, ptr+hdr->keylen, sizeof(char *));
-        fprintf(stderr, "%d [%s] [%s]\n", i, key, record);
-        ptr += (hdr->keylen + sizeof(char *));
-    }        
-}
-
-void memfh_idx_write(memfh_hdr_t *hdr, char *key, char *record) {
-
-    memfh_idx_t *idx;
-    char *ptr;
-
-    idx = hdr->idx;
-
-    if (idx->tp == 0) {
-        // folha
-        if (idx->n < MEMFH_MAX_ITEMS(hdr->keylen)) {
-            // procura a posicao de insercao    
-            ptr = idx->buf;   
-            for (int i=0; i<idx->n; i++) {
-                if (memcmp(key, ptr, hdr->keylen) < 0) {
-                    fprintf(stderr, "TODO abrir espaco\n");
-                    exit(-1);
-                }        
-                ptr += (hdr->keylen + sizeof(char *));
-            }
-            memcpy(ptr, key, hdr->keylen);
-            memcpy(ptr+hdr->keylen, &record, sizeof(char *));
-            idx->n++;
-            memfh_idx_list(hdr, idx);
-
-        } else {
-            fprintf(stderr, "TODO pagina cheia\n");
-            exit(-1);
-
-        }        
-    } else {
-        fprintf(stderr, "TODO no interno\n");
-        exit(-1);
-    }    
-
-}
-
 void memfh_write(memfh_hdr_t *hdr, char *record) {
 
     memfh_data_t *data;
+    char key[MEMFH_MAX_KEYLEN+1];
+    int offset;
 
     data = malloc(sizeof(memfh_data_t));
     data->next = NULL;
@@ -146,12 +126,19 @@ void memfh_write(memfh_hdr_t *hdr, char *record) {
         hdr->tail = data;    
     }    
 
-    //TODO montar chave
-    memfh_idx_write(hdr, data->record, data->record);
+    // monta a chave
+    offset = 0;
+    for (int c=0; c<hdr->keys[0][0]; c++) {
+        memcpy(key, record + hdr->keys[0][1+c*2], hdr->keys[0][1+c*2+1]);
+        offset += hdr->keys[0][1+c*2+1];
+    }    
+    key[offset] = 0;
+    memfh_idx_write(hdr, 0, offset, key, data->record);
 
     hdr->count++;
 }
 
+/*
 int main(int argc, char *argv[]) {
     memfh_hdr_t *hdr;
     hdr = memfh_open("teste", 13, 3);    
@@ -163,3 +150,4 @@ int main(int argc, char *argv[]) {
     memfh_close(hdr);
     return 0;
 }    
+*/
