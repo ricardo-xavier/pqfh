@@ -5,6 +5,8 @@
 
 #include "memfh.h"
 
+#define CAST long
+
 memfh_hdr_t *memfh_open(char *filename, int reclen, int nkeys, int **keys) {
 
     memfh_hdr_t *hdr;
@@ -100,7 +102,7 @@ void memfh_list(memfh_hdr_t *hdr) {
 
     data = hdr->head;
     while (data != NULL) {
-        fprintf(stderr, "%09d %08x [%s] %08x\n", ++i, (int) data, data->record, (int) data->next);    
+        fprintf(stderr, "%09d %08lx [%s] %08lx\n", ++i, (CAST) data, data->record, (CAST) data->next);    
         data = data->next;
     }
 
@@ -139,16 +141,28 @@ void memfh_write(memfh_hdr_t *hdr, char *record) {
     hdr->count++;
 }
 
-/*
 int main(int argc, char *argv[]) {
+
     memfh_hdr_t *hdr;
-    hdr = memfh_open("teste", 13, 3);    
-    memfh_write(hdr, "001RICARDO   ");
-    memfh_write(hdr, "002RONALDO   ");
-    memfh_write(hdr, "003BRENO     ");
-    memfh_write(hdr, "004CRISTIANO ");
-    memfh_list(hdr);
-    memfh_close(hdr);
+    int **keys = malloc(1 * sizeof(int *));
+    keys[0] = malloc((1 + 1 * 2) * sizeof(int));
+    keys[0][0] = 1;
+    keys[0][1] = 0;
+    keys[0][2] = 7;
+    hdr = memfh_open("teste", 129, 1, keys);    
+
+    FILE *f = fopen("bairro.log", "r");
+    char buf[257];
+    char *record;
+    while (fgets(buf, 257, f) != NULL) {
+        record = buf + 20;
+        record[129] = 0;
+        //fprintf(stderr, "[%s]\n", record);
+        memfh_write(hdr, record);
+    }
+    fclose(f);
+
+    memfh_idx_list(hdr);
+
     return 0;
 }    
-*/

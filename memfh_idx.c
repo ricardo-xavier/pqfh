@@ -5,6 +5,8 @@
 
 #include "memfh.h"
 
+#define CAST long
+
 memfh_idx_t *path[MEMFH_MAX_DEPTH];
 int pos[MEMFH_MAX_DEPTH];
 int depth;
@@ -35,36 +37,30 @@ bool memfh_idx_next(memfh_idx_t *idx) {
         return true;
     }    
     while (true) {
-fprintf(stderr, "next depth=%d\n", depth);            
         if (depth == 0) {
             return false;
         }
         depth--;
         memfh_idx_t *idx = path[depth];
         int p = pos[depth];
-fprintf(stderr, "p=%d n=%d len=%d tp=%d\n", p, idx->n, idx->keylen, idx->tp);            
         if (p < idx->n) {
             p++;    
             if (p == idx->n) {
                 idx = idx->next;
             } else {
-fprintf(stderr, "teste0 [%s]\n", idx->buf);                
                 char *ptr = idx->buf + p * (idx->keylen + sizeof(memfh_idx_t *));
-fprintf(stderr, "teste1\n");                
-fprintf(stderr, "teste1 [%s]\n", ptr);                
                 memcpy(&idx, ptr+idx->keylen, sizeof(memfh_idx_t *));
-fprintf(stderr, "teste2\n");                
             }    
-fprintf(stderr, "depth=%d pos=%d n=%d\n", depth, p, idx->n);            
             pos[depth] = p;
             while (idx->tp == 1) {
-fprintf(stderr, "depth=%d tp=%d n=%d\n", depth, idx->tp, idx->n);            
                 depth++;
                 path[depth] = idx;
                 pos[depth] = 0;
                 memcpy(&idx, idx->buf+idx->keylen, sizeof(memfh_idx_t *));
             }
-fprintf(stderr, "fim depth=%d pos=%d\n", depth, pos[depth]);
+            depth++;
+            pos[depth] = 0;
+            path[depth] = idx;
             return true;
         } else {
             // TODO    
@@ -94,6 +90,7 @@ void memfh_idx_list(memfh_hdr_t *hdr) {
         int r = 1;
         fprintf(stderr, "%09d %04d [%s] [%s]\n", r, pos[depth], key, record);
         while (memfh_idx_next(idx)) {
+            idx = path[depth];
             ptr = idx->buf + pos[depth] * (idx->keylen + sizeof(char *));
             memcpy(key, ptr, idx->keylen);
             key[idx->keylen] = 0;    
@@ -107,7 +104,7 @@ void memfh_idx_show_page(memfh_hdr_t *hdr, memfh_idx_t *idx) {
 
     char *ptr, key[257], *record;
 
-    fprintf(stderr, "idx n=%d %08x %08x\n", idx->n, (int) idx, (int) idx->next);
+    fprintf(stderr, "idx n=%d %08lx %08lx\n", idx->n, (CAST) idx, (CAST) idx->next);
     ptr = idx->buf;
     for (int i=0; i<idx->n; i++) {
         memcpy(key, ptr, idx->keylen);
@@ -118,7 +115,7 @@ void memfh_idx_show_page(memfh_hdr_t *hdr, memfh_idx_t *idx) {
         } else {
             memfh_idx_t *page;
             memcpy(&page, ptr+idx->keylen, sizeof(memfh_idx_t *));
-            fprintf(stderr, "%d [%s] %08x\n", i, key, (int) page);
+            fprintf(stderr, "%d [%s] %08lx\n", i, key, (CAST) page);
         }        
         ptr += (idx->keylen + sizeof(char *));
     }        
@@ -139,7 +136,7 @@ bool memfh_idx_search_page(memfh_idx_t *idx, char *key) {
                 return true;
             } else {
                 memcpy(&next, ptr+idx->keylen, sizeof(memfh_idx_t *));
-                //fprintf(stderr, "push %08x\n", (int) next);
+                //fprintf(stderr, "push %08lx\n", (CAST) next);
                 depth++;
                 path[depth] = next;
                 return memfh_idx_search_page(next, key);
@@ -151,7 +148,7 @@ bool memfh_idx_search_page(memfh_idx_t *idx, char *key) {
                 return false;
             } else {
                 memcpy(&next, ptr+idx->keylen, sizeof(memfh_idx_t *));
-                //fprintf(stderr, "push %08x\n", (int) next);
+                //fprintf(stderr, "push %08lx\n", (CAST) next);
                 depth++;
                 path[depth] = next;
                 return memfh_idx_search_page(next, key);
@@ -165,7 +162,7 @@ bool memfh_idx_search_page(memfh_idx_t *idx, char *key) {
 
     } else {    
         next = idx->next;
-        //fprintf(stderr, "push %08x\n", (int) next);
+        //fprintf(stderr, "push %08lx\n", (CAST) next);
         depth++;
         path[depth] = next;
         return memfh_idx_search_page(next, key);
@@ -190,9 +187,9 @@ void memfh_idx_insert_parent(memfh_hdr_t *hdr, int k, int d, memfh_idx_t *idx1, 
         // a pagina que quebrou era a ultima do pai    
         char *ptr = idx2->buf;
         // ptr = primeiro item da segunda pagina
-        memcpy(parent->buf + parent->n * (parent->keylen + sizeof(memfh_idx_t)), ptr, parent->keylen);
+        memcpy(parent->buf + parent->n * (parent->keylen + sizeof(memfh_idx_t *)), ptr, parent->keylen);
         // se for menor que o primeiro item da segunda pagina direciona para a primeira pagina
-        memcpy(parent->buf + parent->n * (parent->keylen + sizeof(memfh_idx_t)) + parent->keylen, &idx1, sizeof(memfh_idx_t *));
+        memcpy(parent->buf + parent->n * (parent->keylen + sizeof(memfh_idx_t *)) + parent->keylen, &idx1, sizeof(memfh_idx_t *));
         parent->next = idx2;
         parent->n++;
 
@@ -207,8 +204,9 @@ void memfh_idx_insert_parent(memfh_hdr_t *hdr, int k, int d, memfh_idx_t *idx1, 
             idx1->n = n1;
             memfh_idx_t *idx2 = malloc(sizeof(memfh_idx_t));
             idx2->keylen = idx1->keylen;
-            idx2->tp = 0;
-            idx2->next = NULL;
+            idx2->tp = 1;
+            idx2->next = idx1->next;
+            idx1->next = idx2;
             idx2->n = n2;
 
             char *ptr1 = idx1->buf + n1 * (idx1->keylen + sizeof(char *));
