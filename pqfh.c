@@ -354,6 +354,10 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
     filename[fnlen] = 0;
     op = getshort(opcode);
 
+    if (strstr(filename, "/tmp/") != NULL) {
+        memfh_cbl(op, fcd, filename);
+    }
+
     if ((op >= OP_OPEN_INPUT) && (op <= OP_OPEN_EXTEND)) {
         fcd->mode = table_mode;
         fcd->isam = 0;

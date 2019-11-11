@@ -133,7 +133,8 @@ void memfh_write(memfh_hdr_t *hdr, char *record) {
         offset += hdr->keys[0][1+c*2+1];
     }    
     key[offset] = 0;
-    memfh_idx_write(hdr, 0, offset, key, data->record);
+    hdr->idx[0]->keylen = offset;
+    memfh_idx_write(hdr, 0, key, data->record);
 
     hdr->count++;
 }

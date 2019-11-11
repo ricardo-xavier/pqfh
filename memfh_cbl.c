@@ -56,7 +56,7 @@ void memfh_cbl_open_output(fcd_t *fcd, char *filename) {
     for (int i=0; i<MAX_HDRS; i++) {
         if (hdrs[i] == 0) {
             hdrs[i] = hdr;
-            fprintf(stderr, "memfh_cbl_open i=%d %08x %d\n", i, (int) hdrs[i], hdr->reclen);
+            //fprintf(stderr, "memfh_cbl_open i=%d %08x %d\n", i, (int) hdrs[i], hdr->reclen);
             nhdrs++;
             break;
         }
@@ -72,12 +72,12 @@ void memfh_cbl_write(fcd_t *fcd) {
     fileid = getint(fcd->file_id);    
     hdr = (memfh_hdr_t *) fileid;
 
-    fprintf(stderr, "memfh_cbl_write %08x %d\n", fileid, nhdrs);
+    //fprintf(stderr, "memfh_cbl_write %08x %d\n", fileid, nhdrs);
 
     for (int i=0; i<MAX_HDRS; i++) {
         if (hdrs[i] == hdr) {    
             memfh_write(hdr, (char *) fcd->record);
-            fprintf(stderr, "memfh_cbl_write count=%d\n", hdr->count);
+            //fprintf(stderr, "memfh_cbl_write count=%d\n", hdr->count);
             memcpy(fcd->status, ST_OK, 2);    
             return;
         }
@@ -94,13 +94,14 @@ void memfh_cbl_close(fcd_t *fcd) {
     fileid = getint(fcd->file_id);    
     hdr = (memfh_hdr_t *) fileid;
 
-    fprintf(stderr, "memfh_cbl_close %08x %d\n", fileid, nhdrs);
+    //fprintf(stderr, "memfh_cbl_close %08x %d\n", fileid, nhdrs);
 
     for (int i=0; i<MAX_HDRS; i++) {
-        fprintf(stderr, "memfh_cbl_close i=%d %08x\n", i, (int) hdrs[i]);
+        //fprintf(stderr, "memfh_cbl_close i=%d %08x\n", i, (int) hdrs[i]);
         if (hdrs[i] == hdr) {    
             fprintf(stderr, "memfh_cbl_close count=%d\n", hdr->count);
-            memfh_list(hdr);
+            memfh_idx_list(hdr);
+            //memfh_list(hdr);
             //TODO criar um comando para fechar no pqfh - nao pode fechar no primeiro close
             /*
             memfh_close(hdr);
@@ -117,7 +118,7 @@ void memfh_cbl_close(fcd_t *fcd) {
 
 void memfh_cbl(unsigned short op, fcd_t *fcd, char *filename) {
 
-    fprintf(stderr, "memfh_cbl %04x [%s]\n", op, filename);
+    //fprintf(stderr, "memfh_cbl %04x [%s]\n", op, filename);
 
     switch (op) {
 

@@ -21,7 +21,8 @@ typedef struct memfh_data_s {
 
 typedef struct memfh_idx_s {
     char tp;
-    char filler[3];
+    char filler;
+    short keylen;
     int  n;    
     struct memfh_idx_s *next;
     char buf[MEMFH_PAGELEN-12];
@@ -40,9 +41,11 @@ typedef struct memfh_hdr_s {
 
 memfh_hdr_t *memfh_open(char *filename, int reclen, int nkeys, int **keys);
 void memfh_close(memfh_hdr_t *hdr);
-void memfh_list(memfh_hdr_t *hdr);
-void memfh_idx_list(memfh_hdr_t *hdr, memfh_idx_t *idx, int keylen);
-void memfh_idx_write(memfh_hdr_t *hdr, int k, int keylen, char *key, char *record);
 void memfh_write(memfh_hdr_t *hdr, char *record);
+void memfh_list(memfh_hdr_t *hdr);
+
+void memfh_idx_write(memfh_hdr_t *hdr, int k, char *key, char *record);
+void memfh_idx_list(memfh_hdr_t *hdr);
+void memfh_idx_show_page(memfh_hdr_t *hdr, memfh_idx_t *idx);
 
 #endif // MEMFH_H
