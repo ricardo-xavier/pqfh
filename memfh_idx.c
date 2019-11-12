@@ -7,9 +7,8 @@
 
 #define CAST long
 
-memfh_idx_t *path[MEMFH_MAX_DEPTH];
-int pos[MEMFH_MAX_DEPTH];
-int depth;
+void debug() {
+}
 
 bool memfh_idx_first(memfh_hdr_t *hdr, int k) {
 
@@ -17,57 +16,103 @@ bool memfh_idx_first(memfh_hdr_t *hdr, int k) {
     if (idx->n == 0) {
         return false;
     }    
-    depth = 0;    
-    path[0] = idx;
-    pos[0] = 0;
+    hdr->depth[k] = 0;    
+    hdr->path[k][0] = idx;
+    hdr->pos[k][0] = 0;
     while (idx->tp == 1) {
         memcpy(&idx, idx->buf+idx->keylen, sizeof(memfh_idx_t *));
+        int depth = hdr->depth[k];
         depth++;
-        path[depth] = idx;
-        pos[depth] = 0;
+        hdr->depth[k] = depth;
+        hdr->path[k][depth] = idx;
+        hdr->pos[k][depth] = 0;
     }
     return true;
 
 }
 
-bool memfh_idx_next(memfh_idx_t *idx) {
+bool memfh_idx_next(memfh_hdr_t *hdr, memfh_idx_t *idx, int k) {
 
-    if (pos[depth] < idx->n) {
-        pos[depth]++;    
+    int depth = hdr->depth[k];
+    if (hdr->pos[k][depth] < (idx->n - 1)) {
+        hdr->pos[k][depth]++;
         return true;
     }    
     while (true) {
         if (depth == 0) {
             return false;
         }
+        // avanca no pai
         depth--;
-        memfh_idx_t *idx = path[depth];
-        int p = pos[depth];
-        if (p < idx->n) {
-            p++;    
-            if (p == idx->n) {
+        hdr->depth[k] = depth;    
+        memfh_idx_t *idx = hdr->path[k][depth];
+        int pos = hdr->pos[k][depth];
+        if (pos < idx->n) {
+            pos++;    
+            if (pos == idx->n) {
                 idx = idx->next;
+
             } else {
-                char *ptr = idx->buf + p * (idx->keylen + sizeof(memfh_idx_t *));
+                char *ptr = idx->buf + pos * (idx->keylen + sizeof(memfh_idx_t *));
                 memcpy(&idx, ptr+idx->keylen, sizeof(memfh_idx_t *));
             }    
-            pos[depth] = p;
+            hdr->pos[k][depth] = pos;
+
+            // avanca ate chegar em uma folha
             while (idx->tp == 1) {
+                // adiciona o no interno ao caminho de busca
                 depth++;
-                path[depth] = idx;
-                pos[depth] = 0;
+                hdr->depth[k] = depth;    
+                hdr->pos[k][depth] = 0;
+                hdr->path[k][depth] = idx;
                 memcpy(&idx, idx->buf+idx->keylen, sizeof(memfh_idx_t *));
             }
+
+            // adiciona a folha ao caminho de busca
             depth++;
-            pos[depth] = 0;
-            path[depth] = idx;
+            hdr->depth[k] = depth;    
+            hdr->pos[k][depth] = 0;
+            hdr->path[k][depth] = idx;
             return true;
+
         } else {
             // TODO    
             return false;
         }    
     }
     return false;
+}
+
+void memfh_idx_create(memfh_hdr_t *hdr, int k) {
+
+    char key0[257], key[257], *record;
+
+    hdr->idx[k] = malloc(sizeof(memfh_idx_t));
+    hdr->idx[k]->tp = 0;
+    hdr->idx[k]->n = 0;
+    hdr->idx[k]->next = NULL;
+
+    if (!memfh_idx_first(hdr, 0)) {
+        return;
+    }
+
+    // le o registro pela pk
+    int depth = hdr->depth[k];
+    memfh_idx_t *idx0 = hdr->path[k][depth];
+    char *ptr0 = idx0->buf + hdr->pos[k][depth] * (idx0->keylen + sizeof(char *));
+    memcpy(key0, ptr0, idx0->keylen);
+    key0[idx0->keylen] = 0;    
+    memcpy(&record, ptr0+idx0->keylen, sizeof(char *));
+
+    // monta a chave
+    int offset = 0;
+    for (int c=0; c<hdr->keys[k][0]; c++) {
+        memcpy(key, record + hdr->keys[k][1+c*2], hdr->keys[k][1+c*2+1]);
+        offset += hdr->keys[k][1+c*2+1];
+    }    
+    key[offset] = 0;
+    hdr->idx[k]->keylen = offset;
+
 }
 
 void memfh_idx_list(memfh_hdr_t *hdr) {
@@ -82,20 +127,22 @@ void memfh_idx_list(memfh_hdr_t *hdr) {
         if (!memfh_idx_first(hdr, k)) {
             continue;
         }    
-        memfh_idx_t *idx = path[depth];
+        int depth = hdr->depth[k];
+        memfh_idx_t *idx = hdr->path[k][depth];
         ptr = idx->buf;
         memcpy(key, ptr, idx->keylen);
         key[idx->keylen] = 0;    
         memcpy(&record, ptr+idx->keylen, sizeof(char *));
         int r = 1;
-        fprintf(stderr, "%09d %04d [%s] [%s]\n", r, pos[depth], key, record);
-        while (memfh_idx_next(idx)) {
-            idx = path[depth];
-            ptr = idx->buf + pos[depth] * (idx->keylen + sizeof(char *));
+        fprintf(stderr, "%09d %04d [%s] [%s]\n", r, hdr->pos[k][depth], key, record);
+        while (memfh_idx_next(hdr, idx, k)) {
+            depth = hdr->depth[k];
+            idx = hdr->path[k][depth];
+            ptr = idx->buf + hdr->pos[k][depth] * (idx->keylen + sizeof(char *));
             memcpy(key, ptr, idx->keylen);
             key[idx->keylen] = 0;    
             memcpy(&record, ptr+idx->keylen, sizeof(char *));
-            fprintf(stderr, "%09d %04d [%s] [%s]\n", ++r, pos[depth], key, record);
+            fprintf(stderr, "%09d %04d [%s] [%s]\n", ++r, hdr->pos[k][depth], key, record);
         }
     }
 }
@@ -121,67 +168,69 @@ void memfh_idx_show_page(memfh_hdr_t *hdr, memfh_idx_t *idx) {
     }        
 }
 
-bool memfh_idx_search_page(memfh_idx_t *idx, char *key) {
+bool memfh_idx_search_page(memfh_hdr_t *hdr, int k, memfh_idx_t *idx, char *key) {
 
     char *ptr = idx->buf;   
     memfh_idx_t *next;
 
     //fprintf(stderr, "memfh_idx_search_page %d [%s] %d %d\n", idx->keylen, key, idx->tp, idx->n);    
 
+    int depth = hdr->depth[k];
     for (int i=0; i<idx->n; i++) {
         int c = memcmp(key, ptr, idx->keylen);
         if (c == 0) {
-            pos[depth] = i;
+            hdr->pos[k][depth] = i;
             if (idx->tp == 0) {
                 return true;
             } else {
                 memcpy(&next, ptr+idx->keylen, sizeof(memfh_idx_t *));
-                //fprintf(stderr, "push %08lx\n", (CAST) next);
                 depth++;
-                path[depth] = next;
-                return memfh_idx_search_page(next, key);
+                hdr->depth[k] = depth;
+                hdr->path[k][depth] = next;
+                return memfh_idx_search_page(hdr, k, next, key);
             }        
         }
         if (c < 0) {
-            pos[depth] = i;
+            hdr->pos[k][depth] = i;
             if (idx->tp == 0) {
                 return false;
             } else {
                 memcpy(&next, ptr+idx->keylen, sizeof(memfh_idx_t *));
-                //fprintf(stderr, "push %08lx\n", (CAST) next);
                 depth++;
-                path[depth] = next;
-                return memfh_idx_search_page(next, key);
+                hdr->depth[k] = depth;
+                hdr->path[k][depth] = next;
+                return memfh_idx_search_page(hdr, k, next, key);
             }
         }    
     }        
 
+    hdr->pos[k][depth] = idx->n;
     if (idx->tp == 0) {
-        pos[depth] = idx->n;
         return false;
 
     } else {    
         next = idx->next;
-        //fprintf(stderr, "push %08lx\n", (CAST) next);
         depth++;
-        path[depth] = next;
-        return memfh_idx_search_page(next, key);
+        hdr->depth[k] = depth;
+        hdr->pos[k][depth] = 0;
+        hdr->path[k][depth] = next;
+        return memfh_idx_search_page(hdr, k, next, key);
     }    
 }
 
 bool memfh_idx_search(memfh_hdr_t *hdr, int k, char *key) {
 
     memfh_idx_t *idx = hdr->idx[k];
-    path[0] = idx;
-    pos[0] = 0;    
-    depth = 0;    
-    return memfh_idx_search_page(idx, key);
+    hdr->path[k][0] = idx;
+    hdr->pos[k][0] = 0;    
+    hdr->depth[k] = 0;
+    return memfh_idx_search_page(hdr, k, idx, key);
 
 }
 
 void memfh_idx_insert_parent(memfh_hdr_t *hdr, int k, int d, memfh_idx_t *idx1, memfh_idx_t *idx2) {
 
-    memfh_idx_t *parent = path[d];
+    memfh_idx_t *parent = hdr->path[k][d];
 
     if (parent->next == idx1) {
         // a pagina que quebrou era a ultima do pai    
@@ -252,15 +301,15 @@ void memfh_idx_write(memfh_hdr_t *hdr, int k, char *key, char *record) {
         exit(-1);    
     }        
 
-    memfh_idx_t *idx = path[depth];
-    //fprintf(stderr, "depth=%d pos=%d/%d\n", depth, pos, idx->n);
+    int depth = hdr->depth[k];
+    memfh_idx_t *idx = hdr->path[k][depth];
 
-    if (pos[depth] < idx->n) {    
+    if (hdr->pos[k][depth] < idx->n) {    
         fprintf(stderr, "TODO abrir espaco\n");
         exit(-1);
     }        
 
-    char *ptr = idx->buf + pos[depth] * (idx->keylen + sizeof(char *));
+    char *ptr = idx->buf + hdr->pos[k][depth] * (idx->keylen + sizeof(char *));
     memcpy(ptr, key, idx->keylen);
     memcpy(ptr+idx->keylen, &record, sizeof(char *));
     idx->n++;

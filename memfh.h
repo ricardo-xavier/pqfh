@@ -2,6 +2,7 @@
 #define MEMFH_H
 
 #define MEMFH_PAGELEN    4096
+#define MEMFH_MAX_KEYS   256
 #define MEMFH_MAX_KEYLEN 256
 #define MEMFH_MAX_DEPTH  16
 
@@ -37,14 +38,19 @@ typedef struct memfh_hdr_s {
     memfh_data_t *head;
     memfh_data_t *tail;
     memfh_idx_t **idx;
+    memfh_idx_t *path[MEMFH_MAX_KEYS][MEMFH_MAX_DEPTH];
+    int pos[MEMFH_MAX_KEYS][MEMFH_MAX_DEPTH];
+    int depth[MEMFH_MAX_KEYS];
 } memfh_hdr_t;    
 
 memfh_hdr_t *memfh_open(char *filename, int reclen, int nkeys, int **keys);
 void memfh_close(memfh_hdr_t *hdr);
 void memfh_write(memfh_hdr_t *hdr, char *record);
+void memfh_start(memfh_hdr_t *hdr, int k, char *record);
 void memfh_list(memfh_hdr_t *hdr);
 
 void memfh_idx_write(memfh_hdr_t *hdr, int k, char *key, char *record);
+void memfh_idx_create(memfh_hdr_t *hdr, int k);
 void memfh_idx_list(memfh_hdr_t *hdr);
 void memfh_idx_show_page(memfh_hdr_t *hdr, memfh_idx_t *idx);
 
