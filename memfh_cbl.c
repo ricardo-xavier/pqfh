@@ -56,12 +56,12 @@ void memfh_cbl_open_output(fcd_t *fcd, char *filename) {
     for (int i=0; i<MAX_HDRS; i++) {
         if (hdrs[i] == 0) {
             hdrs[i] = hdr;
-            //fprintf(stderr, "memfh_cbl_open i=%d %08x %d\n", i, (int) hdrs[i], hdr->reclen);
             nhdrs++;
             break;
         }
     }    
 
+    //fprintf(stderr, "memfh_cbl_open_output %08x %s\n", fileid, hdr->filename);
 }    
 
 void memfh_cbl_write(fcd_t *fcd) {
@@ -72,12 +72,11 @@ void memfh_cbl_write(fcd_t *fcd) {
     fileid = getint(fcd->file_id);    
     hdr = (memfh_hdr_t *) fileid;
 
-    //fprintf(stderr, "memfh_cbl_write %08x %d\n", fileid, nhdrs);
+    //fprintf(stderr, "memfh_cbl_write %08x %s %d\n", fileid, hdr->filename, hdr->count);
 
     for (int i=0; i<MAX_HDRS; i++) {
         if (hdrs[i] == hdr) {    
             memfh_write(hdr, (char *) fcd->record);
-            //fprintf(stderr, "memfh_cbl_write count=%d\n", hdr->count);
             memcpy(fcd->status, ST_OK, 2);    
             return;
         }
@@ -94,13 +93,11 @@ void memfh_cbl_close(fcd_t *fcd) {
     fileid = getint(fcd->file_id);    
     hdr = (memfh_hdr_t *) fileid;
 
-    //fprintf(stderr, "memfh_cbl_close %08x %d\n", fileid, nhdrs);
+    //fprintf(stderr, "memfh_cbl_close %08x %s %d\n", fileid, hdr->filename, hdr->count);
 
     for (int i=0; i<MAX_HDRS; i++) {
-        //fprintf(stderr, "memfh_cbl_close i=%d %08x\n", i, (int) hdrs[i]);
         if (hdrs[i] == hdr) {    
-            fprintf(stderr, "memfh_cbl_close count=%d\n", hdr->count);
-            memfh_idx_list(hdr);
+            //memfh_idx_list(hdr);
             //memfh_list(hdr);
             //TODO criar um comando para fechar no pqfh - nao pode fechar no primeiro close
             /*
@@ -114,6 +111,38 @@ void memfh_cbl_close(fcd_t *fcd) {
     }    
     
     memcpy(fcd->status, ST_ALREADY_CLOSED, 2);    
+}
+
+void memfh_cbl_start(fcd_t *fcd) {
+
+    int fileid;
+    memfh_hdr_t *hdr;
+
+    fileid = getint(fcd->file_id);    
+    hdr = (memfh_hdr_t *) fileid;
+
+    //fprintf(stderr, "memfh_cbl_start %08x %s %d\n", fileid, hdr->filename, hdr->count);
+    if (memfh_start(hdr, (char *) fcd->record)) {
+        memcpy(fcd->status, ST_OK, 2);    
+    } else {
+        memcpy(fcd->status, ST_EOF, 2);    
+    }        
+}
+
+void memfh_cbl_next(fcd_t *fcd) {
+
+    int fileid;
+    memfh_hdr_t *hdr;
+
+    fileid = getint(fcd->file_id);    
+    hdr = (memfh_hdr_t *) fileid;
+
+    //fprintf(stderr, "memfh_cbl_next %08x %s %d\n", fileid, hdr->filename, hdr->count);
+    if (memfh_next(hdr, (char *) fcd->record)) {
+        memcpy(fcd->status, ST_OK, 2);    
+    } else {
+        memcpy(fcd->status, ST_EOF, 2);    
+    }    
 }
 
 void memfh_cbl(unsigned short op, fcd_t *fcd, char *filename) {
@@ -132,6 +161,14 @@ void memfh_cbl(unsigned short op, fcd_t *fcd, char *filename) {
 
         case OP_WRITE:    
             memfh_cbl_write(fcd);
+            break;
+
+        case OP_START_GE:    
+            memfh_cbl_start(fcd);
+            break;
+
+        case OP_READ_NEXT:    
+            memfh_cbl_next(fcd);
             break;
 
         case OP_CLOSE:    

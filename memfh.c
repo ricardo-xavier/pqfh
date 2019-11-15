@@ -5,12 +5,11 @@
 
 #include "memfh.h"
 
-#define CAST long
-
 memfh_hdr_t *memfh_open(char *filename, int reclen, int nkeys, int **keys) {
 
     memfh_hdr_t *hdr;
 
+    /*
     fprintf(stderr, "===== memfh_open [%s] %d %d\n", filename, reclen, nkeys);
     for (int k=0; k<nkeys; k++) {
         fprintf(stderr, "%d %d\n", k, keys[k][0]);    
@@ -18,6 +17,7 @@ memfh_hdr_t *memfh_open(char *filename, int reclen, int nkeys, int **keys) {
             fprintf(stderr, "    %d:%d\n", keys[k][1+c*2], keys[k][1+c*2+1]);        
         }        
     }        
+    */
     hdr = malloc(sizeof(memfh_hdr_t));
     hdr->filename = strdup(filename);
     hdr->count = 0;
@@ -102,7 +102,7 @@ void memfh_list(memfh_hdr_t *hdr) {
 
     data = hdr->head;
     while (data != NULL) {
-        fprintf(stderr, "%09d %08lx [%s] %08lx\n", ++i, (CAST) data, data->record, (CAST) data->next);    
+        fprintf(stderr, "%09d %08x [%s] %08x\n", ++i, (CAST) data, data->record, (CAST) data->next);    
         data = data->next;
     }
 
@@ -141,18 +141,48 @@ void memfh_write(memfh_hdr_t *hdr, char *record) {
     hdr->count++;
 }
 
-void memfh_start(memfh_hdr_t *hdr, int k, char *record) {
+bool memfh_start(memfh_hdr_t *hdr, char *record) {
 
-    if (hdr->idx[0] == NULL) {
-        //TODO
-        return;
-    }
+    int depth;    
+    char key[257], *ptr, *buf;
+    memfh_idx_t *idx;
 
-    if (hdr->idx[k] == NULL) {
-        memfh_idx_create(hdr, k);
+    bool ret = memfh_idx_first(hdr, 0);
+
+    if (ret) {
+        depth = hdr->depth[0];
+        idx = hdr->path[0][depth];
+        ptr = idx->buf;
+        memcpy(key, ptr, idx->keylen);
+        key[idx->keylen] = 0;    
+        memcpy(&buf, ptr+idx->keylen, sizeof(char *));
+        memcpy(record, buf, hdr->reclen);
+        //fprintf(stderr, "%04d [%s] [%s]\n", hdr->pos[0][depth], key, buf);
     }
+    return ret;    
 }
 
+bool memfh_next(memfh_hdr_t *hdr, char *record) {
+
+    char key[257], *ptr, *buf;
+    int depth = hdr->depth[0];
+    memfh_idx_t *idx = hdr->path[0][depth];
+    key[idx->keylen] = 0;    
+    bool ret = memfh_idx_next(hdr, idx, 0);
+
+    if (ret) {
+        depth = hdr->depth[0];
+        idx = hdr->path[0][depth];
+        ptr = idx->buf + hdr->pos[0][depth] * (idx->keylen + sizeof(char *));
+        memcpy(key, ptr, idx->keylen);
+        memcpy(&buf, ptr+idx->keylen, sizeof(char *));
+        memcpy(record, buf, hdr->reclen);
+        //fprintf(stderr, "%04d [%s] [%s]\n", hdr->pos[0][depth], key, buf);
+    }
+    return ret;    
+}
+
+/*
 int main(int argc, char *argv[]) {
 
     memfh_hdr_t *hdr;
@@ -196,3 +226,4 @@ int main(int argc, char *argv[]) {
 
     return 0;
 }    
+*/

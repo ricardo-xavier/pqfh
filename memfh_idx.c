@@ -5,11 +5,6 @@
 
 #include "memfh.h"
 
-#define CAST long
-
-void debug() {
-}
-
 bool memfh_idx_first(memfh_hdr_t *hdr, int k) {
 
     memfh_idx_t *idx = hdr->idx[k];
@@ -151,7 +146,7 @@ void memfh_idx_show_page(memfh_hdr_t *hdr, memfh_idx_t *idx) {
 
     char *ptr, key[257], *record;
 
-    fprintf(stderr, "idx n=%d %08lx %08lx\n", idx->n, (CAST) idx, (CAST) idx->next);
+    fprintf(stderr, "idx n=%d %08x %08x\n", idx->n, (CAST) idx, (CAST) idx->next);
     ptr = idx->buf;
     for (int i=0; i<idx->n; i++) {
         memcpy(key, ptr, idx->keylen);
@@ -162,7 +157,7 @@ void memfh_idx_show_page(memfh_hdr_t *hdr, memfh_idx_t *idx) {
         } else {
             memfh_idx_t *page;
             memcpy(&page, ptr+idx->keylen, sizeof(memfh_idx_t *));
-            fprintf(stderr, "%d [%s] %08lx\n", i, key, (CAST) page);
+            fprintf(stderr, "%d [%s] %08x\n", i, key, (CAST) page);
         }        
         ptr += (idx->keylen + sizeof(char *));
     }        

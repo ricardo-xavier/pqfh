@@ -354,9 +354,6 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
     filename[fnlen] = 0;
     op = getshort(opcode);
 
-    if (strstr(filename, "/tmp/") != NULL) {
-        memfh_cbl(op, fcd, filename);
-    }
 
     if ((op >= OP_OPEN_INPUT) && (op <= OP_OPEN_EXTEND)) {
         fcd->mode = table_mode;
@@ -364,9 +361,14 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
     } else {
         table_mode = 0;
     }    
-    if (fcd->mode && (strchr("ABWI", fcd->mode) != NULL)) {
+    if (fcd->mode && (strchr("ABWIM", fcd->mode) != NULL)) {
         mode = fcd->mode;
     }        
+
+    if (mode == 'M') {
+        memfh_cbl(op, fcd, filename);
+        return;
+    }
 
     if ((mode == 'W') && (op == OP_OPEN_IO)) {
         fcd->isam = 0;

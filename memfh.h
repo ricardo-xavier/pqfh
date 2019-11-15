@@ -15,6 +15,8 @@
 #define true 1
 #endif
 
+#define CAST int
+
 typedef struct memfh_data_s {
     struct memfh_data_s *next;
     char *record;
@@ -46,11 +48,14 @@ typedef struct memfh_hdr_s {
 memfh_hdr_t *memfh_open(char *filename, int reclen, int nkeys, int **keys);
 void memfh_close(memfh_hdr_t *hdr);
 void memfh_write(memfh_hdr_t *hdr, char *record);
-void memfh_start(memfh_hdr_t *hdr, int k, char *record);
+bool memfh_start(memfh_hdr_t *hdr, char *record);
+bool memfh_next(memfh_hdr_t *hdr, char *record);
 void memfh_list(memfh_hdr_t *hdr);
 
 void memfh_idx_write(memfh_hdr_t *hdr, int k, char *key, char *record);
 void memfh_idx_create(memfh_hdr_t *hdr, int k);
+bool memfh_idx_first(memfh_hdr_t *hdr, int k);
+bool memfh_idx_next(memfh_hdr_t *hdr, memfh_idx_t *idx, int k);
 void memfh_idx_list(memfh_hdr_t *hdr);
 void memfh_idx_show_page(memfh_hdr_t *hdr, memfh_idx_t *idx);
 
