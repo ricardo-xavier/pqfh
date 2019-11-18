@@ -353,15 +353,22 @@ bool nome_dicionario(char *tabela, char *nome) {
     if (strlen(prefixo) < 4) {
         return false;
     }
-
-    for (p=prefixo+4; *p; p++) {
-        if (strchr("0123456789", *p) != NULL) {
-            *p = 0;
-            if (dbg > 2) {
-                fprintf(flog, "%ld prefixo [%s]\n", time(NULL), prefixo);
-            }
+    for (p=prefixo+3; p>prefixo; p--) {
+        if (strchr("0123456789", *p) == NULL) {
             break;
         }
+        *p = 0;
+    }        
+    if (strlen(prefixo) >= 4) {
+        for (p=prefixo+4; *p; p++) {
+            if (strchr("0123456789", *p) != NULL) {
+                *p = 0;
+                break;
+            }
+        }
+    } 
+    if (dbg > 2) {
+        fprintf(flog, "%ld prefixo [%s]\n", time(NULL), prefixo);
     }
 
     memset(fcd02.record, 0, 256);
