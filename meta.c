@@ -357,16 +357,18 @@ bool nome_dicionario(char *tabela, char *nome) {
         if (strchr("0123456789", *p) == NULL) {
             break;
         }
-        *p = 0;
+        *p = ' ';
     }        
-    if (strlen(prefixo) >= 4) {
+    if (prefixo[3] != ' ') {
         for (p=prefixo+4; *p; p++) {
             if (strchr("0123456789", *p) != NULL) {
                 *p = 0;
                 break;
             }
         }
-    } 
+    } else {
+        prefixo[4] = 0;
+    }    
     if (dbg > 2) {
         fprintf(flog, "%ld prefixo [%s]\n", time(NULL), prefixo);
     }
