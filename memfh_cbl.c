@@ -6,6 +6,8 @@
 
 #define MAX_HDRS 128
 
+extern int dbg;
+
 int nhdrs=0;
 memfh_hdr_t *hdrs[128];
 
@@ -116,13 +118,17 @@ void memfh_cbl_close(fcd_t *fcd) {
 void memfh_cbl_start(fcd_t *fcd) {
 
     int fileid;
+    short keyid;
     memfh_hdr_t *hdr;
 
     fileid = getint(fcd->file_id);    
+    keyid = getshort(fcd->key_id);
     hdr = (memfh_hdr_t *) fileid;
 
-    //fprintf(stderr, "memfh_cbl_start %08x %s %d\n", fileid, hdr->filename, hdr->count);
-    if (memfh_start(hdr, (char *) fcd->record)) {
+    if (dbg > 2) {
+        fprintf(stderr, "memfh_cbl_start %08x %s %d %d\n", fileid, hdr->filename, keyid, hdr->count);
+    }    
+    if (memfh_start(hdr, (char *) fcd->record, keyid)) {
         memcpy(fcd->status, ST_OK, 2);    
     } else {
         memcpy(fcd->status, ST_EOF, 2);    
@@ -147,7 +153,9 @@ void memfh_cbl_next(fcd_t *fcd) {
 
 void memfh_cbl(unsigned short op, fcd_t *fcd, char *filename) {
 
-    //fprintf(stderr, "memfh_cbl %04x [%s]\n", op, filename);
+    if (dbg > 1) {    
+        fprintf(stderr, "memfh_cbl %04x [%s]\n", op, filename);
+    }    
 
     switch (op) {
 

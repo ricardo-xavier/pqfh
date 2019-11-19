@@ -141,17 +141,21 @@ void memfh_write(memfh_hdr_t *hdr, char *record) {
     hdr->count++;
 }
 
-bool memfh_start(memfh_hdr_t *hdr, char *record) {
+bool memfh_start(memfh_hdr_t *hdr, char *record, int k) {
 
     int depth;    
     char key[257], *ptr, *buf;
     memfh_idx_t *idx;
 
-    bool ret = memfh_idx_first(hdr, 0);
+    if ((k > 0) && (hdr->idx[k] == NULL)) {
+        memfh_idx_create(hdr, k);        
+    }
+
+    bool ret = memfh_idx_first(hdr, k);
 
     if (ret) {
-        depth = hdr->depth[0];
-        idx = hdr->path[0][depth];
+        depth = hdr->depth[k];
+        idx = hdr->path[k][depth];
         ptr = idx->buf;
         memcpy(key, ptr, idx->keylen);
         key[idx->keylen] = 0;    
@@ -186,20 +190,23 @@ bool memfh_next(memfh_hdr_t *hdr, char *record) {
 int main(int argc, char *argv[]) {
 
     memfh_hdr_t *hdr;
-    int **keys = malloc(2 * sizeof(int *));
+    int **keys = malloc(7 * sizeof(int *));
+
+    // cod
     keys[0] = malloc((1 + 1 * 2) * sizeof(int));
     keys[0][0] = 1;
     keys[0][1] = 0;
     keys[0][2] = 7;
-    keys[1] = malloc((1 + 3 * 2) * sizeof(int));
-    keys[1][0] = 3;
-    keys[1][1] = 51;
-    keys[1][2] = 15;
-    keys[1][3] = 7;
-    keys[1][4] = 35;
-    keys[1][5] = 0;
-    keys[1][6] = 7;
-    hdr = memfh_open("teste", 129, 1, keys);    
+
+    keys[4] = malloc((1 + 3 * 2) * sizeof(int));
+    keys[4][0] = 3;
+    keys[4][1] = 51;
+    keys[4][2] = 15;
+    keys[4][3] = 7;
+    keys[4][4] = 35;
+    keys[4][5] = 0;
+    keys[4][6] = 7;
+    hdr = memfh_open("teste", 129, 7, keys);    
 
     int n = 999999999;
     if (argc > 1) {
@@ -222,7 +229,8 @@ int main(int argc, char *argv[]) {
 
     //memfh_idx_list(hdr);
 
-    //memfh_start(hdr, 1, record);
+    memset(buf, 0, 257);
+    memfh_start(hdr, buf, 4);
 
     return 0;
 }    

@@ -48,7 +48,7 @@ typedef struct memfh_hdr_s {
 memfh_hdr_t *memfh_open(char *filename, int reclen, int nkeys, int **keys);
 void memfh_close(memfh_hdr_t *hdr);
 void memfh_write(memfh_hdr_t *hdr, char *record);
-bool memfh_start(memfh_hdr_t *hdr, char *record);
+bool memfh_start(memfh_hdr_t *hdr, char *record, int k);
 bool memfh_next(memfh_hdr_t *hdr, char *record);
 void memfh_list(memfh_hdr_t *hdr);
 
