@@ -10,6 +10,7 @@ extern int dbg;
 
 int nhdrs=0;
 memfh_hdr_t *hdrs[128];
+bool start=false;
 
 void memfh_cbl_open_output(fcd_t *fcd, char *filename) {
 
@@ -30,7 +31,11 @@ void memfh_cbl_open_output(fcd_t *fcd, char *filename) {
         kda = fcd->kdb + 14 + (k * 16);
         ncomps = getshort(kda + 0);
         cdaoffset = getshort(kda + 2);
-        keys[k] = malloc((1 + ncomps * 2) * sizeof(int));
+        if (k == 0) {
+            keys[k] = malloc((1 + ncomps * 2) * sizeof(int));
+        } else {
+            keys[k] = malloc((1 + (ncomps + 1) * 2) * sizeof(int));
+        }
         keys[k][0] = ncomps;
 
         for (c=0; c<ncomps; c++) {
@@ -43,6 +48,12 @@ void memfh_cbl_open_output(fcd_t *fcd, char *filename) {
             keys[k][1+c*2+1] = len;
 
         }    
+
+        if (k > 0) {
+            keys[k][0] = ncomps + 1;
+            keys[k][1+ncomps*2] = keys[0][1];
+            keys[k][1+ncomps*2+1] = keys[0][2];
+        }        
     }    
 
     hdr = memfh_open(filename, reclen, nkeys, keys);
@@ -130,6 +141,7 @@ void memfh_cbl_start(fcd_t *fcd) {
     }    
     if (memfh_start(hdr, (char *) fcd->record, keyid)) {
         memcpy(fcd->status, ST_OK, 2);    
+        start = true;
     } else {
         memcpy(fcd->status, ST_EOF, 2);    
     }        
@@ -138,13 +150,20 @@ void memfh_cbl_start(fcd_t *fcd) {
 void memfh_cbl_next(fcd_t *fcd) {
 
     int fileid;
+    short keyid;
     memfh_hdr_t *hdr;
 
     fileid = getint(fcd->file_id);    
+    keyid = getshort(fcd->key_id);    
     hdr = (memfh_hdr_t *) fileid;
+    if (start) {
+        memcpy(fcd->status, ST_OK, 2);    
+        start = false;
+        return;
+    }
 
     //fprintf(stderr, "memfh_cbl_next %08x %s %d\n", fileid, hdr->filename, hdr->count);
-    if (memfh_next(hdr, (char *) fcd->record)) {
+    if (memfh_next(hdr, (char *) fcd->record, keyid)) {
         memcpy(fcd->status, ST_OK, 2);    
     } else {
         memcpy(fcd->status, ST_EOF, 2);    
