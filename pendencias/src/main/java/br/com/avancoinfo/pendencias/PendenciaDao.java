@@ -19,7 +19,7 @@ public class PendenciaDao {
 		
 		try {
 			
-			String sql = "select chave_busca, data_emissao,numero_cupom,numero_nota,serie,tipo_pendencia "
+			String sql = "select chave_busca,data_emissao,numero_cupom,numero_nota,serie,tipo_pendencia,codigo_situacao,processada,cancelada,inutilizada "
 					+ "from pen_pendencias order by data_emissao desc";
 			
 			Statement stmt = conn.createStatement();
@@ -30,19 +30,28 @@ public class PendenciaDao {
 			while (cursor.next()) {
 				
 				String chaveBusca = cursor.getString("chave_busca");
-				
 				Timestamp dataEmissaoSql = cursor.getTimestamp("data_emissao");
 				Date dataEmissao = new Date(dataEmissaoSql.getTime());
 				String data = df.format(dataEmissao);
-				
 				String cupom = cursor.getString("numero_cupom");
 				String nota = cursor.getString("numero_nota");
 				String serie = cursor.getString("serie");
+				String tipo = cursor.getString("tipo_pendencia");
+				String situacao = cursor.getString("codigo_situacao");
 				
-				//TODO traduzir o tipo de pendencia
+				int processada = cursor.getInt("processada");
+				int cancelada = cursor.getInt("cancelada");
+				int inutilizada = cursor.getInt("inutilizada");
+				String status = "";
+				if (processada == 1) {
+					status = "Processada";
+				} else if (cancelada == 1) {
+					status = "Cancelada";
+				} else if (inutilizada == 1) {
+					status = "Inutilizada";
+				}
 				
-				System.out.printf("%s %s %s %s%n", data, cupom, nota, serie);
-				Pendencia pendencia = new Pendencia(chaveBusca, data, cupom, nota, serie, "");
+				Pendencia pendencia = new Pendencia(chaveBusca, data, cupom, nota, serie, tipo, situacao, status);
 				pendencias.add(pendencia);
 				
 			}

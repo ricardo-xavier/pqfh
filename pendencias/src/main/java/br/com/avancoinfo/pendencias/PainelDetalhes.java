@@ -35,6 +35,7 @@ public class PainelDetalhes extends Stage {
         
         JFXTextField edtChaveAcesso = new JFXTextField();
         edtChaveAcesso.setPrefColumnCount(44);
+        edtChaveAcesso.setEditable(false);
         main.add(edtChaveAcesso, 0, 1);
         edtChaveAcesso.setText(detalhes.getChaveAcesso());
         
@@ -43,6 +44,7 @@ public class PainelDetalhes extends Stage {
         
         JFXTextField edtNfceSubstituta = new JFXTextField();
         edtNfceSubstituta.setPrefColumnCount(44);
+        edtNfceSubstituta.setEditable(false);
         main.add(edtNfceSubstituta, 0, 3);
         edtNfceSubstituta.setText(detalhes.getNfceSubstituta());
 
@@ -50,7 +52,8 @@ public class PainelDetalhes extends Stage {
         main.add(lblXml, 0, 4);
         
         TextArea edtXml = new TextArea();
-        edtXml.setPrefRowCount(10);
+        edtXml.setPrefRowCount(20);
+        edtXml.setEditable(false);
         main.add(edtXml, 0, 5);
         edtXml.setText(prettyFormat(detalhes.getXml(), 2));
         

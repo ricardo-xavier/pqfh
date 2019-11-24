@@ -28,7 +28,20 @@ public class Painel extends Stage {
 	
 	@SuppressWarnings("unchecked")
 	public Painel(Connection conn) {
+		
+		// tipo_pendencia, data_emissao, numero_cupom, numero_nota, serie, codigo_situacao, situacao, processada, cancelada, inutilizada, 
 
+        JFXTreeTableColumn<Pendencia, String> colTipo = new JFXTreeTableColumn<>("Tipo");
+        colTipo.setPrefWidth(50);
+        colTipo.setEditable(false);
+        colTipo.setCellValueFactory((TreeTableColumn.CellDataFeatures<Pendencia, String> param) -> {
+            if (colTipo.validateValue(param)) {
+                return param.getValue().getValue().getTipo();
+            } else {
+                return colTipo.getComputedValue(param);
+            }
+        });
+		
         JFXTreeTableColumn<Pendencia, String> colData = new JFXTreeTableColumn<>("Data/Hora");
         colData.setPrefWidth(200);
         colData.setEditable(false);
@@ -63,7 +76,7 @@ public class Painel extends Stage {
         });
 
         JFXTreeTableColumn<Pendencia, String> colSerie = new JFXTreeTableColumn<>("Série");
-        colSerie.setPrefWidth(100);
+        colSerie.setPrefWidth(50);
         colSerie.setEditable(false);
         colSerie.setCellValueFactory((TreeTableColumn.CellDataFeatures<Pendencia, String> param) -> {
             if (colSerie.validateValue(param)) {
@@ -73,65 +86,59 @@ public class Painel extends Stage {
             }
         });
 
-        JFXTreeTableColumn<Pendencia, String> colTipo = new JFXTreeTableColumn<>("Tipo pendência");
-        colTipo.setPrefWidth(200);
-        colTipo.setEditable(false);
-        colTipo.setCellValueFactory((TreeTableColumn.CellDataFeatures<Pendencia, String> param) -> {
-            if (colTipo.validateValue(param)) {
-                return param.getValue().getValue().getTipo();
+        JFXTreeTableColumn<Pendencia, String> colSituacao = new JFXTreeTableColumn<>("Situação");
+        colSituacao.setPrefWidth(100);
+        colSituacao.setEditable(false);
+        colSituacao.setCellValueFactory((TreeTableColumn.CellDataFeatures<Pendencia, String> param) -> {
+            if (colSituacao.validateValue(param)) {
+                return param.getValue().getValue().getSituacao();
             } else {
-                return colTipo.getComputedValue(param);
+                return colSituacao.getComputedValue(param);
+            }
+        });
+
+        JFXTreeTableColumn<Pendencia, String> colStatus = new JFXTreeTableColumn<>("Status");
+        colStatus.setPrefWidth(100);
+        colStatus.setEditable(false);
+        colStatus.setCellValueFactory((TreeTableColumn.CellDataFeatures<Pendencia, String> param) -> {
+            if (colStatus.validateValue(param)) {
+                return param.getValue().getValue().getStatus();
+            } else {
+                return colStatus.getComputedValue(param);
             }
         });
 
         /*
-        colData.setCellFactory((TreeTableColumn<Pendencia, String> param) -> new GenericEditableTreeTableCell<>(
-            new TextFieldEditorBuilder()));
-        colData.setOnEditCommit((CellEditEvent<Pendencia, String> t) -> t.getTreeTableView()
-                                                                      .getTreeItem(t.getTreeTablePosition()
-                                                                                    .getRow())
-                                                                      .getValue().getData().set(t.getNewValue()));
-
-        colCupom.setCellFactory((TreeTableColumn<Pendencia, String> param) -> new GenericEditableTreeTableCell<>(
-            new TextFieldEditorBuilder()));
-        colCupom.setOnEditCommit((CellEditEvent<Pendencia, String> t) -> t.getTreeTableView()
-                                                                      .getTreeItem(t.getTreeTablePosition()
-                                                                                    .getRow())
-                                                                      .getValue().getCupom().set(t.getNewValue()));
-
-        colNota.setCellFactory((TreeTableColumn<Pendencia, String> param) -> new GenericEditableTreeTableCell<>(
-            new TextFieldEditorBuilder()));
-        colNota.setOnEditCommit((CellEditEvent<Pendencia, String> t) -> t.getTreeTableView()
-                                                                       .getTreeItem(t.getTreeTablePosition()
-                                                                                     .getRow())
-                                                                       .getValue().getNota().set(t.getNewValue()));
-
-        colSerie.setCellFactory((TreeTableColumn<Pendencia, String> param) -> new GenericEditableTreeTableCell<>(
-            new TextFieldEditorBuilder()));
-        colSerie.setOnEditCommit((CellEditEvent<Pendencia, String> t) -> t.getTreeTableView()
-                                                                       .getTreeItem(t.getTreeTablePosition()
-                                                                                     .getRow())
-                                                                       .getValue().getSerie().set(t.getNewValue()));
-
-        colTipo.setCellFactory((TreeTableColumn<Pendencia, String> param) -> new GenericEditableTreeTableCell<>(
-            new TextFieldEditorBuilder()));
-        colTipo.setOnEditCommit((CellEditEvent<Pendencia, String> t) -> t.getTreeTableView()
-                                                                       .getTreeItem(t.getTreeTablePosition()
-                                                                                     .getRow())
-                                                                       .getValue().getTipo().set(t.getNewValue()));
-		*/
+        JFXTreeTableColumn<Pendencia, Boolean> colProcessada = new JFXTreeTableColumn<>("Processada");
+        colProcessada.setPrefWidth(100);
+        colProcessada.setEditable(false);
+        colProcessada.setCellValueFactory((TreeTableColumn.CellDataFeatures<Pendencia, Boolean> param) -> {
+            if (colProcessada.validateValue(param)) {
+                return param.getValue().getValue().getProcessada();
+            } else {
+                return colProcessada.getComputedValue(param);
+            }
+        });
         
-        // data
+        colProcessada.setCellFactory(new Callback<TreeTableColumn<Pendencia, Boolean>,TreeTableCell<Pendencia, Boolean>>() {
+            @Override
+            public TreeTableCell<Pendencia, Boolean> call( TreeTableColumn<Pendencia, Boolean> p ) {
+                CheckBoxTreeTableCell<Pendencia, Boolean> cell = new CheckBoxTreeTableCell<Pendencia, Boolean>();
+                cell.setAlignment(Pos.CENTER);
+                return cell;
+            }
+        });
+        */        
+
         List<Pendencia> pendenciasBd = PendenciaDao.list(conn);
         ObservableList<Pendencia> pendencias = FXCollections.observableArrayList(pendenciasBd);
 
-        // build tree
         final TreeItem<Pendencia> root = new RecursiveTreeItem<>(pendencias, RecursiveTreeObject::getChildren);
 
         JFXTreeTableView<Pendencia> treeView = new JFXTreeTableView<>(root);
         treeView.setShowRoot(false);
         treeView.setEditable(true);
-        treeView.getColumns().setAll(colData, colCupom, colNota, colSerie, colTipo);
+        treeView.getColumns().setAll(colTipo, colData, colCupom, colNota, colSerie, colSituacao, colStatus);
         
         treeView.setOnMouseClicked(new EventHandler<MouseEvent>() {
             @Override
@@ -149,13 +156,6 @@ public class Painel extends Stage {
                 }
             }
         });
-        
-        /*
-        treeView.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
-            if (newSelection != null) {
-            }
-        });
-        */
         
         FlowPane main = new FlowPane();
         main.setPadding(new Insets(10));

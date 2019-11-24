@@ -9,18 +9,22 @@ public class Pendencia extends RecursiveTreeObject<Pendencia> {
 	
 	private StringProperty chave;
     private StringProperty data;
-    private  StringProperty cupom;
-    private  StringProperty nota;
-    private  StringProperty serie;
-    private  StringProperty tipo;
+    private StringProperty cupom;
+    private StringProperty nota;
+    private StringProperty serie;
+    private StringProperty tipo;
+    private StringProperty situacao;
+    private StringProperty status;
     
-    public Pendencia(String chave, String data, String cupom, String nota, String serie, String tipo) {
+    public Pendencia(String chave, String data, String cupom, String nota, String serie, String tipo, String situacao, String status) {
     	this.setChave(new SimpleStringProperty(chave));
         this.setData(new SimpleStringProperty(data));
         this.setCupom(new SimpleStringProperty(cupom));
         this.setNota(new SimpleStringProperty(nota));
         this.setSerie(new SimpleStringProperty(serie));
         this.setTipo(new SimpleStringProperty(tipo));
+        this.setSituacao(new SimpleStringProperty(situacao));
+        this.setStatus(new SimpleStringProperty(status));
     }
 
 	public StringProperty getData() {
@@ -69,6 +73,22 @@ public class Pendencia extends RecursiveTreeObject<Pendencia> {
 
 	public void setChave(StringProperty chave) {
 		this.chave = chave;
+	}
+
+	public StringProperty getSituacao() {
+		return situacao;
+	}
+
+	public void setSituacao(StringProperty situacao) {
+		this.situacao = situacao;
+	}
+
+	public StringProperty getStatus() {
+		return status;
+	}
+
+	public void setStatus(StringProperty status) {
+		this.status = status;
 	}
 
 }
