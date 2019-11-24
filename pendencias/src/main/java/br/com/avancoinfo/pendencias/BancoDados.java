@@ -40,8 +40,7 @@ import java.sql.Statement;
 public class BancoDados {
 	
 	public static Connection conecta() throws ClassNotFoundException, SQLException {
-		//String url = "jdbc:postgresql://192.168.0.218:5432/bd_pendencias?user=postgres";
-		String url = "jdbc:postgresql://127.0.0.1:5432/bd_pendencias?user=postgres";
+		String url = "jdbc:postgresql://192.168.0.218:5432/bd_pendencias?user=postgres";
 		String env = System.getenv("BANCO_PENDENCIAS");
 		if (env != null) {
 			url = env;

@@ -1,8 +1,10 @@
 package br.com.avancoinfo.pendencias;
 
+import java.io.IOException;
 import java.sql.Connection;
 import java.util.List;
 
+import com.jfoenix.controls.JFXButton;
 import com.jfoenix.controls.JFXTextField;
 import com.jfoenix.controls.JFXTreeTableColumn;
 import com.jfoenix.controls.JFXTreeTableView;
@@ -12,25 +14,37 @@ import com.jfoenix.controls.datamodels.treetable.RecursiveTreeObject;
 import javafx.beans.binding.Bindings;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Label;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeTableColumn;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.FlowPane;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 
 public class Painel extends Stage {
 	
+	private JFXTreeTableView<Pendencia> treeView;
+	private Connection conn;
+	private ObservableList<Pendencia> pendencias;
+	
 	@SuppressWarnings("unchecked")
 	public Painel(Connection conn) {
 		
 		// tipo_pendencia, data_emissao, numero_cupom, numero_nota, serie, codigo_situacao, situacao, processada, cancelada, inutilizada, 
 
+		this.conn = conn;
+		
         JFXTreeTableColumn<Pendencia, String> colTipo = new JFXTreeTableColumn<>("Tipo");
         colTipo.setPrefWidth(50);
         colTipo.setEditable(false);
@@ -131,38 +145,78 @@ public class Painel extends Stage {
         */        
 
         List<Pendencia> pendenciasBd = PendenciaDao.list(conn);
-        ObservableList<Pendencia> pendencias = FXCollections.observableArrayList(pendenciasBd);
+        pendencias = FXCollections.observableArrayList(pendenciasBd);
 
         final TreeItem<Pendencia> root = new RecursiveTreeItem<>(pendencias, RecursiveTreeObject::getChildren);
 
-        JFXTreeTableView<Pendencia> treeView = new JFXTreeTableView<>(root);
+        treeView = new JFXTreeTableView<>(root);
         treeView.setShowRoot(false);
         treeView.setEditable(true);
         treeView.getColumns().setAll(colTipo, colData, colCupom, colNota, colSerie, colSituacao, colStatus);
+        
+        treeView.setOnKeyPressed(new EventHandler<KeyEvent>() {
+
+			@Override
+			public void handle(KeyEvent event) {
+				switch (event.getCode()) {
+				
+				case F1:
+					ajuda();
+					break;
+				
+				case ENTER:
+				case F2:
+					detalhes();
+					break;
+					
+				case F5:
+					atualiza();
+					break;
+					
+				case F6:
+					executa();
+					break;
+					
+				case ESCAPE:
+					close();
+					
+				default:
+					break;
+				}
+			}
+
+		});
         
         treeView.setOnMouseClicked(new EventHandler<MouseEvent>() {
             @Override
             public void handle(MouseEvent mouseEvent) {
                 if (mouseEvent.getButton().equals(MouseButton.PRIMARY)) {
                     if (mouseEvent.getClickCount() == 2) {
-                    	TreeItem<Pendencia> item = treeView.getSelectionModel().getSelectedItem();
-                    	Pendencia pendencia = item.getValue();
-                    	Detalhes detalhes = PendenciaDao.getDetalhes(conn, pendencia.getChave().getValue());
-                		PainelDetalhes painel = new PainelDetalhes(detalhes);
-                		painel.show();
-                		painel.setIconified(true);
-                		painel.setIconified(false);	            	
+                    	detalhes();
                     }
                 }
             }
         });
         
-        FlowPane main = new FlowPane();
+        BorderPane main = new BorderPane();
         main.setPadding(new Insets(10));
-        main.getChildren().add(treeView);
+        main.setCenter(treeView);
+        
+        BorderPane pnlControles = new BorderPane();
+        pnlControles.setPadding(new Insets(10));
+        
+        FlowPane pnlFiltro = new FlowPane();
+        pnlFiltro.setPadding(new Insets(10));
+        pnlFiltro.setMaxWidth(300);
+        pnlControles.setLeft(pnlFiltro);
+        
+        FlowPane pnlBotoes = new FlowPane();
+        pnlBotoes.setPadding(new Insets(20));
+        pnlBotoes.setAlignment(Pos.CENTER_RIGHT);
+        pnlControles.setRight(pnlBotoes);
         
         JFXTextField filterField = new JFXTextField();
-        main.getChildren().add(filterField);
+        pnlFiltro.getChildren().add(filterField);
 
         Label size = new Label();
 
@@ -180,14 +234,125 @@ public class Painel extends Stage {
         size.textProperty()
             .bind(Bindings.createStringBinding(() -> String.valueOf(treeView.getCurrentItemsCount()),
                                                treeView.currentItemsCountProperty()));
-        main.getChildren().add(size);
+        pnlFiltro.getChildren().add(size);
+        
+        JFXButton btnAjuda = new JFXButton("F1-ajuda");
+        pnlBotoes.getChildren().add(btnAjuda);
+        btnAjuda.setOnAction(new EventHandler<ActionEvent>() {
+
+			@Override
+			public void handle(ActionEvent event) {
+				ajuda();
+			}
+		});        
+        
+        JFXButton btnDetalhes = new JFXButton("F2-detalhes");
+        pnlBotoes.getChildren().add(btnDetalhes);
+        btnDetalhes.setOnAction(new EventHandler<ActionEvent>() {
+
+			@Override
+			public void handle(ActionEvent event) {
+				detalhes();
+			}
+		});
+        
+        JFXButton btnRefresh = new JFXButton("F5-atualiza");
+        pnlBotoes.getChildren().add(btnRefresh);
+        btnRefresh.setOnAction(new EventHandler<ActionEvent>() {
+
+			@Override
+			public void handle(ActionEvent event) {
+				atualiza();
+			}
+		});
+        
+        
+        JFXButton btnExecuta = new JFXButton("F6-executa");
+        pnlBotoes.getChildren().add(btnExecuta);
+        btnExecuta.setOnAction(new EventHandler<ActionEvent>() {
+
+			@Override
+			public void handle(ActionEvent event) {
+				executa();
+			}
+		});
+        
+        main.setBottom(pnlControles);
 	
 		setTitle("Painel de Pendências - NFC-e");
-		Scene scene = new Scene(main, 700, 500);
+		Scene scene = new Scene(main, 750, 500);
 		scene.getStylesheets().add(Painel.class.getResource("jfoenix-components.css").toExternalForm());
 		setScene(scene);
 		initModality(Modality.WINDOW_MODAL);
 		
+		if (pendencias.size() > 0) {
+			treeView.getSelectionModel().select(0);
+		}
+		
 	}
+	
+	private void ajuda() {
+		PainelAjuda painel = new PainelAjuda();
+		painel.show();
+	}
+	
+	private void detalhes() {
+		
+		TreeItem<Pendencia> item = treeView.getSelectionModel().getSelectedItem();
+		if (item == null) {
+			Alert alert = new Alert(AlertType.WARNING);
+			alert.setTitle("Aviso");
+			alert.setHeaderText("Nenhuma nota selecionada");
+			alert.show();
+			return;
+		} 
+		
+       	Pendencia pendencia = item.getValue();
+       	Detalhes detalhes = PendenciaDao.getDetalhes(conn, pendencia.getChave().getValue());
+   		PainelDetalhes painel = new PainelDetalhes(detalhes);
+   		painel.show();
+   		painel.setIconified(true);
+   		painel.setIconified(false);	            	
+		
+	}	
+	
+	private void atualiza() {
+        List<Pendencia> pendenciasBd = PendenciaDao.list(conn);
+        pendencias.clear();
+        pendencias.addAll(pendenciasBd);
+		if (pendencias.size() > 0) {
+			treeView.getSelectionModel().select(0);
+		}        
+	}
+	
+	
+	private void executa() {
+
+		String comando = System.getenv("COMANDO_PENDENCIAS");
+		if (comando == null) {
+			Alert alert = new Alert(AlertType.WARNING);
+			alert.setTitle("Aviso");
+			alert.setHeaderText("Comando não definido");
+			alert.show();
+			return;
+		} 
+		
+		TreeItem<Pendencia> item = treeView.getSelectionModel().getSelectedItem();
+		if (item == null) {
+			Alert alert = new Alert(AlertType.WARNING);
+			alert.setTitle("Aviso");
+			alert.setHeaderText("Nenhuma nota selecionada");
+			alert.show();
+			return;
+		} 
+		
+		try {
+			Runtime.getRuntime().exec(comando + " " + item.getValue().getChave().getValue());
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+	}
+	
 
 }

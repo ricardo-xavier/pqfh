@@ -12,10 +12,13 @@ import javax.xml.transform.stream.StreamSource;
 
 import com.jfoenix.controls.JFXTextField;
 
+import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.GridPane;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
@@ -62,6 +65,19 @@ public class PainelDetalhes extends Stage {
 		scene.getStylesheets().add(PainelDetalhes.class.getResource("jfoenix-components.css").toExternalForm());
 		setScene(scene);
 		initModality(Modality.WINDOW_MODAL);
+		
+		Stage janela = this;
+		
+		main.setOnKeyPressed(new EventHandler<KeyEvent>() {
+
+			@Override
+			public void handle(KeyEvent event) {
+				if (event.getCode() == KeyCode.ESCAPE) {
+					janela.close();
+				}
+			}
+		});
+		
 		
 	}
 	

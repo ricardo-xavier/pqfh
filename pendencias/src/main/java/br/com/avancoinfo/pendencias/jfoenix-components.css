@@ -3,6 +3,12 @@
     src: "/resources/roboto/Roboto-Regular.ttf";
 }
 
+.jfx-button:hover {
+	 -fx-cursor: hand;
+     -fx-background-color: blue;
+     -fx-text-fill: white;
+}
+
 /* Burgers Demo */
 
 .jfx-hamburger {
