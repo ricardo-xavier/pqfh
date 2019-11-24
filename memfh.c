@@ -131,7 +131,7 @@ void memfh_write(memfh_hdr_t *hdr, char *record) {
     // monta a chave
     offset = 0;
     for (int c=0; c<hdr->keys[0][0]; c++) {
-        memcpy(key, record + hdr->keys[0][1+c*2], hdr->keys[0][1+c*2+1]);
+        memcpy(key + offset, record + hdr->keys[0][1+c*2], hdr->keys[0][1+c*2+1]);
         offset += hdr->keys[0][1+c*2+1];
     }    
     key[offset] = 0;
@@ -141,65 +141,83 @@ void memfh_write(memfh_hdr_t *hdr, char *record) {
     hdr->count++;
 }
 
-bool memfh_start(memfh_hdr_t *hdr, char *record) {
+bool memfh_start(memfh_hdr_t *hdr, char *record, int k) {
 
     int depth;    
     char key[257], *ptr, *buf;
     memfh_idx_t *idx;
 
-    bool ret = memfh_idx_first(hdr, 0);
+    if ((k > 0) && (hdr->idx[k] == NULL)) {
+        memfh_idx_create(hdr, k);        
+    }
 
-    if (ret) {
-        depth = hdr->depth[0];
-        idx = hdr->path[0][depth];
+    // monta a chave
+    int offset = 0;
+    for (int c=0; c<hdr->keys[k][0]; c++) {
+        memcpy(key + offset, record + hdr->keys[k][1+c*2], hdr->keys[k][1+c*2+1]);
+        offset += hdr->keys[k][1+c*2+1];
+    }    
+    key[offset] = 0;
+
+    int ret = memfh_idx_search_page(hdr, k, hdr->idx[k], key);
+
+    if (ret >= 0) {
+        depth = hdr->depth[k];
+        idx = hdr->path[k][depth];
         ptr = idx->buf;
         memcpy(key, ptr, idx->keylen);
         key[idx->keylen] = 0;    
         memcpy(&buf, ptr+idx->keylen, sizeof(char *));
         memcpy(record, buf, hdr->reclen);
-        //fprintf(stderr, "%04d [%s] [%s]\n", hdr->pos[0][depth], key, buf);
+        //fprintf(stderr, "%04d [%s] [%s]\n", hdr->pos[k][depth], key, buf);
     }
-    return ret;    
+    return ret <= 0;    
 }
 
-bool memfh_next(memfh_hdr_t *hdr, char *record) {
+bool memfh_next(memfh_hdr_t *hdr, char *record, int k) {
 
     char key[257], *ptr, *buf;
-    int depth = hdr->depth[0];
-    memfh_idx_t *idx = hdr->path[0][depth];
+    int depth = hdr->depth[k];
+    memfh_idx_t *idx = hdr->path[k][depth];
     key[idx->keylen] = 0;    
-    bool ret = memfh_idx_next(hdr, idx, 0);
+    bool ret = memfh_idx_next(hdr, idx, k);
 
     if (ret) {
-        depth = hdr->depth[0];
-        idx = hdr->path[0][depth];
-        ptr = idx->buf + hdr->pos[0][depth] * (idx->keylen + sizeof(char *));
+        depth = hdr->depth[k];
+        idx = hdr->path[k][depth];
+        ptr = idx->buf + hdr->pos[k][depth] * (idx->keylen + sizeof(char *));
         memcpy(key, ptr, idx->keylen);
         memcpy(&buf, ptr+idx->keylen, sizeof(char *));
         memcpy(record, buf, hdr->reclen);
-        //fprintf(stderr, "%04d [%s] [%s]\n", hdr->pos[0][depth], key, buf);
+        //fprintf(stderr, "%04d [%s] [%s]\n", hdr->pos[k][depth], key, buf);
     }
     return ret;    
 }
 
-/*
+extern int num_writes;
+extern int num_reads;
+
+#ifndef PQFH
 int main(int argc, char *argv[]) {
 
     memfh_hdr_t *hdr;
-    int **keys = malloc(2 * sizeof(int *));
+    int **keys = malloc(7 * sizeof(int *));
+
+    // cod
     keys[0] = malloc((1 + 1 * 2) * sizeof(int));
     keys[0][0] = 1;
     keys[0][1] = 0;
     keys[0][2] = 7;
-    keys[1] = malloc((1 + 3 * 2) * sizeof(int));
-    keys[1][0] = 3;
-    keys[1][1] = 51;
-    keys[1][2] = 15;
-    keys[1][3] = 7;
-    keys[1][4] = 35;
-    keys[1][5] = 0;
-    keys[1][6] = 7;
-    hdr = memfh_open("teste", 129, 1, keys);    
+
+    keys[4] = malloc((1 + 3 * 2) * sizeof(int));
+    keys[4][0] = 3;
+    keys[4][1] = 51;
+    keys[4][2] = 15;
+    keys[4][3] = 7;
+    keys[4][4] = 35;
+    keys[4][5] = 0;
+    keys[4][6] = 7;
+    hdr = memfh_open("teste", 129, 7, keys);    
 
     int n = 999999999;
     if (argc > 1) {
@@ -209,6 +227,7 @@ int main(int argc, char *argv[]) {
     char buf[257];
     char *record;
     int i = 0;
+    num_writes = 0;
     while (fgets(buf, 257, f) != NULL) {
         record = buf + 20;
         record[129] = 0;
@@ -220,10 +239,17 @@ int main(int argc, char *argv[]) {
     }
     fclose(f);
 
-    //memfh_idx_list(hdr);
+    num_reads = 0;
+    memfh_idx_list(hdr);
+    fprintf(stderr, "%d %d %d\n", i, num_writes, num_reads);
 
-    //memfh_start(hdr, 1, record);
+    memset(buf, 0, 257);
+    //memcpy(buf, "                                                   YPIRANGA", 59);
+    num_reads = 0;
+    num_writes = 0;
+    memfh_start(hdr, buf, 4);
+    fprintf(stderr, "%d %d %d\n", i, num_writes, num_reads);
 
     return 0;
 }    
-*/
+#endif

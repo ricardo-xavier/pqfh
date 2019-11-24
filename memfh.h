@@ -48,8 +48,8 @@ typedef struct memfh_hdr_s {
 memfh_hdr_t *memfh_open(char *filename, int reclen, int nkeys, int **keys);
 void memfh_close(memfh_hdr_t *hdr);
 void memfh_write(memfh_hdr_t *hdr, char *record);
-bool memfh_start(memfh_hdr_t *hdr, char *record);
-bool memfh_next(memfh_hdr_t *hdr, char *record);
+bool memfh_start(memfh_hdr_t *hdr, char *record, int k);
+bool memfh_next(memfh_hdr_t *hdr, char *record, int k);
 void memfh_list(memfh_hdr_t *hdr);
 
 void memfh_idx_write(memfh_hdr_t *hdr, int k, char *key, char *record);
@@ -57,6 +57,8 @@ void memfh_idx_create(memfh_hdr_t *hdr, int k);
 bool memfh_idx_first(memfh_hdr_t *hdr, int k);
 bool memfh_idx_next(memfh_hdr_t *hdr, memfh_idx_t *idx, int k);
 void memfh_idx_list(memfh_hdr_t *hdr);
+void memfh_idx_list_k(memfh_hdr_t *hdr, int k);
 void memfh_idx_show_page(memfh_hdr_t *hdr, memfh_idx_t *idx);
+int memfh_idx_search_page(memfh_hdr_t *hdr, int k, memfh_idx_t *idx, char *key);
 
 #endif // MEMFH_H
