@@ -45,13 +45,28 @@ public class BancoDados {
 		if (env != null) {
 			url = env;
 		}
-		return conecta(url);
+		String usuario = System.getenv("USUARIO_BANCO");
+		String senha = System.getenv("SENHA_BANCO");
+		if (usuario != null) {
+			return conecta(url, usuario, senha);
+		}
+		if (url.contains("?")) {
+			return conecta(url);
+		} else {
+			return conecta(url, "postgres", "postgres");
+		}
 	}
 	
 	public static Connection conecta(String url) throws ClassNotFoundException, SQLException {
 		String driver = "org.postgresql.Driver";
 		Class.forName(driver);
 		return DriverManager.getConnection(url);
+	}	
+	
+	public static Connection conecta(String url, String usuario, String senha) throws ClassNotFoundException, SQLException {
+		String driver = "org.postgresql.Driver";
+		Class.forName(driver);
+		return DriverManager.getConnection(url, usuario, senha);
 	}	
 	
 	public static void main(String[] args) throws ClassNotFoundException, SQLException {
