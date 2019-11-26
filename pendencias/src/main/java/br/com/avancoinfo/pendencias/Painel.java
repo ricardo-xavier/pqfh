@@ -309,7 +309,7 @@ public class Painel extends Stage {
 		
        	Pendencia pendencia = item.getValue();
        	Detalhes detalhes = PendenciaDao.getDetalhes(conn, pendencia.getChave().getValue());
-   		PainelDetalhes painel = new PainelDetalhes(detalhes);
+   		PainelDetalhes painel = new PainelDetalhes(conn, detalhes, pendencia.getDataInclusao());
    		painel.show();
    		painel.setIconified(true);
    		painel.setIconified(false);	            	

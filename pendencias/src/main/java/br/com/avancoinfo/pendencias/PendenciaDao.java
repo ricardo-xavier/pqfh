@@ -1,6 +1,7 @@
 package br.com.avancoinfo.pendencias;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -19,8 +20,9 @@ public class PendenciaDao {
 		
 		try {
 			
-			String sql = "select chave_busca,data_emissao,numero_cupom,numero_nota,serie,tipo_pendencia,codigo_situacao,processada,cancelada,inutilizada "
-					+ "from pen_pendencias order by data_emissao desc";
+			String sql = "select chave_busca,data_emissao,data_inclusao,numero_cupom,numero_nota,serie,tipo_pendencia,codigo_situacao,processada,cancelada,inutilizada "
+					+ "from pen_pendencias "
+					+ "order by data_emissao desc";
 			
 			Statement stmt = conn.createStatement();
 			ResultSet cursor = stmt.executeQuery(sql);
@@ -32,6 +34,8 @@ public class PendenciaDao {
 				String chaveBusca = cursor.getString("chave_busca");
 				Timestamp dataEmissaoSql = cursor.getTimestamp("data_emissao");
 				Date dataEmissao = new Date(dataEmissaoSql.getTime());
+				Timestamp dataInclusaoSql = cursor.getTimestamp("data_inclusao");
+				Date dataInclusao = new Date(dataInclusaoSql.getTime());				
 				String data = df.format(dataEmissao);
 				String cupom = cursor.getString("numero_cupom");
 				String nota = cursor.getString("numero_nota");
@@ -51,7 +55,7 @@ public class PendenciaDao {
 					status = "Inutilizada";
 				}
 				
-				Pendencia pendencia = new Pendencia(chaveBusca, data, cupom, nota, serie, tipo, situacao, status);
+				Pendencia pendencia = new Pendencia(chaveBusca, data, cupom, nota, serie, tipo, situacao, status, dataInclusao);
 				pendencias.add(pendencia);
 				
 			}
@@ -74,7 +78,8 @@ public class PendenciaDao {
 		try {
 			
 			String sql = "select chave_acesso, nfce_substituta, convert_from(decode(xml, 'base64'), 'UTF-8') as xml "
-					+ "from pen_pendencias where chave_busca = '" + chave + "'";
+					+ "from pen_pendencias "
+					+ "where chave_busca = '" + chave + "'";
 			
 			Statement stmt = conn.createStatement();
 			ResultSet cursor = stmt.executeQuery(sql);
@@ -99,6 +104,42 @@ public class PendenciaDao {
 		
 		return detalhes;
 
+	}
+
+	public static List<Log> log(Connection conn, Date dataInclusao) {
+		
+		List<Log> logs = new ArrayList<Log>();
+		
+		try {
+			
+			String sql = "select descricao "
+					+ "from pen_logs "
+					+ "where data=? ";
+			
+			PreparedStatement stmt = conn.prepareStatement(sql);
+			System.out.println(dataInclusao);
+			stmt.setTimestamp(1, new java.sql.Timestamp(dataInclusao.getTime()));
+			ResultSet cursor = stmt.executeQuery();
+			
+			DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+			
+			while (cursor.next()) {
+				
+				String descricao = cursor.getString("descricao");
+				
+				Log log = new Log(df.format(dataInclusao), descricao);
+				logs.add(log);
+				
+			}
+			
+			cursor.close();
+			stmt.close();
+			
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		
+		return logs;
 	}
 
 }

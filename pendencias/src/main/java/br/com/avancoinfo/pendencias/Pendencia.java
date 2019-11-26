@@ -1,5 +1,7 @@
 package br.com.avancoinfo.pendencias;
 
+import java.util.Date;
+
 import com.jfoenix.controls.datamodels.treetable.RecursiveTreeObject;
 
 import javafx.beans.property.SimpleStringProperty;
@@ -15,8 +17,9 @@ public class Pendencia extends RecursiveTreeObject<Pendencia> {
     private StringProperty tipo;
     private StringProperty situacao;
     private StringProperty status;
+    private Date dataInclusao;
     
-    public Pendencia(String chave, String data, String cupom, String nota, String serie, String tipo, String situacao, String status) {
+    public Pendencia(String chave, String data, String cupom, String nota, String serie, String tipo, String situacao, String status, Date dataInclusao) {
     	this.setChave(new SimpleStringProperty(chave));
         this.setData(new SimpleStringProperty(data));
         this.setCupom(new SimpleStringProperty(cupom));
@@ -25,6 +28,7 @@ public class Pendencia extends RecursiveTreeObject<Pendencia> {
         this.setTipo(new SimpleStringProperty(tipo));
         this.setSituacao(new SimpleStringProperty(situacao));
         this.setStatus(new SimpleStringProperty(status));
+        this.dataInclusao = dataInclusao;
     }
 
 	public StringProperty getData() {
@@ -89,6 +93,14 @@ public class Pendencia extends RecursiveTreeObject<Pendencia> {
 
 	public void setStatus(StringProperty status) {
 		this.status = status;
+	}
+
+	public Date getDataInclusao() {
+		return dataInclusao;
+	}
+
+	public void setDataInclusao(Date dataInclusao) {
+		this.dataInclusao = dataInclusao;
 	}
 
 }
