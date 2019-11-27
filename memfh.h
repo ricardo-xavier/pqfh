@@ -37,6 +37,7 @@ typedef struct memfh_hdr_s {
     int   reclen;
     int   nkeys;
     int   **keys;
+    int   open;
     memfh_data_t *head;
     memfh_data_t *tail;
     memfh_idx_t **idx;
