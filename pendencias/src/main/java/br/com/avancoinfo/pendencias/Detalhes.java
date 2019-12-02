@@ -5,6 +5,7 @@ public class Detalhes {
 	private String chaveAcesso;
 	private String nfceSubstituta;
 	private String xml;
+	private String situacao;
 	public String getChaveAcesso() {
 		return chaveAcesso;
 	}
@@ -22,6 +23,12 @@ public class Detalhes {
 	}
 	public void setXml(String xml) {
 		this.xml = xml;
+	}
+	public String getSituacao() {
+		return situacao;
+	}
+	public void setSituacao(String situacao) {
+		this.situacao = situacao;
 	}
 
 }

@@ -36,43 +36,56 @@ public class PainelDetalhes extends Stage {
         main.setPadding(new Insets(10));
         
         main.setVgap(5); 
-        main.setHgap(5);
+        main.setHgap(25);
         
         Label lblChave = new Label("Chave de Acesso");
         main.add(lblChave, 0, 0);
         
         JFXTextField edtChaveAcesso = new JFXTextField();
-        edtChaveAcesso.setPrefColumnCount(44);
+        edtChaveAcesso.setMinWidth(400);
         edtChaveAcesso.setEditable(false);
-        main.add(edtChaveAcesso, 0, 1);
+        main.add(edtChaveAcesso, 1, 0);
         edtChaveAcesso.setText(detalhes.getChaveAcesso());
         
         Label lblSubstituta = new Label("NFCe Substituta");
-        main.add(lblSubstituta, 0, 2);
+        main.add(lblSubstituta, 0, 1);
         
         JFXTextField edtNfceSubstituta = new JFXTextField();
-        edtNfceSubstituta.setPrefColumnCount(44);
+        edtNfceSubstituta.setMinWidth(400);
         edtNfceSubstituta.setEditable(false);
-        main.add(edtNfceSubstituta, 0, 3);
+        main.add(edtNfceSubstituta, 1, 1);
         edtNfceSubstituta.setText(detalhes.getNfceSubstituta());
 
         Label lblXml = new Label("XML");
-        main.add(lblXml, 0, 4);
+        main.add(lblXml, 0, 2);
         
         TextArea edtXml = new TextArea();
+        edtXml.setPrefWidth(800);
         edtXml.setPrefRowCount(10);
         edtXml.setEditable(false);
-        main.add(edtXml, 0, 5);
+        main.add(edtXml, 1, 2);
         edtXml.setText(prettyFormat(detalhes.getXml(), 2));
 
-        DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        Label lblSituacao = new Label("Situação");
+        main.add(lblSituacao, 0, 3);
+        
+        TextArea edtSituacao = new TextArea();
+        edtSituacao.setPrefWidth(800);
+        edtSituacao.setPrefRowCount(10);
+        edtSituacao.setEditable(false);
+        main.add(edtSituacao, 1, 3);
+        
+        edtSituacao.setText(detalhes.getSituacao());
+
+        DateFormat df = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
         Label lblLogs = new Label("Logs " + df.format(dataInclusao));
-        main.add(lblLogs, 0, 6);
+        main.add(lblLogs, 0, 4);
         
         TextArea edtLogs = new TextArea();
+        edtLogs.setPrefWidth(800);
         edtLogs.setPrefRowCount(10);
         edtLogs.setEditable(false);
-        main.add(edtLogs, 0, 7);
+        main.add(edtLogs, 1, 4);
         
         StringBuilder linhas = new StringBuilder();
         List<Log> logs = PendenciaDao.log(conn, dataInclusao);
@@ -84,7 +97,7 @@ public class PainelDetalhes extends Stage {
         edtLogs.setText(linhas.toString());
         
 		setTitle("Detalhes da Pendência");
-		Scene scene = new Scene(main, 600, 500);
+		Scene scene = new Scene(main);
 		scene.getStylesheets().add(PainelDetalhes.class.getResource("jfoenix-components.css").toExternalForm());
 		setScene(scene);
 		initModality(Modality.WINDOW_MODAL);

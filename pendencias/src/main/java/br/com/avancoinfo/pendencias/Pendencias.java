@@ -20,10 +20,10 @@ public class Pendencias extends Application {
 	public void start(Stage primaryStage) {
 		
 		Painel painel = new Painel(conn);
-		//painel.setMaximized(true);
+		painel.setMaximized(true);
 		painel.show();
-		//painel.setIconified(true);
-		//painel.setIconified(false);	
+		painel.setIconified(true);
+		painel.setIconified(false);	
 		
 	}
 

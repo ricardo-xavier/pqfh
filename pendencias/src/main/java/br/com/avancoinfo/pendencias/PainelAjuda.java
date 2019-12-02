@@ -60,8 +60,6 @@ public class PainelAjuda extends Stage {
         
         html.append("</ul>");
         
-        html.append("<li>Para filtrar, digite na caixa de pesquisa no abaixo da tabela.");
-        
         html.append("<li>Para fechar uma janela clique no x, ou pressione ESC.");
         
         html.append("</ul>");
