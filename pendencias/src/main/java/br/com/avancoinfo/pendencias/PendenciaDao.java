@@ -31,6 +31,9 @@ public class PendenciaDao {
 			boolean inutilizadasTodas,
 			boolean inutilizadasSim,
 			boolean inutilizadasNao,
+			boolean autorizadasTodas,
+			boolean autorizadasSim,
+			boolean autorizadasNao,			
 			LocalDate emissaoIni,
 			LocalDate emissaoFim) {
 		
@@ -85,6 +88,15 @@ public class PendenciaDao {
 				where += inutilizadasSim ? "1" : "0";
 			}
 			
+			if (!autorizadasTodas) {
+				if (where.equals("")) {
+					where = "where codigo_situacao ";
+				} else {
+					where += " and codigo_situacao ";
+				}
+				where += autorizadasSim ? "= 100" : "!= 100";
+			}
+			
 			String sql = "select chave_busca,data_emissao,data_inclusao,numero_cupom,numero_nota,serie,tipo_pendencia,codigo_situacao,situacao,processada,cancelada,inutilizada "
 					+ "from pen_pendencias "
 					+ where 
@@ -107,9 +119,9 @@ public class PendenciaDao {
 				String nota = cursor.getString("numero_nota");
 				String serie = cursor.getString("serie");
 				String tipo = cursor.getString("tipo_pendencia");
-				if (tipo.equals("0")) {
+				if (tipo.equals("1")) {
 					tipo = "Contingência";
-				} else if (tipo.equals("1")) {
+				} else if (tipo.equals("0")) {
 					tipo = "Chaves pendentes";
 				}
 				String situacao = cursor.getString("codigo_situacao");

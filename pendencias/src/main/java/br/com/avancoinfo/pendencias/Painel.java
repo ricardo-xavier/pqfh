@@ -1,6 +1,5 @@
 package br.com.avancoinfo.pendencias;
 
-import java.io.IOException;
 import java.sql.Connection;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -55,6 +54,9 @@ public class Painel extends Stage {
 	private JFXRadioButton rbInutilizadasSim;
 	private JFXRadioButton rbInutilizadasNao;
 	private JFXRadioButton rbInutilizadasTodas;
+	private JFXRadioButton rbAutorizadasSim;
+	private JFXRadioButton rbAutorizadasNao;
+	private JFXRadioButton rbAutorizadasTodas;	
 	private JFXDatePicker dtInicial;
 	private JFXDatePicker dtFinal;
 	
@@ -68,7 +70,12 @@ public class Painel extends Stage {
 
 		List<JFXTreeTableColumn<Pendencia, ?>> colunas = criaColunas();
 
-		List<Pendencia> pendenciasBd = PendenciaDao.list(conn, true, false, false, true, false, false, true, false, false, null, null);
+		List<Pendencia> pendenciasBd = PendenciaDao.list(conn, 
+				false, false, true, 
+				true, false, false, 
+				true, false, false,
+				true, false, false,
+				null, null);
 		pendencias = FXCollections.observableArrayList(pendenciasBd);
 
 		final TreeItem<Pendencia> root = new RecursiveTreeItem<>(pendencias, RecursiveTreeObject::getChildren);
@@ -97,9 +104,11 @@ public class Painel extends Stage {
 					atualiza();
 					break;
 
+				/*
 				case F6:
 					executa();
 					break;
+				*/
 
 				case ESCAPE:
 					close();
@@ -132,7 +141,7 @@ public class Painel extends Stage {
 		GridPane pnlFiltro = new GridPane();
 		pnlFiltro.setHgap(40);
 		pnlFiltro.setVgap(10);
-		pnlFiltro.setMaxWidth(600);
+		pnlFiltro.setMaxWidth(700);
 		pnlControles.setLeft(pnlFiltro);
 
 		FlowPane pnlBotoes = new FlowPane();
@@ -149,7 +158,7 @@ public class Painel extends Stage {
 		ToggleGroup groupProcessadas = new ToggleGroup();
 
 		rbProcessadasTodas = new JFXRadioButton("Todas");
-		rbProcessadasTodas.setSelected(true);
+		rbProcessadasTodas.setSelected(false);
 		pnlFiltro.add(rbProcessadasTodas, 1, 1);
 		rbProcessadasTodas.setToggleGroup(groupProcessadas);
 		rbProcessadasTodas.setOnAction(new EventHandler<ActionEvent>() {
@@ -175,7 +184,7 @@ public class Painel extends Stage {
 		});
 		
 		rbProcessadasNao = new JFXRadioButton("Não");
-		rbProcessadasNao.setSelected(false);
+		rbProcessadasNao.setSelected(true);
 		pnlFiltro.add(rbProcessadasNao, 1, 3);
 		rbProcessadasNao.setToggleGroup(groupProcessadas);
 		rbProcessadasNao.setOnAction(new EventHandler<ActionEvent>() {
@@ -275,13 +284,57 @@ public class Painel extends Stage {
 			}
 		});
 		
+		Label lblAutorizadas = new Label("Autorizadas");
+		pnlFiltro.add(lblAutorizadas, 4, 0);
+		
+		ToggleGroup groupAutorizadas = new ToggleGroup();
+
+		rbAutorizadasTodas = new JFXRadioButton("Todas");
+		rbAutorizadasTodas.setSelected(true);
+		pnlFiltro.add(rbAutorizadasTodas, 4, 1);
+		rbAutorizadasTodas.setToggleGroup(groupAutorizadas);
+		rbAutorizadasTodas.setOnAction(new EventHandler<ActionEvent>() {
+
+			@Override
+			public void handle(ActionEvent event) {
+				atualiza();
+				
+			}
+		});
+		
+		rbAutorizadasSim = new JFXRadioButton("Sim");
+		rbAutorizadasSim.setSelected(false);
+		pnlFiltro.add(rbAutorizadasSim, 4, 2);
+		rbAutorizadasSim.setToggleGroup(groupAutorizadas);
+		rbAutorizadasSim.setOnAction(new EventHandler<ActionEvent>() {
+
+			@Override
+			public void handle(ActionEvent event) {
+				atualiza();
+				
+			}
+		});
+		
+		rbAutorizadasNao = new JFXRadioButton("Não");
+		rbAutorizadasNao.setSelected(false);
+		pnlFiltro.add(rbAutorizadasNao, 4, 3);
+		rbAutorizadasNao.setToggleGroup(groupAutorizadas);
+		rbAutorizadasNao.setOnAction(new EventHandler<ActionEvent>() {
+
+			@Override
+			public void handle(ActionEvent event) {
+				atualiza();
+				
+			}
+		});
+		
 		Label lblEmissao = new Label("Emissão entre");
-		pnlFiltro.add(lblEmissao, 4, 0);
+		pnlFiltro.add(lblEmissao, 5, 0);
 		
 		dtInicial = new JFXDatePicker();
 		dtInicial.setMaxWidth(140);
-		dtInicial.setValue(LocalDate.of(1900, 4, 1));
-		pnlFiltro.add(dtInicial, 4, 1);
+		dtInicial.setValue(LocalDate.of(1900, 1, 1));
+		pnlFiltro.add(dtInicial, 5, 1);
 		dtInicial.valueProperty().addListener((ov, oldValue, newValue) -> {
 			atualiza();
 		});	
@@ -290,7 +343,7 @@ public class Painel extends Stage {
 		dtFinal.setMaxWidth(140);
 		Calendar hoje = Calendar.getInstance();
 		dtFinal.setValue(LocalDate.of(hoje.get(Calendar.YEAR), hoje.get(Calendar.MONTH)+1, hoje.get(Calendar.DAY_OF_MONTH)));
-		pnlFiltro.add(dtFinal, 4, 2);
+		pnlFiltro.add(dtFinal, 5, 2);
 		dtFinal.valueProperty().addListener((ov, oldValue, newValue) -> {
 			atualiza();
 		});	
@@ -346,6 +399,7 @@ public class Painel extends Stage {
 			}
 		});
 
+		/*
 		JFXButton btnExecuta = new JFXButton("F6-executa");
 		pnlBotoes.getChildren().add(btnExecuta);
 		btnExecuta.setOnAction(new EventHandler<ActionEvent>() {
@@ -355,6 +409,7 @@ public class Painel extends Stage {
 				executa();
 			}
 		});
+		*/
 
 		main.setBottom(pnlControles);
 
@@ -566,17 +621,11 @@ public class Painel extends Stage {
 
 	private void atualiza() {
 		List<Pendencia> pendenciasBd = PendenciaDao.list(conn, 
-				rbProcessadasTodas.isSelected(),
-				rbProcessadasSim.isSelected(),
-				rbProcessadasNao.isSelected(),
-				rbCanceladasTodas.isSelected(),
-				rbCanceladasSim.isSelected(),
-				rbCanceladasNao.isSelected(),
-				rbInutilizadasTodas.isSelected(),
-				rbInutilizadasSim.isSelected(),
-				rbInutilizadasNao.isSelected(),
-				dtInicial.getValue(),
-				dtFinal.getValue());
+				rbProcessadasTodas.isSelected(), rbProcessadasSim.isSelected(), rbProcessadasNao.isSelected(),
+				rbCanceladasTodas.isSelected(), rbCanceladasSim.isSelected(), rbCanceladasNao.isSelected(),
+				rbInutilizadasTodas.isSelected(), rbInutilizadasSim.isSelected(), rbInutilizadasNao.isSelected(),
+				rbAutorizadasTodas.isSelected(), rbAutorizadasSim.isSelected(), rbAutorizadasNao.isSelected(),
+				dtInicial.getValue(), dtFinal.getValue());
 		pendencias.clear();
 		pendencias.addAll(pendenciasBd);
 		if (pendencias.size() > 0) {
@@ -584,6 +633,7 @@ public class Painel extends Stage {
 		}
 	}
 
+	/*
 	private void executa() {
 
 		String comando = System.getenv("COMANDO_PENDENCIAS");
@@ -611,5 +661,6 @@ public class Painel extends Stage {
 		}
 
 	}
+	*/
 
 }
