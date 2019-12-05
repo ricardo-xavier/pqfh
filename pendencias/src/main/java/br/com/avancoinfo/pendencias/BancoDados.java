@@ -39,8 +39,10 @@ import java.sql.Statement;
 
 public class BancoDados {
 	
+	private static String url;
+	
 	public static Connection conecta() throws ClassNotFoundException, SQLException {
-		String url = "jdbc:postgresql://192.168.0.218:5432/bd_pendencias?user=postgres";
+		url = "jdbc:postgresql://192.168.0.218:5432/bd_pendencias?user=postgres";
 		String env = System.getenv("BANCO_PENDENCIAS");
 		if (env != null) {
 			url = env;
@@ -91,6 +93,30 @@ public class BancoDados {
 		stmt.close();
 		//PendenciaDao.list(conn);
 		conn.close();
+	}
+	
+	public static String getIp() {
+		int p1 = url.indexOf("//");
+		int p2 = url.indexOf(":", p1+2);
+		String ip = url.substring(p1+2, p2);
+		return ip;
+	}
+
+	public static String getUrl() {
+		return url;
+	}
+
+	public static void setUrl(String url) {
+		BancoDados.url = url;
+	}
+
+	public static Connection reconecta(Connection conn, String ip) throws SQLException, ClassNotFoundException {
+		int p1 = url.indexOf("//");
+		int p2 = url.indexOf(":", p1+2);
+		url = url.substring(0, p1+2) + ip + url.substring(p2);
+		System.out.println(url);
+		conn.close();
+		return conecta(url);
 	}
 
 }

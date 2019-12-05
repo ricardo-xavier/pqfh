@@ -1,14 +1,21 @@
 package br.com.avancoinfo.pendencias;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 
 import com.jfoenix.controls.JFXButton;
+import com.jfoenix.controls.JFXComboBox;
 import com.jfoenix.controls.JFXDatePicker;
 import com.jfoenix.controls.JFXRadioButton;
+import com.jfoenix.controls.JFXTextField;
 import com.jfoenix.controls.JFXTreeTableColumn;
 import com.jfoenix.controls.JFXTreeTableView;
 import com.jfoenix.controls.RecursiveTreeItem;
@@ -33,7 +40,6 @@ import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.GridPane;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
@@ -60,11 +66,31 @@ public class Painel extends Stage {
 	private JFXDatePicker dtInicial;
 	private JFXDatePicker dtFinal;
 	
+	private String ipAtual;	
 
 	public Painel(Connection conn) {
-
-		// tipo_pendencia, data_emissao, numero_cupom, numero_nota, serie,
-		// codigo_situacao, situacao, processada, cancelada, inutilizada,
+		
+		List<String> ips = new ArrayList<String>();				
+		List<String> nomes = new ArrayList<String>();
+		ipAtual = BancoDados.getIp();
+		
+		try {
+			BufferedReader reader = new BufferedReader(new FileReader(new File("anaipbd.cfg")));
+			String linha;
+			while ((linha = reader.readLine()) != null) {
+				int p = linha.indexOf(' ');
+				if (p < 0) {
+					p = linha.indexOf('\t');
+				}
+				String ip = linha.substring(0, p);
+				ips.add(ip);
+				String nome = linha.substring(p+1).trim();
+				nomes.add(nome);
+			}
+			reader.close();
+			
+		} catch (IOException e) {
+		}
 
 		this.conn = conn;
 
@@ -104,12 +130,6 @@ public class Painel extends Stage {
 					atualiza();
 					break;
 
-				/*
-				case F6:
-					executa();
-					break;
-				*/
-
 				case ESCAPE:
 					close();
 
@@ -141,12 +161,11 @@ public class Painel extends Stage {
 		GridPane pnlFiltro = new GridPane();
 		pnlFiltro.setHgap(40);
 		pnlFiltro.setVgap(10);
-		pnlFiltro.setMaxWidth(700);
+//		pnlFiltro.setMaxWidth(900);
 		pnlControles.setLeft(pnlFiltro);
 
-		FlowPane pnlBotoes = new FlowPane();
-		pnlBotoes.setPadding(new Insets(20));
-		pnlBotoes.setAlignment(Pos.CENTER_RIGHT);
+		GridPane pnlBotoes = new GridPane();
+		pnlBotoes.setVgap(10);		
 		pnlControles.setRight(pnlBotoes);
 		
 		Label lblFiltros = new Label("Filtros");
@@ -347,30 +366,62 @@ public class Painel extends Stage {
 		dtFinal.valueProperty().addListener((ov, oldValue, newValue) -> {
 			atualiza();
 		});	
+
+		JFXTextField filterField = new JFXTextField();
+		filterField.setPromptText("Digite para filtrar");
+		pnlFiltro.add(filterField, 6, 0);
+		
+		filterField.textProperty().addListener((o, oldVal, newVal) -> {
+			treeView.setPredicate(userProp -> {
+				final Pendencia pendencia = userProp.getValue();
+				return pendencia.getData().get().contains(newVal) 
+						|| pendencia.getCupom().get().contains(newVal)
+						|| pendencia.getNota().get().contains(newVal) 
+						|| pendencia.getSerie().get().contains(newVal)
+						|| pendencia.getTipo().get().contains(newVal)
+						|| pendencia.getSituacao().get().contains(newVal)
+						|| pendencia.getDescricao().get().contains(newVal);						
+			});
+		});		
+		
+		ObservableList<String> empresas = FXCollections.observableList(nomes);
+		JFXComboBox<String> cbxEmpresas = new JFXComboBox<String>(empresas );
+		cbxEmpresas.setPromptText("Selecione a empresa");
+		cbxEmpresas.getSelectionModel()
+        .selectedItemProperty()
+        .addListener((obs, oldValue, newValue) -> {
+        	int i = nomes.indexOf(newValue);
+        	String ip = ips.get(i);
+        	if (!ip.equals(ipAtual)) {
+        		ipAtual = ip;
+        		try {
+					this.conn = BancoDados.reconecta(conn, ipAtual);
+					atualiza();
+				} catch (ClassNotFoundException | SQLException e) {
+				}
+        	}
+        });
+		pnlFiltro.add(cbxEmpresas, 6, 2);
+		
+		dtInicial = new JFXDatePicker();
+		dtInicial.setMaxWidth(140);
+		dtInicial.setValue(LocalDate.of(1900, 1, 1));
+		pnlFiltro.add(dtInicial, 5, 1);
+		dtInicial.valueProperty().addListener((ov, oldValue, newValue) -> {
+			atualiza();
+		});	
 		
 		/*
 
 		JFXTextField filterField = new JFXTextField();
 		pnlFiltro.getChildren().add(filterField);
-
 		Label size = new Label();
-
-		filterField.textProperty().addListener((o, oldVal, newVal) -> {
-			treeView.setPredicate(userProp -> {
-				final Pendencia pendencia = userProp.getValue();
-				return pendencia.getData().get().contains(newVal) || pendencia.getCupom().get().contains(newVal)
-						|| pendencia.getNota().get().contains(newVal) || pendencia.getSerie().get().contains(newVal)
-						|| pendencia.getTipo().get().contains(newVal);
-			});
-		});
-
 		size.textProperty().bind(Bindings.createStringBinding(() -> String.valueOf(treeView.getCurrentItemsCount()),
 				treeView.currentItemsCountProperty()));
-		pnlFiltro.getChildren().add(size);
 		*/
 
 		JFXButton btnAjuda = new JFXButton("F1-ajuda");
-		pnlBotoes.getChildren().add(btnAjuda);
+		pnlBotoes.add(btnAjuda, 0, 0);
 		btnAjuda.setOnAction(new EventHandler<ActionEvent>() {
 
 			@Override
@@ -380,7 +431,7 @@ public class Painel extends Stage {
 		});
 
 		JFXButton btnDetalhes = new JFXButton("F2-detalhes");
-		pnlBotoes.getChildren().add(btnDetalhes);
+		pnlBotoes.add(btnDetalhes, 0, 1);
 		btnDetalhes.setOnAction(new EventHandler<ActionEvent>() {
 
 			@Override
@@ -390,7 +441,7 @@ public class Painel extends Stage {
 		});
 
 		JFXButton btnRefresh = new JFXButton("F5-atualiza");
-		pnlBotoes.getChildren().add(btnRefresh);
+		pnlBotoes.add(btnRefresh, 0, 2);		
 		btnRefresh.setOnAction(new EventHandler<ActionEvent>() {
 
 			@Override
@@ -398,18 +449,6 @@ public class Painel extends Stage {
 				atualiza();
 			}
 		});
-
-		/*
-		JFXButton btnExecuta = new JFXButton("F6-executa");
-		pnlBotoes.getChildren().add(btnExecuta);
-		btnExecuta.setOnAction(new EventHandler<ActionEvent>() {
-
-			@Override
-			public void handle(ActionEvent event) {
-				executa();
-			}
-		});
-		*/
 
 		main.setBottom(pnlControles);
 
@@ -513,16 +552,6 @@ public class Painel extends Stage {
 				return colDescricao.getComputedValue(param);
 			}
 		});
-
-		/*
-		 * JFXTreeTableColumn<Pendencia, String> colStatus = new
-		 * JFXTreeTableColumn<>("Status"); colStatus.setPrefWidth(100);
-		 * colStatus.setEditable(false);
-		 * colStatus.setCellValueFactory((TreeTableColumn.CellDataFeatures<Pendencia,
-		 * String> param) -> { if (colStatus.validateValue(param)) { return
-		 * param.getValue().getValue().getStatus(); } else { return
-		 * colStatus.getComputedValue(param); } });
-		 */
 
 		JFXTreeTableColumn<Pendencia, Boolean> colProcessada = new JFXTreeTableColumn<>("Processada");
 		colunas.add(colProcessada);
@@ -632,35 +661,5 @@ public class Painel extends Stage {
 			treeView.getSelectionModel().select(0);
 		}
 	}
-
-	/*
-	private void executa() {
-
-		String comando = System.getenv("COMANDO_PENDENCIAS");
-		if (comando == null) {
-			Alert alert = new Alert(AlertType.WARNING);
-			alert.setTitle("Aviso");
-			alert.setHeaderText("Comando não definido");
-			alert.show();
-			return;
-		}
-
-		TreeItem<Pendencia> item = treeView.getSelectionModel().getSelectedItem();
-		if (item == null) {
-			Alert alert = new Alert(AlertType.WARNING);
-			alert.setTitle("Aviso");
-			alert.setHeaderText("Nenhuma nota selecionada");
-			alert.show();
-			return;
-		}
-
-		try {
-			Runtime.getRuntime().exec(comando + " " + item.getValue().getChave().getValue());
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-
-	}
-	*/
 
 }
