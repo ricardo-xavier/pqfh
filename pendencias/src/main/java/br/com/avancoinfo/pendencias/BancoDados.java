@@ -115,8 +115,19 @@ public class BancoDados {
 		int p2 = url.indexOf(":", p1+2);
 		url = url.substring(0, p1+2) + ip + url.substring(p2);
 		System.out.println(url);
-		conn.close();
-		return conecta(url);
+		if (conn != null) {
+			conn.close();
+		}
+		String usuario = System.getenv("USUARIO_BANCO");
+		String senha = System.getenv("SENHA_BANCO");
+		if (usuario != null) {
+			return conecta(url, usuario, senha);
+		}
+		if (url.contains("?")) {
+			return conecta(url);
+		} else {
+			return conecta(url, "postgres", "postgres");
+		}
 	}
 
 }

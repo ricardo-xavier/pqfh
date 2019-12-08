@@ -5,11 +5,13 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.sql.Connection;
-import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
+
+import org.controlsfx.control.StatusBar;
 
 import com.jfoenix.controls.JFXButton;
 import com.jfoenix.controls.JFXComboBox;
@@ -21,8 +23,10 @@ import com.jfoenix.controls.JFXTreeTableView;
 import com.jfoenix.controls.RecursiveTreeItem;
 import com.jfoenix.controls.datamodels.treetable.RecursiveTreeObject;
 
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
@@ -65,26 +69,29 @@ public class Painel extends Stage {
 	private JFXRadioButton rbAutorizadasTodas;	
 	private JFXDatePicker dtInicial;
 	private JFXDatePicker dtFinal;
+	private StatusBar statusBar;
 	
-	private String ipAtual;	
+	private int idx;
+	private String ipAtual;
 
+	private List<String> ips = new ArrayList<String>();			
+	private List<String> cnpjs = new ArrayList<String>();			
+	private List<String> nomes = new ArrayList<String>();
+	
 	public Painel(Connection conn) {
 		
-		List<String> ips = new ArrayList<String>();				
-		List<String> nomes = new ArrayList<String>();
 		ipAtual = BancoDados.getIp();
 		
 		try {
 			BufferedReader reader = new BufferedReader(new FileReader(new File("anaipbd.cfg")));
 			String linha;
 			while ((linha = reader.readLine()) != null) {
-				int p = linha.indexOf(' ');
-				if (p < 0) {
-					p = linha.indexOf('\t');
-				}
-				String ip = linha.substring(0, p);
+				String[] partes = linha.split("\\|");
+				String ip = partes[0];
 				ips.add(ip);
-				String nome = linha.substring(p+1).trim();
+				String cnpj = partes[1];
+				cnpjs.add(cnpj);
+				String nome = partes[2];
 				nomes.add(nome);
 			}
 			reader.close();
@@ -390,15 +397,83 @@ public class Painel extends Stage {
 		cbxEmpresas.getSelectionModel()
         .selectedItemProperty()
         .addListener((obs, oldValue, newValue) -> {
-        	int i = nomes.indexOf(newValue);
-        	String ip = ips.get(i);
+        	int idxAnterior = idx;
+        	idx = nomes.indexOf(newValue);
+        	String ip = ips.get(idx);
+        	if (idx != idxAnterior) {
+    			statusBar.getLeftItems().clear();
+    			statusBar.getLeftItems().add(new Label("CNPJ: " + cnpjs.get(idx) + "   Loja: " + nomes.get(idx)));
+    			statusBar.getRightItems().clear();
+    			statusBar.getRightItems().add(new Label("IP: " + ipAtual));
+        	}
         	if (!ip.equals(ipAtual)) {
         		ipAtual = ip;
-        		try {
-					this.conn = BancoDados.reconecta(conn, ipAtual);
-					atualiza();
-				} catch (ClassNotFoundException | SQLException e) {
-				}
+       			Painel context = this;
+       			Task<Void> task = new Task<Void>() {
+
+					@Override
+					protected Void call() throws Exception {
+						System.err.println(new Date());
+						updateProgress(-1, 1);
+						try {
+							context.conn = BancoDados.reconecta(conn, ipAtual);
+							atualiza();
+						} catch (Exception e) {
+							
+							updateProgress(0, 0);
+							Platform.runLater(new Runnable() {
+								@Override
+								public void run() {
+									Alert alert = new Alert(AlertType.ERROR);
+									alert.setTitle("Erro");
+									alert.setHeaderText("Erro na conexão ao banco de dados");
+									alert.setContentText(e.getMessage());
+									alert.show();
+								}
+							});
+							
+							updateProgress(-1, 1);
+							idx = idxAnterior;
+							String ip = ips.get(idx);
+							ipAtual = ip;
+							try {
+								context.conn = BancoDados.reconecta(conn, ipAtual);
+							} catch (Exception e2) {
+								e2.printStackTrace();
+								updateProgress(0, 0);
+								Platform.runLater(new Runnable() {
+									@Override
+									public void run() {
+										Alert alert = new Alert(AlertType.ERROR);
+										alert.setTitle("Erro");
+										alert.setHeaderText("Erro na conexão ao banco de dados");
+										alert.setContentText(e2.getMessage());
+										alert.show();
+									}
+								});
+								return null;
+							}
+							
+							updateProgress(0, 0);
+							Platform.runLater(new Runnable() {
+								@Override
+								public void run() {
+					    			statusBar.getLeftItems().clear();
+					    			statusBar.getLeftItems().add(new Label("CNPJ: " + cnpjs.get(idx) + "   Loja: " + nomes.get(idx)));
+					    			statusBar.getRightItems().clear();
+					    			statusBar.getRightItems().add(new Label("IP: " + ipAtual));
+								}
+							});
+						}
+						
+						updateProgress(0, 0);
+						return null;
+					}
+				};
+				statusBar.progressProperty().bind(task.progressProperty());
+				Thread thread = new Thread(task, "task-thread");
+		        thread.setDaemon(true);
+		        thread.start();				
         	}
         });
 		pnlFiltro.add(cbxEmpresas, 6, 2);
@@ -449,6 +524,13 @@ public class Painel extends Stage {
 				atualiza();
 			}
 		});
+		
+		statusBar = new StatusBar();
+		statusBar.setText(null);
+		statusBar.setProgress(0);
+		statusBar.getLeftItems().add(new Label("CNPJ: " + cnpjs.get(idx) + "   Loja: " + nomes.get(idx)));
+		statusBar.getRightItems().add(new Label("IP: " + ipAtual));
+		pnlControles.setBottom(statusBar);
 
 		main.setBottom(pnlControles);
 

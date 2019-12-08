@@ -45,11 +45,13 @@
 			<version>9.1-901-1.jdbc4</version>
 		</dependency>
 
+		<!-- https://mvnrepository.com/artifact/org.controlsfx/controlsfx -->
 		<dependency>
-			<groupId>org.openjfx</groupId>
-			<artifactId>jfxrt</artifactId>
-			<version>8</version>
+			<groupId>org.controlsfx</groupId>
+			<artifactId>controlsfx</artifactId>
+			<version>8.40.12</version>
 		</dependency>
+
 
 	</dependencies>
 
