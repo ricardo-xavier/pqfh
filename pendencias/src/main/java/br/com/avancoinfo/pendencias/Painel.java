@@ -108,7 +108,7 @@ public class Painel extends Stage {
 				true, false, false, 
 				true, false, false,
 				true, false, false,
-				null, null);
+				null, null, null);
 		pendencias = FXCollections.observableArrayList(pendenciasBd);
 
 		final TreeItem<Pendencia> root = new RecursiveTreeItem<>(pendencias, RecursiveTreeObject::getChildren);
@@ -474,6 +474,8 @@ public class Painel extends Stage {
 				Thread thread = new Thread(task, "task-thread");
 		        thread.setDaemon(true);
 		        thread.start();				
+        	} else if (idx != idxAnterior) {
+        		atualiza();
         	}
         });
 		pnlFiltro.add(cbxEmpresas, 6, 2);
@@ -528,8 +530,10 @@ public class Painel extends Stage {
 		statusBar = new StatusBar();
 		statusBar.setText(null);
 		statusBar.setProgress(0);
-		statusBar.getLeftItems().add(new Label("CNPJ: " + cnpjs.get(idx) + "   Loja: " + nomes.get(idx)));
-		statusBar.getRightItems().add(new Label("IP: " + ipAtual));
+		if (idx < cnpjs.size()) {
+			statusBar.getLeftItems().add(new Label("CNPJ: " + cnpjs.get(idx) + "   Loja: " + nomes.get(idx)));
+			statusBar.getRightItems().add(new Label("IP: " + ipAtual));
+		}
 		pnlControles.setBottom(statusBar);
 
 		main.setBottom(pnlControles);
@@ -736,7 +740,7 @@ public class Painel extends Stage {
 				rbCanceladasTodas.isSelected(), rbCanceladasSim.isSelected(), rbCanceladasNao.isSelected(),
 				rbInutilizadasTodas.isSelected(), rbInutilizadasSim.isSelected(), rbInutilizadasNao.isSelected(),
 				rbAutorizadasTodas.isSelected(), rbAutorizadasSim.isSelected(), rbAutorizadasNao.isSelected(),
-				dtInicial.getValue(), dtFinal.getValue());
+				dtInicial.getValue(), dtFinal.getValue(), idx < cnpjs.size() ? cnpjs.get(idx) : null);
 		pendencias.clear();
 		pendencias.addAll(pendenciasBd);
 		if (pendencias.size() > 0) {

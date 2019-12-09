@@ -35,7 +35,8 @@ public class PendenciaDao {
 			boolean autorizadasSim,
 			boolean autorizadasNao,			
 			LocalDate emissaoIni,
-			LocalDate emissaoFim) {
+			LocalDate emissaoFim,
+			String cnpj) {
 		
 		List<Pendencia> pendencias = new ArrayList<Pendencia>();
 		
@@ -95,6 +96,15 @@ public class PendenciaDao {
 					where += " and codigo_situacao ";
 				}
 				where += autorizadasSim ? "= 100" : "!= 100";
+			}
+			
+			if (cnpj != null) {
+				if (where.equals("")) {
+					where = "where chave_acesso like ";
+				} else {
+					where += " and chave_acesso like ";
+				}
+				where += "'%" + cnpj.trim() + "%'";
 			}
 			
 			String sql = "select chave_busca,data_emissao,data_inclusao,numero_cupom,numero_nota,serie,tipo_pendencia,codigo_situacao,situacao,processada,cancelada,inutilizada "
