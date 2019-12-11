@@ -398,6 +398,8 @@ public class Painel extends Stage {
 		cbxEmpresas.getSelectionModel()
         .selectedItemProperty()
         .addListener((obs, oldValue, newValue) -> {
+        	
+        	int idxOld = nomes.indexOf(oldValue);
         	int idx = nomes.indexOf(newValue);
         	String ip = ips.get(idx);
    			atualizaStatus();
@@ -412,7 +414,14 @@ public class Painel extends Stage {
 						updateProgress(-1, 1);
 						try {
 							context.conn = BancoDados.reconecta(conn, ipAtual);
-							atualiza();
+							Platform.runLater(new Runnable() {
+								@Override
+								public void run() {
+									atualiza();
+									atualizaStatus();
+								}
+							});
+							
 						} catch (Exception e) {
 							
 							updateProgress(0, 0);
@@ -428,6 +437,11 @@ public class Painel extends Stage {
 							});
 							
 							updateProgress(-1, 1);
+							
+							int idx = idxOld;
+							if (idx < 0) {
+								idx = 0;
+							}
 							String ip = ips.get(idx);
 							ipAtual = ip;
 							try {
@@ -452,6 +466,7 @@ public class Painel extends Stage {
 							Platform.runLater(new Runnable() {
 								@Override
 								public void run() {
+									atualiza();
 									atualizaStatus();
 								}
 							});
@@ -467,6 +482,7 @@ public class Painel extends Stage {
 		        thread.start();				
         	}
         	atualiza();
+        	atualizaStatus();
         });
 		pnlFiltro.add(cbxEmpresas, 6, 2);
 		
@@ -548,7 +564,7 @@ public class Painel extends Stage {
 			lblLoja.getStyleClass().add("statuslabel");
 			statusBar.getLeftItems().add(lblLoja);
 		}
-		Label lblIp = new Label("IP: " + ipAtual);
+		Label lblIp = new Label("IP: " + ips.get(idx));
 		lblIp.getStyleClass().add("statuslabel");
 		statusBar.getRightItems().add(lblIp);		
 	}
