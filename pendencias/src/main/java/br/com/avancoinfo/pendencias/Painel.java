@@ -70,8 +70,8 @@ public class Painel extends Stage {
 	private JFXDatePicker dtInicial;
 	private JFXDatePicker dtFinal;
 	private StatusBar statusBar;
+	private JFXComboBox<String> cbxEmpresas;
 	
-	private int idx;
 	private String ipAtual;
 
 	private List<String> ips = new ArrayList<String>();			
@@ -387,25 +387,20 @@ public class Painel extends Stage {
 						|| pendencia.getSerie().get().contains(newVal)
 						|| pendencia.getTipo().get().contains(newVal)
 						|| pendencia.getSituacao().get().contains(newVal)
-						|| pendencia.getDescricao().get().contains(newVal);						
+						|| pendencia.getDescricao().get().contains(newVal)
+						|| pendencia.getCnpj().get().contains(newVal);						
 			});
 		});		
 		
 		ObservableList<String> empresas = FXCollections.observableList(nomes);
-		JFXComboBox<String> cbxEmpresas = new JFXComboBox<String>(empresas );
+		cbxEmpresas = new JFXComboBox<String>(empresas );
 		cbxEmpresas.setPromptText("Selecione a empresa");
 		cbxEmpresas.getSelectionModel()
         .selectedItemProperty()
         .addListener((obs, oldValue, newValue) -> {
-        	int idxAnterior = idx;
-        	idx = nomes.indexOf(newValue);
+        	int idx = nomes.indexOf(newValue);
         	String ip = ips.get(idx);
-        	if (idx != idxAnterior) {
-    			statusBar.getLeftItems().clear();
-    			statusBar.getLeftItems().add(new Label("CNPJ: " + cnpjs.get(idx) + "   Loja: " + nomes.get(idx)));
-    			statusBar.getRightItems().clear();
-    			statusBar.getRightItems().add(new Label("IP: " + ipAtual));
-        	}
+   			atualizaStatus();
         	if (!ip.equals(ipAtual)) {
         		ipAtual = ip;
        			Painel context = this;
@@ -433,7 +428,6 @@ public class Painel extends Stage {
 							});
 							
 							updateProgress(-1, 1);
-							idx = idxAnterior;
 							String ip = ips.get(idx);
 							ipAtual = ip;
 							try {
@@ -458,10 +452,7 @@ public class Painel extends Stage {
 							Platform.runLater(new Runnable() {
 								@Override
 								public void run() {
-					    			statusBar.getLeftItems().clear();
-					    			statusBar.getLeftItems().add(new Label("CNPJ: " + cnpjs.get(idx) + "   Loja: " + nomes.get(idx)));
-					    			statusBar.getRightItems().clear();
-					    			statusBar.getRightItems().add(new Label("IP: " + ipAtual));
+									atualizaStatus();
 								}
 							});
 						}
@@ -474,9 +465,8 @@ public class Painel extends Stage {
 				Thread thread = new Thread(task, "task-thread");
 		        thread.setDaemon(true);
 		        thread.start();				
-        	} else if (idx != idxAnterior) {
-        		atualiza();
         	}
+        	atualiza();
         });
 		pnlFiltro.add(cbxEmpresas, 6, 2);
 		
@@ -529,12 +519,10 @@ public class Painel extends Stage {
 		
 		statusBar = new StatusBar();
 		statusBar.setText(null);
+		statusBar.setId("statusbar");
 		statusBar.setProgress(0);
-		if (idx < cnpjs.size()) {
-			statusBar.getLeftItems().add(new Label("CNPJ: " + cnpjs.get(idx) + "   Loja: " + nomes.get(idx)));
-			statusBar.getRightItems().add(new Label("IP: " + ipAtual));
-		}
-		pnlControles.setBottom(statusBar);
+		atualizaStatus();
+		main.setTop(statusBar);
 
 		main.setBottom(pnlControles);
 
@@ -550,10 +538,36 @@ public class Painel extends Stage {
 		}
 
 	}
+	
+	void atualizaStatus() {
+		int idx = cbxEmpresas.getSelectionModel().getSelectedIndex();
+		statusBar.getLeftItems().clear();
+		statusBar.getRightItems().clear();
+		if (idx >= 0) {
+			Label lblLoja = new Label("CNPJ: " + cnpjs.get(idx) + "   Loja: " + nomes.get(idx));
+			lblLoja.getStyleClass().add("statuslabel");
+			statusBar.getLeftItems().add(lblLoja);
+		}
+		Label lblIp = new Label("IP: " + ipAtual);
+		lblIp.getStyleClass().add("statuslabel");
+		statusBar.getRightItems().add(lblIp);		
+	}
 
 	private List<JFXTreeTableColumn<Pendencia, ?>> criaColunas() {
 
 		List<JFXTreeTableColumn<Pendencia, ?>> colunas = new ArrayList<JFXTreeTableColumn<Pendencia, ?>>();
+
+		JFXTreeTableColumn<Pendencia, String> colCnpj = new JFXTreeTableColumn<>("CNPJ");
+		colunas.add(colCnpj);
+		colCnpj.setPrefWidth(150);
+		colCnpj.setEditable(false);
+		colCnpj.setCellValueFactory((TreeTableColumn.CellDataFeatures<Pendencia, String> param) -> {
+			if (colCnpj.validateValue(param)) {
+				return param.getValue().getValue().getCnpj();
+			} else {
+				return colCnpj.getComputedValue(param);
+			}
+		});
 
 		JFXTreeTableColumn<Pendencia, String> colTipo = new JFXTreeTableColumn<>("Tipo");
 		colunas.add(colTipo);
@@ -569,7 +583,7 @@ public class Painel extends Stage {
 
 		JFXTreeTableColumn<Pendencia, String> colData = new JFXTreeTableColumn<>("Data/Hora");
 		colunas.add(colData);
-		colData.setPrefWidth(200);
+		colData.setPrefWidth(150);
 		colData.setEditable(false);
 		colData.setCellValueFactory((TreeTableColumn.CellDataFeatures<Pendencia, String> param) -> {
 			if (colData.validateValue(param)) {
@@ -617,7 +631,7 @@ public class Painel extends Stage {
 
 		JFXTreeTableColumn<Pendencia, String> colSituacao = new JFXTreeTableColumn<>("Situação");
 		colunas.add(colSituacao);
-		colSituacao.setPrefWidth(100);
+		colSituacao.setPrefWidth(80);
 		colSituacao.setEditable(false);
 		colSituacao.setCellValueFactory((TreeTableColumn.CellDataFeatures<Pendencia, String> param) -> {
 			if (colSituacao.validateValue(param)) {
@@ -639,7 +653,7 @@ public class Painel extends Stage {
 			}
 		});
 
-		JFXTreeTableColumn<Pendencia, Boolean> colProcessada = new JFXTreeTableColumn<>("Processada");
+		JFXTreeTableColumn<Pendencia, Boolean> colProcessada = new JFXTreeTableColumn<>("Processadas");
 		colunas.add(colProcessada);
 		colProcessada.setPrefWidth(100);
 		colProcessada.setEditable(false);
@@ -661,7 +675,7 @@ public class Painel extends Stage {
 					}
 				});
 
-		JFXTreeTableColumn<Pendencia, Boolean> colCancelada = new JFXTreeTableColumn<>("Cancelada");
+		JFXTreeTableColumn<Pendencia, Boolean> colCancelada = new JFXTreeTableColumn<>("Canceladas");
 		colunas.add(colCancelada);
 		colCancelada.setPrefWidth(100);
 		colCancelada.setEditable(false);
@@ -683,7 +697,7 @@ public class Painel extends Stage {
 					}
 				});
 
-		JFXTreeTableColumn<Pendencia, Boolean> colInutilizada = new JFXTreeTableColumn<>("Inutilizada");
+		JFXTreeTableColumn<Pendencia, Boolean> colInutilizada = new JFXTreeTableColumn<>("Inutilizadas");
 		colunas.add(colInutilizada);
 		colInutilizada.setPrefWidth(100);
 		colInutilizada.setEditable(false);
@@ -735,12 +749,13 @@ public class Painel extends Stage {
 	}
 
 	private void atualiza() {
+		int idx = cbxEmpresas.getSelectionModel().getSelectedIndex();
 		List<Pendencia> pendenciasBd = PendenciaDao.list(conn, 
 				rbProcessadasTodas.isSelected(), rbProcessadasSim.isSelected(), rbProcessadasNao.isSelected(),
 				rbCanceladasTodas.isSelected(), rbCanceladasSim.isSelected(), rbCanceladasNao.isSelected(),
 				rbInutilizadasTodas.isSelected(), rbInutilizadasSim.isSelected(), rbInutilizadasNao.isSelected(),
 				rbAutorizadasTodas.isSelected(), rbAutorizadasSim.isSelected(), rbAutorizadasNao.isSelected(),
-				dtInicial.getValue(), dtFinal.getValue(), idx < cnpjs.size() ? cnpjs.get(idx) : null);
+				dtInicial.getValue(), dtFinal.getValue(), idx >= 0 ? cnpjs.get(idx) : null);
 		pendencias.clear();
 		pendencias.addAll(pendenciasBd);
 		if (pendencias.size() > 0) {

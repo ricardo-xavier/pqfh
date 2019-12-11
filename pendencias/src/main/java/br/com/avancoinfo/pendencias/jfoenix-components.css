@@ -346,4 +346,12 @@
     -fx-padding: 5 0 5 0;
 }
 
+#statusbar {
+     -fx-background-color: green;
+     -fx-text-color: white;
+     -fx-text-fill: white;
+}
 
+.statuslabel {
+     -fx-text-fill: white;
+}
