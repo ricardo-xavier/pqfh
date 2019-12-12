@@ -1,22 +1,32 @@
 package br.com.avancoinfo.pendencias;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.sql.Connection;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 
+import org.controlsfx.control.StatusBar;
+
 import com.jfoenix.controls.JFXButton;
+import com.jfoenix.controls.JFXComboBox;
 import com.jfoenix.controls.JFXDatePicker;
 import com.jfoenix.controls.JFXRadioButton;
+import com.jfoenix.controls.JFXTextField;
 import com.jfoenix.controls.JFXTreeTableColumn;
 import com.jfoenix.controls.JFXTreeTableView;
 import com.jfoenix.controls.RecursiveTreeItem;
 import com.jfoenix.controls.datamodels.treetable.RecursiveTreeObject;
 
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
@@ -34,7 +44,6 @@ import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.GridPane;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
@@ -55,20 +64,51 @@ public class Painel extends Stage {
 	private JFXRadioButton rbInutilizadasSim;
 	private JFXRadioButton rbInutilizadasNao;
 	private JFXRadioButton rbInutilizadasTodas;
+	private JFXRadioButton rbAutorizadasSim;
+	private JFXRadioButton rbAutorizadasNao;
+	private JFXRadioButton rbAutorizadasTodas;	
 	private JFXDatePicker dtInicial;
 	private JFXDatePicker dtFinal;
+	private StatusBar statusBar;
+	private JFXComboBox<String> cbxEmpresas;
 	
+	private String ipAtual;
 
+	private List<String> ips = new ArrayList<String>();			
+	private List<String> cnpjs = new ArrayList<String>();			
+	private List<String> nomes = new ArrayList<String>();
+	
 	public Painel(Connection conn) {
-
-		// tipo_pendencia, data_emissao, numero_cupom, numero_nota, serie,
-		// codigo_situacao, situacao, processada, cancelada, inutilizada,
+		
+		ipAtual = BancoDados.getIp();
+		
+		try {
+			BufferedReader reader = new BufferedReader(new FileReader(new File("anaipbd.cfg")));
+			String linha;
+			while ((linha = reader.readLine()) != null) {
+				String[] partes = linha.split("\\|");
+				String ip = partes[0];
+				ips.add(ip);
+				String cnpj = partes[1];
+				cnpjs.add(cnpj);
+				String nome = partes[2];
+				nomes.add(nome);
+			}
+			reader.close();
+			
+		} catch (IOException e) {
+		}
 
 		this.conn = conn;
 
 		List<JFXTreeTableColumn<Pendencia, ?>> colunas = criaColunas();
 
-		List<Pendencia> pendenciasBd = PendenciaDao.list(conn, true, false, false, true, false, false, true, false, false, null, null);
+		List<Pendencia> pendenciasBd = PendenciaDao.list(conn, 
+				false, false, true, 
+				true, false, false, 
+				true, false, false,
+				true, false, false,
+				null, null, null);
 		pendencias = FXCollections.observableArrayList(pendenciasBd);
 
 		final TreeItem<Pendencia> root = new RecursiveTreeItem<>(pendencias, RecursiveTreeObject::getChildren);
@@ -95,10 +135,6 @@ public class Painel extends Stage {
 
 				case F5:
 					atualiza();
-					break;
-
-				case F6:
-					executa();
 					break;
 
 				case ESCAPE:
@@ -132,12 +168,11 @@ public class Painel extends Stage {
 		GridPane pnlFiltro = new GridPane();
 		pnlFiltro.setHgap(40);
 		pnlFiltro.setVgap(10);
-		pnlFiltro.setMaxWidth(600);
+//		pnlFiltro.setMaxWidth(900);
 		pnlControles.setLeft(pnlFiltro);
 
-		FlowPane pnlBotoes = new FlowPane();
-		pnlBotoes.setPadding(new Insets(20));
-		pnlBotoes.setAlignment(Pos.CENTER_RIGHT);
+		GridPane pnlBotoes = new GridPane();
+		pnlBotoes.setVgap(10);		
 		pnlControles.setRight(pnlBotoes);
 		
 		Label lblFiltros = new Label("Filtros");
@@ -149,7 +184,7 @@ public class Painel extends Stage {
 		ToggleGroup groupProcessadas = new ToggleGroup();
 
 		rbProcessadasTodas = new JFXRadioButton("Todas");
-		rbProcessadasTodas.setSelected(true);
+		rbProcessadasTodas.setSelected(false);
 		pnlFiltro.add(rbProcessadasTodas, 1, 1);
 		rbProcessadasTodas.setToggleGroup(groupProcessadas);
 		rbProcessadasTodas.setOnAction(new EventHandler<ActionEvent>() {
@@ -175,7 +210,7 @@ public class Painel extends Stage {
 		});
 		
 		rbProcessadasNao = new JFXRadioButton("Não");
-		rbProcessadasNao.setSelected(false);
+		rbProcessadasNao.setSelected(true);
 		pnlFiltro.add(rbProcessadasNao, 1, 3);
 		rbProcessadasNao.setToggleGroup(groupProcessadas);
 		rbProcessadasNao.setOnAction(new EventHandler<ActionEvent>() {
@@ -275,13 +310,57 @@ public class Painel extends Stage {
 			}
 		});
 		
+		Label lblAutorizadas = new Label("Autorizadas");
+		pnlFiltro.add(lblAutorizadas, 4, 0);
+		
+		ToggleGroup groupAutorizadas = new ToggleGroup();
+
+		rbAutorizadasTodas = new JFXRadioButton("Todas");
+		rbAutorizadasTodas.setSelected(true);
+		pnlFiltro.add(rbAutorizadasTodas, 4, 1);
+		rbAutorizadasTodas.setToggleGroup(groupAutorizadas);
+		rbAutorizadasTodas.setOnAction(new EventHandler<ActionEvent>() {
+
+			@Override
+			public void handle(ActionEvent event) {
+				atualiza();
+				
+			}
+		});
+		
+		rbAutorizadasSim = new JFXRadioButton("Sim");
+		rbAutorizadasSim.setSelected(false);
+		pnlFiltro.add(rbAutorizadasSim, 4, 2);
+		rbAutorizadasSim.setToggleGroup(groupAutorizadas);
+		rbAutorizadasSim.setOnAction(new EventHandler<ActionEvent>() {
+
+			@Override
+			public void handle(ActionEvent event) {
+				atualiza();
+				
+			}
+		});
+		
+		rbAutorizadasNao = new JFXRadioButton("Não");
+		rbAutorizadasNao.setSelected(false);
+		pnlFiltro.add(rbAutorizadasNao, 4, 3);
+		rbAutorizadasNao.setToggleGroup(groupAutorizadas);
+		rbAutorizadasNao.setOnAction(new EventHandler<ActionEvent>() {
+
+			@Override
+			public void handle(ActionEvent event) {
+				atualiza();
+				
+			}
+		});
+		
 		Label lblEmissao = new Label("Emissão entre");
-		pnlFiltro.add(lblEmissao, 4, 0);
+		pnlFiltro.add(lblEmissao, 5, 0);
 		
 		dtInicial = new JFXDatePicker();
 		dtInicial.setMaxWidth(140);
-		dtInicial.setValue(LocalDate.of(1900, 4, 1));
-		pnlFiltro.add(dtInicial, 4, 1);
+		dtInicial.setValue(LocalDate.of(1900, 1, 1));
+		pnlFiltro.add(dtInicial, 5, 1);
 		dtInicial.valueProperty().addListener((ov, oldValue, newValue) -> {
 			atualiza();
 		});	
@@ -290,8 +369,128 @@ public class Painel extends Stage {
 		dtFinal.setMaxWidth(140);
 		Calendar hoje = Calendar.getInstance();
 		dtFinal.setValue(LocalDate.of(hoje.get(Calendar.YEAR), hoje.get(Calendar.MONTH)+1, hoje.get(Calendar.DAY_OF_MONTH)));
-		pnlFiltro.add(dtFinal, 4, 2);
+		pnlFiltro.add(dtFinal, 5, 2);
 		dtFinal.valueProperty().addListener((ov, oldValue, newValue) -> {
+			atualiza();
+		});	
+
+		JFXTextField filterField = new JFXTextField();
+		filterField.setPromptText("Digite para filtrar");
+		pnlFiltro.add(filterField, 6, 0);
+		
+		filterField.textProperty().addListener((o, oldVal, newVal) -> {
+			treeView.setPredicate(userProp -> {
+				final Pendencia pendencia = userProp.getValue();
+				return pendencia.getData().get().contains(newVal) 
+						|| pendencia.getCupom().get().contains(newVal)
+						|| pendencia.getNota().get().contains(newVal) 
+						|| pendencia.getSerie().get().contains(newVal)
+						|| pendencia.getTipo().get().contains(newVal)
+						|| pendencia.getSituacao().get().contains(newVal)
+						|| pendencia.getDescricao().get().contains(newVal)
+						|| pendencia.getCnpj().get().contains(newVal);						
+			});
+		});		
+		
+		ObservableList<String> empresas = FXCollections.observableList(nomes);
+		cbxEmpresas = new JFXComboBox<String>(empresas );
+		cbxEmpresas.setPromptText("Selecione a empresa");
+		cbxEmpresas.getSelectionModel()
+        .selectedItemProperty()
+        .addListener((obs, oldValue, newValue) -> {
+        	
+        	int idxOld = nomes.indexOf(oldValue);
+        	int idx = nomes.indexOf(newValue);
+        	String ip = ips.get(idx);
+   			atualizaStatus();
+        	if (!ip.equals(ipAtual)) {
+        		ipAtual = ip;
+       			Painel context = this;
+       			Task<Void> task = new Task<Void>() {
+
+					@Override
+					protected Void call() throws Exception {
+						System.err.println(new Date());
+						updateProgress(-1, 1);
+						try {
+							context.conn = BancoDados.reconecta(conn, ipAtual);
+							Platform.runLater(new Runnable() {
+								@Override
+								public void run() {
+									atualiza();
+									atualizaStatus();
+								}
+							});
+							
+						} catch (Exception e) {
+							
+							updateProgress(0, 0);
+							Platform.runLater(new Runnable() {
+								@Override
+								public void run() {
+									Alert alert = new Alert(AlertType.ERROR);
+									alert.setTitle("Erro");
+									alert.setHeaderText("Erro na conexão ao banco de dados");
+									alert.setContentText(e.getMessage());
+									alert.show();
+								}
+							});
+							
+							updateProgress(-1, 1);
+							
+							int idx = idxOld;
+							if (idx < 0) {
+								idx = 0;
+							}
+							String ip = ips.get(idx);
+							ipAtual = ip;
+							try {
+								context.conn = BancoDados.reconecta(conn, ipAtual);
+							} catch (Exception e2) {
+								e2.printStackTrace();
+								updateProgress(0, 0);
+								Platform.runLater(new Runnable() {
+									@Override
+									public void run() {
+										Alert alert = new Alert(AlertType.ERROR);
+										alert.setTitle("Erro");
+										alert.setHeaderText("Erro na conexão ao banco de dados");
+										alert.setContentText(e2.getMessage());
+										alert.show();
+									}
+								});
+								return null;
+							}
+							
+							updateProgress(0, 0);
+							Platform.runLater(new Runnable() {
+								@Override
+								public void run() {
+									atualiza();
+									atualizaStatus();
+								}
+							});
+						}
+						
+						updateProgress(0, 0);
+						return null;
+					}
+				};
+				statusBar.progressProperty().bind(task.progressProperty());
+				Thread thread = new Thread(task, "task-thread");
+		        thread.setDaemon(true);
+		        thread.start();				
+        	}
+        	atualiza();
+        	atualizaStatus();
+        });
+		pnlFiltro.add(cbxEmpresas, 6, 2);
+		
+		dtInicial = new JFXDatePicker();
+		dtInicial.setMaxWidth(140);
+		dtInicial.setValue(LocalDate.of(1900, 1, 1));
+		pnlFiltro.add(dtInicial, 5, 1);
+		dtInicial.valueProperty().addListener((ov, oldValue, newValue) -> {
 			atualiza();
 		});	
 		
@@ -299,25 +498,13 @@ public class Painel extends Stage {
 
 		JFXTextField filterField = new JFXTextField();
 		pnlFiltro.getChildren().add(filterField);
-
 		Label size = new Label();
-
-		filterField.textProperty().addListener((o, oldVal, newVal) -> {
-			treeView.setPredicate(userProp -> {
-				final Pendencia pendencia = userProp.getValue();
-				return pendencia.getData().get().contains(newVal) || pendencia.getCupom().get().contains(newVal)
-						|| pendencia.getNota().get().contains(newVal) || pendencia.getSerie().get().contains(newVal)
-						|| pendencia.getTipo().get().contains(newVal);
-			});
-		});
-
 		size.textProperty().bind(Bindings.createStringBinding(() -> String.valueOf(treeView.getCurrentItemsCount()),
 				treeView.currentItemsCountProperty()));
-		pnlFiltro.getChildren().add(size);
 		*/
 
 		JFXButton btnAjuda = new JFXButton("F1-ajuda");
-		pnlBotoes.getChildren().add(btnAjuda);
+		pnlBotoes.add(btnAjuda, 0, 0);
 		btnAjuda.setOnAction(new EventHandler<ActionEvent>() {
 
 			@Override
@@ -327,7 +514,7 @@ public class Painel extends Stage {
 		});
 
 		JFXButton btnDetalhes = new JFXButton("F2-detalhes");
-		pnlBotoes.getChildren().add(btnDetalhes);
+		pnlBotoes.add(btnDetalhes, 0, 1);
 		btnDetalhes.setOnAction(new EventHandler<ActionEvent>() {
 
 			@Override
@@ -337,7 +524,7 @@ public class Painel extends Stage {
 		});
 
 		JFXButton btnRefresh = new JFXButton("F5-atualiza");
-		pnlBotoes.getChildren().add(btnRefresh);
+		pnlBotoes.add(btnRefresh, 0, 2);		
 		btnRefresh.setOnAction(new EventHandler<ActionEvent>() {
 
 			@Override
@@ -345,16 +532,13 @@ public class Painel extends Stage {
 				atualiza();
 			}
 		});
-
-		JFXButton btnExecuta = new JFXButton("F6-executa");
-		pnlBotoes.getChildren().add(btnExecuta);
-		btnExecuta.setOnAction(new EventHandler<ActionEvent>() {
-
-			@Override
-			public void handle(ActionEvent event) {
-				executa();
-			}
-		});
+		
+		statusBar = new StatusBar();
+		statusBar.setText(null);
+		statusBar.setId("statusbar");
+		statusBar.setProgress(0);
+		atualizaStatus();
+		main.setTop(statusBar);
 
 		main.setBottom(pnlControles);
 
@@ -370,10 +554,36 @@ public class Painel extends Stage {
 		}
 
 	}
+	
+	void atualizaStatus() {
+		int idx = cbxEmpresas.getSelectionModel().getSelectedIndex();
+		statusBar.getLeftItems().clear();
+		statusBar.getRightItems().clear();
+		if (idx >= 0) {
+			Label lblLoja = new Label("CNPJ: " + cnpjs.get(idx) + "   Loja: " + nomes.get(idx));
+			lblLoja.getStyleClass().add("statuslabel");
+			statusBar.getLeftItems().add(lblLoja);
+		}
+		Label lblIp = new Label("IP: " + ips.get(idx));
+		lblIp.getStyleClass().add("statuslabel");
+		statusBar.getRightItems().add(lblIp);		
+	}
 
 	private List<JFXTreeTableColumn<Pendencia, ?>> criaColunas() {
 
 		List<JFXTreeTableColumn<Pendencia, ?>> colunas = new ArrayList<JFXTreeTableColumn<Pendencia, ?>>();
+
+		JFXTreeTableColumn<Pendencia, String> colCnpj = new JFXTreeTableColumn<>("CNPJ");
+		colunas.add(colCnpj);
+		colCnpj.setPrefWidth(150);
+		colCnpj.setEditable(false);
+		colCnpj.setCellValueFactory((TreeTableColumn.CellDataFeatures<Pendencia, String> param) -> {
+			if (colCnpj.validateValue(param)) {
+				return param.getValue().getValue().getCnpj();
+			} else {
+				return colCnpj.getComputedValue(param);
+			}
+		});
 
 		JFXTreeTableColumn<Pendencia, String> colTipo = new JFXTreeTableColumn<>("Tipo");
 		colunas.add(colTipo);
@@ -389,7 +599,7 @@ public class Painel extends Stage {
 
 		JFXTreeTableColumn<Pendencia, String> colData = new JFXTreeTableColumn<>("Data/Hora");
 		colunas.add(colData);
-		colData.setPrefWidth(200);
+		colData.setPrefWidth(150);
 		colData.setEditable(false);
 		colData.setCellValueFactory((TreeTableColumn.CellDataFeatures<Pendencia, String> param) -> {
 			if (colData.validateValue(param)) {
@@ -437,7 +647,7 @@ public class Painel extends Stage {
 
 		JFXTreeTableColumn<Pendencia, String> colSituacao = new JFXTreeTableColumn<>("Situação");
 		colunas.add(colSituacao);
-		colSituacao.setPrefWidth(100);
+		colSituacao.setPrefWidth(80);
 		colSituacao.setEditable(false);
 		colSituacao.setCellValueFactory((TreeTableColumn.CellDataFeatures<Pendencia, String> param) -> {
 			if (colSituacao.validateValue(param)) {
@@ -459,17 +669,7 @@ public class Painel extends Stage {
 			}
 		});
 
-		/*
-		 * JFXTreeTableColumn<Pendencia, String> colStatus = new
-		 * JFXTreeTableColumn<>("Status"); colStatus.setPrefWidth(100);
-		 * colStatus.setEditable(false);
-		 * colStatus.setCellValueFactory((TreeTableColumn.CellDataFeatures<Pendencia,
-		 * String> param) -> { if (colStatus.validateValue(param)) { return
-		 * param.getValue().getValue().getStatus(); } else { return
-		 * colStatus.getComputedValue(param); } });
-		 */
-
-		JFXTreeTableColumn<Pendencia, Boolean> colProcessada = new JFXTreeTableColumn<>("Processada");
+		JFXTreeTableColumn<Pendencia, Boolean> colProcessada = new JFXTreeTableColumn<>("Processadas");
 		colunas.add(colProcessada);
 		colProcessada.setPrefWidth(100);
 		colProcessada.setEditable(false);
@@ -491,7 +691,7 @@ public class Painel extends Stage {
 					}
 				});
 
-		JFXTreeTableColumn<Pendencia, Boolean> colCancelada = new JFXTreeTableColumn<>("Cancelada");
+		JFXTreeTableColumn<Pendencia, Boolean> colCancelada = new JFXTreeTableColumn<>("Canceladas");
 		colunas.add(colCancelada);
 		colCancelada.setPrefWidth(100);
 		colCancelada.setEditable(false);
@@ -513,7 +713,7 @@ public class Painel extends Stage {
 					}
 				});
 
-		JFXTreeTableColumn<Pendencia, Boolean> colInutilizada = new JFXTreeTableColumn<>("Inutilizada");
+		JFXTreeTableColumn<Pendencia, Boolean> colInutilizada = new JFXTreeTableColumn<>("Inutilizadas");
 		colunas.add(colInutilizada);
 		colInutilizada.setPrefWidth(100);
 		colInutilizada.setEditable(false);
@@ -565,51 +765,18 @@ public class Painel extends Stage {
 	}
 
 	private void atualiza() {
+		int idx = cbxEmpresas.getSelectionModel().getSelectedIndex();
 		List<Pendencia> pendenciasBd = PendenciaDao.list(conn, 
-				rbProcessadasTodas.isSelected(),
-				rbProcessadasSim.isSelected(),
-				rbProcessadasNao.isSelected(),
-				rbCanceladasTodas.isSelected(),
-				rbCanceladasSim.isSelected(),
-				rbCanceladasNao.isSelected(),
-				rbInutilizadasTodas.isSelected(),
-				rbInutilizadasSim.isSelected(),
-				rbInutilizadasNao.isSelected(),
-				dtInicial.getValue(),
-				dtFinal.getValue());
+				rbProcessadasTodas.isSelected(), rbProcessadasSim.isSelected(), rbProcessadasNao.isSelected(),
+				rbCanceladasTodas.isSelected(), rbCanceladasSim.isSelected(), rbCanceladasNao.isSelected(),
+				rbInutilizadasTodas.isSelected(), rbInutilizadasSim.isSelected(), rbInutilizadasNao.isSelected(),
+				rbAutorizadasTodas.isSelected(), rbAutorizadasSim.isSelected(), rbAutorizadasNao.isSelected(),
+				dtInicial.getValue(), dtFinal.getValue(), idx >= 0 ? cnpjs.get(idx) : null);
 		pendencias.clear();
 		pendencias.addAll(pendenciasBd);
 		if (pendencias.size() > 0) {
 			treeView.getSelectionModel().select(0);
 		}
-	}
-
-	private void executa() {
-
-		String comando = System.getenv("COMANDO_PENDENCIAS");
-		if (comando == null) {
-			Alert alert = new Alert(AlertType.WARNING);
-			alert.setTitle("Aviso");
-			alert.setHeaderText("Comando não definido");
-			alert.show();
-			return;
-		}
-
-		TreeItem<Pendencia> item = treeView.getSelectionModel().getSelectedItem();
-		if (item == null) {
-			Alert alert = new Alert(AlertType.WARNING);
-			alert.setTitle("Aviso");
-			alert.setHeaderText("Nenhuma nota selecionada");
-			alert.show();
-			return;
-		}
-
-		try {
-			Runtime.getRuntime().exec(comando + " " + item.getValue().getChave().getValue());
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-
 	}
 
 }

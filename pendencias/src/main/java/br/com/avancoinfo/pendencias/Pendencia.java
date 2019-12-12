@@ -23,10 +23,11 @@ public class Pendencia extends RecursiveTreeObject<Pendencia> {
     private BooleanProperty cancelada;
     private BooleanProperty inutilizada;
     private Date dataInclusao;
+    private SimpleStringProperty cnpj;
     
     public Pendencia(String chave, String data, String cupom, String nota, String serie, String tipo, 
     		String situacao, String descricao, 
-    		boolean processada, boolean cancelada, boolean inutilizada, Date dataInclusao) {
+    		boolean processada, boolean cancelada, boolean inutilizada, Date dataInclusao, String cnpj) {
     	this.setChave(new SimpleStringProperty(chave));
         this.setData(new SimpleStringProperty(data));
         this.setCupom(new SimpleStringProperty(cupom));
@@ -39,6 +40,7 @@ public class Pendencia extends RecursiveTreeObject<Pendencia> {
         this.setCancelada(new SimpleBooleanProperty(cancelada));
         this.setInutilizada(new SimpleBooleanProperty(inutilizada));
         this.dataInclusao = dataInclusao;
+        this.setCnpj(new SimpleStringProperty(cnpj));
     }
 
 	public StringProperty getData() {
@@ -135,6 +137,14 @@ public class Pendencia extends RecursiveTreeObject<Pendencia> {
 
 	public void setDescricao(StringProperty descricao) {
 		this.descricao = descricao;
+	}
+
+	public SimpleStringProperty getCnpj() {
+		return cnpj;
+	}
+
+	public void setCnpj(SimpleStringProperty cnpj) {
+		this.cnpj = cnpj;
 	}
 
 }

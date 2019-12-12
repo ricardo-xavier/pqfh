@@ -31,8 +31,12 @@ public class PendenciaDao {
 			boolean inutilizadasTodas,
 			boolean inutilizadasSim,
 			boolean inutilizadasNao,
+			boolean autorizadasTodas,
+			boolean autorizadasSim,
+			boolean autorizadasNao,			
 			LocalDate emissaoIni,
-			LocalDate emissaoFim) {
+			LocalDate emissaoFim,
+			String cnpj) {
 		
 		List<Pendencia> pendencias = new ArrayList<Pendencia>();
 		
@@ -85,11 +89,29 @@ public class PendenciaDao {
 				where += inutilizadasSim ? "1" : "0";
 			}
 			
-			String sql = "select chave_busca,data_emissao,data_inclusao,numero_cupom,numero_nota,serie,tipo_pendencia,codigo_situacao,situacao,processada,cancelada,inutilizada "
+			if (!autorizadasTodas) {
+				if (where.equals("")) {
+					where = "where codigo_situacao ";
+				} else {
+					where += " and codigo_situacao ";
+				}
+				where += autorizadasSim ? "= 100" : "!= 100";
+			}
+			
+			if (cnpj != null) {
+				if (where.equals("")) {
+					where = "where cnpj like ";
+				} else {
+					where += " and cnpj like ";
+				}
+				where += "'%" + cnpj.trim() + "%'";
+			}
+			
+			String sql = "select chave_busca,data_emissao,data_inclusao,numero_cupom,numero_nota,serie,tipo_pendencia,codigo_situacao,situacao,processada,cancelada,inutilizada,cnpj "
 					+ "from pen_pendencias "
 					+ where 
 					+ " order by data_emissao desc limit 100";
-			
+			//System.out.println(sql);
 			Statement stmt = conn.createStatement();
 			ResultSet cursor = stmt.executeQuery(sql);
 			
@@ -107,9 +129,9 @@ public class PendenciaDao {
 				String nota = cursor.getString("numero_nota");
 				String serie = cursor.getString("serie");
 				String tipo = cursor.getString("tipo_pendencia");
-				if (tipo.equals("0")) {
+				if (tipo.equals("1")) {
 					tipo = "Contingência";
-				} else if (tipo.equals("1")) {
+				} else if (tipo.equals("0")) {
 					tipo = "Chaves pendentes";
 				}
 				String situacao = cursor.getString("codigo_situacao");
@@ -134,9 +156,10 @@ public class PendenciaDao {
 				boolean processada = cursor.getInt("processada") == 1;
 				boolean cancelada = cursor.getInt("cancelada") == 1;
 				boolean inutilizada = cursor.getInt("inutilizada") == 1;
+				cnpj = cursor.getString("cnpj");
 				
 				Pendencia pendencia = new Pendencia(chaveBusca, data, cupom, nota, serie, tipo, situacao, descricao, 
-						processada, cancelada, inutilizada, dataInclusao);
+						processada, cancelada, inutilizada, dataInclusao, cnpj);
 				pendencias.add(pendencia);
 				
 			}
