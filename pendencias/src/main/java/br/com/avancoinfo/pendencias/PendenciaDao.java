@@ -56,9 +56,9 @@ public class PendenciaDao {
 			
 			if (emissaoFim != null) {
 				if (where.equals("")) {
-					where = String.format("where data_emissao <= '%s'", formatter.format(emissaoFim));
+					where = String.format("where data_emissao <= '%s 23:59:59'", formatter.format(emissaoFim));
 				} else {
-					where += String.format(" and data_emissao <= '%s'", formatter.format(emissaoFim));
+					where += String.format(" and data_emissao <= '%s 23:59:59'", formatter.format(emissaoFim));
 				}
 			}
 			

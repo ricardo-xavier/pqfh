@@ -87,6 +87,9 @@ public class Painel extends Stage {
 			String linha;
 			while ((linha = reader.readLine()) != null) {
 				String[] partes = linha.split("\\|");
+				if (partes.length != 3) {
+					continue;
+				}
 				String ip = partes[0];
 				ips.add(ip);
 				String cnpj = partes[1];
@@ -563,10 +566,10 @@ public class Painel extends Stage {
 			Label lblLoja = new Label("CNPJ: " + cnpjs.get(idx) + "   Loja: " + nomes.get(idx));
 			lblLoja.getStyleClass().add("statuslabel");
 			statusBar.getLeftItems().add(lblLoja);
+			Label lblIp = new Label("IP: " + ips.get(idx));
+			lblIp.getStyleClass().add("statuslabel");
+			statusBar.getRightItems().add(lblIp);		
 		}
-		Label lblIp = new Label("IP: " + ips.get(idx));
-		lblIp.getStyleClass().add("statuslabel");
-		statusBar.getRightItems().add(lblIp);		
 	}
 
 	private List<JFXTreeTableColumn<Pendencia, ?>> criaColunas() {
