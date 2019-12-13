@@ -65,3 +65,4 @@ int memfh_idx_search_page(memfh_hdr_t *hdr, int k, memfh_idx_t *idx, char *key);
 extern FILE *flog;
 
 #endif // MEMFH_H
+
