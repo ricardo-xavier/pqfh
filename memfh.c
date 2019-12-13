@@ -10,11 +10,11 @@ memfh_hdr_t *memfh_open(char *filename, int reclen, int nkeys, int **keys) {
     memfh_hdr_t *hdr;
 
     /*
-    fprintf(stderr, "===== memfh_open [%s] %d %d\n", filename, reclen, nkeys);
+    fprintf(flog, "===== memfh_open [%s] %d %d\n", filename, reclen, nkeys);
     for (int k=0; k<nkeys; k++) {
-        fprintf(stderr, "%d %d\n", k, keys[k][0]);    
+        fprintf(flog, "%d %d\n", k, keys[k][0]);    
         for (int c=0; c<keys[k][0]; c++) {
-            fprintf(stderr, "    %d:%d\n", keys[k][1+c*2], keys[k][1+c*2+1]);        
+            fprintf(flog, "    %d:%d\n", keys[k][1+c*2], keys[k][1+c*2+1]);        
         }        
     }        
     */
@@ -102,7 +102,7 @@ void memfh_list(memfh_hdr_t *hdr) {
 
     data = hdr->head;
     while (data != NULL) {
-        fprintf(stderr, "%09d %08x [%s] %08x\n", ++i, (CAST) data, data->record, (CAST) data->next);    
+        fprintf(flog, "%09d %08x [%s] %08x\n", ++i, (CAST) data, data->record, (CAST) data->next);    
         data = data->next;
     }
 
@@ -169,7 +169,7 @@ bool memfh_start(memfh_hdr_t *hdr, char *record, int k) {
         key[idx->keylen] = 0;    
         memcpy(&buf, ptr+idx->keylen, sizeof(char *));
         memcpy(record, buf, hdr->reclen);
-        //fprintf(stderr, "%04d [%s] [%s]\n", hdr->pos[k][depth], key, buf);
+        //fprintf(flog, "%04d [%s] [%s]\n", hdr->pos[k][depth], key, buf);
     }
     return ret <= 0;    
 }
@@ -189,7 +189,7 @@ bool memfh_next(memfh_hdr_t *hdr, char *record, int k) {
         memcpy(key, ptr, idx->keylen);
         memcpy(&buf, ptr+idx->keylen, sizeof(char *));
         memcpy(record, buf, hdr->reclen);
-        //fprintf(stderr, "%04d [%s] [%s]\n", hdr->pos[k][depth], key, buf);
+        //fprintf(flog, "%04d [%s] [%s]\n", hdr->pos[k][depth], key, buf);
     }
     return ret;    
 }
@@ -231,7 +231,7 @@ int main(int argc, char *argv[]) {
     while (fgets(buf, 257, f) != NULL) {
         record = buf + 20;
         record[129] = 0;
-        //fprintf(stderr, "[%s]\n", record);
+        //fprintf(flog, "[%s]\n", record);
         memfh_write(hdr, record);
         if (++i == n) {
             break;
@@ -241,14 +241,14 @@ int main(int argc, char *argv[]) {
 
     num_reads = 0;
     memfh_idx_list(hdr);
-    fprintf(stderr, "%d %d %d\n", i, num_writes, num_reads);
+    fprintf(flog, "%d %d %d\n", i, num_writes, num_reads);
 
     memset(buf, 0, 257);
     //memcpy(buf, "                                                   YPIRANGA", 59);
     num_reads = 0;
     num_writes = 0;
     memfh_start(hdr, buf, 4);
-    fprintf(stderr, "%d %d %d\n", i, num_writes, num_reads);
+    fprintf(flog, "%d %d %d\n", i, num_writes, num_reads);
 
     return 0;
 }    

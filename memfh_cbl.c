@@ -110,7 +110,7 @@ void memfh_cbl_open_output(fcd_t *fcd, char *filename) {
         }
     }    
 
-    //fprintf(stderr, "memfh_cbl_open_output %08x %s\n", fileid, hdr->filename);
+    //fprintf(flog, "memfh_cbl_open_output %08x %s\n", fileid, hdr->filename);
 }    
 
 void memfh_cbl_write(fcd_t *fcd) {
@@ -126,7 +126,7 @@ void memfh_cbl_write(fcd_t *fcd) {
     fileid = getint(fcd->file_id);    
     hdr = (memfh_hdr_t *) fileid;
 
-    //fprintf(stderr, "memfh_cbl_write %08x %s %d\n", fileid, hdr->filename, hdr->count);
+    //fprintf(flog, "memfh_cbl_write %08x %s %d\n", fileid, hdr->filename, hdr->count);
 
     for (int i=0; i<MAX_HDRS; i++) {
         if (hdrs[i] == hdr) {    
@@ -152,7 +152,7 @@ void memfh_cbl_close(fcd_t *fcd) {
     fileid = getint(fcd->file_id);    
     hdr = (memfh_hdr_t *) fileid;
 
-    //fprintf(stderr, "memfh_cbl_close %08x %s %d\n", fileid, hdr->filename, hdr->count);
+    //fprintf(flog, "memfh_cbl_close %08x %s %d\n", fileid, hdr->filename, hdr->count);
 
     for (int i=0; i<MAX_HDRS; i++) {
         if (hdrs[i] == hdr) {    
@@ -189,7 +189,7 @@ void memfh_cbl_start(fcd_t *fcd) {
     hdr = (memfh_hdr_t *) fileid;
 
     if (dbg > 2) {
-        fprintf(stderr, "memfh_cbl_start %08x %s %d %d\n", fileid, hdr->filename, keyid, hdr->count);
+        fprintf(flog, "memfh_cbl_start %08x %s %d %d\n", fileid, hdr->filename, keyid, hdr->count);
     }    
     if (memfh_start(hdr, (char *) fcd->record, keyid)) {
         memcpy(fcd->status, ST_OK, 2);    
@@ -219,7 +219,7 @@ void memfh_cbl_next(fcd_t *fcd) {
         return;
     }
 
-    //fprintf(stderr, "memfh_cbl_next %08x %s %d\n", fileid, hdr->filename, hdr->count);
+    //fprintf(flog, "memfh_cbl_next %08x %s %d\n", fileid, hdr->filename, hdr->count);
     if (memfh_next(hdr, (char *) fcd->record, keyid)) {
         memcpy(fcd->status, ST_OK, 2);    
     } else {
@@ -230,13 +230,13 @@ void memfh_cbl_next(fcd_t *fcd) {
 void memfh_cbl(unsigned short op, fcd_t *fcd, char *filename) {
 
     if (dbg > 1) {    
-        fprintf(stderr, "memfh_cbl %04x [%s]\n", op, filename);
+        fprintf(flog, "memfh_cbl %04x [%s]\n", op, filename);
     }    
 
     switch (op) {
 
         case OP_OPEN_INPUT:    
-            memfh_cbl_open_output(fcd, filename);
+            memfh_cbl_open_input(fcd, filename);
             break;
 
         case OP_OPEN_IO:    
@@ -263,5 +263,9 @@ void memfh_cbl(unsigned short op, fcd_t *fcd, char *filename) {
             memfh_cbl_close(fcd);
             break;
     }        
+
+    if (dbg > 1) {    
+        fprintf(flog, "memfh_cbl %04x [%s] st=%c%c\n", op, filename, fcd->status[0], fcd->status[1]); 
+    }    
 
 }

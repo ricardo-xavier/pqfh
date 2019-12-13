@@ -144,11 +144,11 @@ void memfh_idx_create(memfh_hdr_t *hdr, int k) {
         memfh_idx_write(hdr, k, key, record);
 
         /*
-        fprintf(stderr, "%d\n", num_writes);
+        fprintf(flog, "%d\n", num_writes);
         num_reads = 0;
         memfh_idx_list_k(hdr, k);
         if (num_writes != num_reads) {
-            fprintf(stderr, "write [%s] %d %d\n", record, num_writes, num_reads);
+            fprintf(flog, "write [%s] %d %d\n", record, num_writes, num_reads);
             exit(-1);
         }    
         */
@@ -173,7 +173,7 @@ void memfh_idx_list_k(memfh_hdr_t *hdr, int k) {
     key[idx->keylen] = 0;    
     memcpy(&record, ptr+idx->keylen, PTRSZ);
     //int r = 1;
-    //fprintf(stderr, "%09d %04d [%s] [%s]\n", r, hdr->pos[k][depth], key, record);
+    //fprintf(flog, "%09d %04d [%s] [%s]\n", r, hdr->pos[k][depth], key, record);
     while (memfh_idx_next(hdr, idx, k)) {
         depth = hdr->depth[k];
         idx = hdr->path[k][depth];
@@ -181,13 +181,13 @@ void memfh_idx_list_k(memfh_hdr_t *hdr, int k) {
         memcpy(key, ptr, idx->keylen);
         key[idx->keylen] = 0;    
         memcpy(&record, ptr+idx->keylen, PTRSZ);
-        //fprintf(stderr, "%09d %04d [%s] [%s]\n", ++r, hdr->pos[k][depth], key, record);
+        //fprintf(flog, "%09d %04d [%s] [%s]\n", ++r, hdr->pos[k][depth], key, record);
     }
 }
 
 void memfh_idx_list(memfh_hdr_t *hdr) {
     for (int k=0; k<hdr->nkeys; k++) {    
-        fprintf(stderr, "=========================================== k=%d\n", k);    
+        fprintf(flog, "=========================================== k=%d\n", k);    
         memfh_idx_list_k(hdr, k);
     }
 }
@@ -196,19 +196,19 @@ void memfh_idx_show_page(memfh_hdr_t *hdr, memfh_idx_t *idx) {
 
     char *ptr, key[257], *record;
 
-    fprintf(stderr, "idx n=%d %08x %08x\n", idx->n, (CAST) idx, (CAST) idx->next);
+    fprintf(flog, "idx n=%d %08x %08x\n", idx->n, (CAST) idx, (CAST) idx->next);
     ptr = idx->buf;
     for (int i=0; i<idx->n; i++) {
         memcpy(key, ptr, idx->keylen);
         key[idx->keylen] = 0;    
         if (idx->tp == 0) {
             memcpy(&record, ptr+idx->keylen, PTRSZ);
-            fprintf(stderr, "%d [%s] [%s]\n", i, key, record);
+            fprintf(flog, "%d [%s] [%s]\n", i, key, record);
             ptr += (idx->keylen + PTRSZ);
         } else {
             memfh_idx_t *page;
             memcpy(&page, ptr+idx->keylen, PTRIDXSZ);
-            fprintf(stderr, "%d [%s] %08x\n", i, key, (CAST) page);
+            fprintf(flog, "%d [%s] %08x\n", i, key, (CAST) page);
             ptr += (idx->keylen + PTRIDXSZ);
         }        
     }        
@@ -220,7 +220,7 @@ int memfh_idx_search_page(memfh_hdr_t *hdr, int k, memfh_idx_t *idx, char *key) 
     memfh_idx_t *next;
     int c=1;
 
-    //fprintf(stderr, "memfh_idx_search_page %d [%s] %d %d\n", idx->keylen, key, idx->tp, idx->n);    
+    //fprintf(flog, "memfh_idx_search_page %d [%s] %d %d\n", idx->keylen, key, idx->tp, idx->n);    
 
     int depth = hdr->depth[k];
     for (int i=0; i<idx->n; i++) {
@@ -286,7 +286,7 @@ void memfh_idx_insert_parent(memfh_hdr_t *hdr, int k, int d, memfh_idx_t *idx1, 
     char *ptr = parent->buf;
     if (k > 0) debugidx();
     if (parent->next != NULL) {
-        fprintf(stderr, "%d %08x %d\n", parent->n, (CAST) parent->next, parent->next->n);
+        fprintf(flog, "%d %08x %d\n", parent->n, (CAST) parent->next, parent->next->n);
     }
     for (int i=0; i<parent->n; i++) {
         char key[257];
@@ -294,7 +294,7 @@ void memfh_idx_insert_parent(memfh_hdr_t *hdr, int k, int d, memfh_idx_t *idx1, 
         memcpy(key, ptr, parent->keylen);    
         key[parent->keylen] = 0;
         memcpy(&idx, ptr + parent->keylen, PTRIDXSZ);
-        fprintf(stderr, "%d %08x [%s] %d\n", i, (CAST) idx, key, idx->n);
+        fprintf(flog, "%d %08x [%s] %d\n", i, (CAST) idx, key, idx->n);
         ptr += (idx->keylen + PTRIDXSZ);
     }        
     */
@@ -380,7 +380,7 @@ void memfh_idx_insert_parent(memfh_hdr_t *hdr, int k, int d, memfh_idx_t *idx1, 
 
 void memfh_idx_write(memfh_hdr_t *hdr, int k, char *key, char *record) {
 
-    //fprintf(stderr, "memfh_idx_write %d [%s]\n", k, key);
+    //fprintf(flog, "memfh_idx_write %d [%s]\n", k, key);
     int exists = memfh_idx_search(hdr, k, key);
     if (exists == 0) {
         exit(-1);    

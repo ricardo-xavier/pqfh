@@ -15,7 +15,7 @@
 // insert into tabela_api values('sp05a51', 'planoGerencial');
 //
 
-#define VERSAO "v3.5.1 27/11/2019"
+#define VERSAO "v3.5.2 28/11/2019"
 
 int dbg=-1;
 int dbg_upd=-1;
@@ -358,9 +358,8 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
     if ((op >= OP_OPEN_INPUT) && (op <= OP_OPEN_EXTEND)) {
         fcd->mode = table_mode;
         fcd->isam = 0;
-    } else {
-        table_mode = 0;
     }    
+    table_mode = 0;
     if (fcd->mode && (strchr("ABWIM", fcd->mode) != NULL)) {
         mode = fcd->mode;
     }        
