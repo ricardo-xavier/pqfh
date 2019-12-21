@@ -237,6 +237,6 @@ extern void EXTFH(unsigned char *opcode, fcd_t *fcd);
 bool get_cache(table_t *table);
 void put_cache(table_t *table);
 
-void memfh_cbl(unsigned short op, fcd_t *fcd, char *filename);
+void memfh_cbl(char mode, unsigned short op, fcd_t *fcd, char *filename);
 
 #endif

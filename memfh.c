@@ -5,19 +5,26 @@
 
 #include "memfh.h"
 
+#ifndef PQFH
+int dbg=0;
+#define flog stderr
+#else
+extern int dbg;
+#endif
+
 memfh_hdr_t *memfh_open(char *filename, int reclen, int nkeys, int **keys) {
 
     memfh_hdr_t *hdr;
 
-    /*
-    fprintf(flog, "===== memfh_open [%s] %d %d\n", filename, reclen, nkeys);
-    for (int k=0; k<nkeys; k++) {
-        fprintf(flog, "%d %d\n", k, keys[k][0]);    
-        for (int c=0; c<keys[k][0]; c++) {
-            fprintf(flog, "    %d:%d\n", keys[k][1+c*2], keys[k][1+c*2+1]);        
+    if (dbg >= 3) {
+        fprintf(flog, "===== memfh_open [%s] %d %d\n", filename, reclen, nkeys);
+        for (int k=0; k<nkeys; k++) {
+            fprintf(flog, "%d %d\n", k, keys[k][0]);    
+            for (int c=0; c<keys[k][0]; c++) {
+                fprintf(flog, "    %d:%d\n", keys[k][1+c*2], keys[k][1+c*2+1]);        
+            }        
         }        
-    }        
-    */
+    }
     hdr = malloc(sizeof(memfh_hdr_t));
     hdr->filename = strdup(filename);
     hdr->count = 0;
@@ -141,6 +148,46 @@ void memfh_write(memfh_hdr_t *hdr, char *record) {
     hdr->count++;
 }
 
+bool memfh_read(memfh_hdr_t *hdr, char *record, bool update) {
+
+    int depth;    
+    char key[257], *ptr, *buf;
+    memfh_idx_t *idx;
+
+    // monta a chave
+    int offset = 0;
+    for (int c=0; c<hdr->keys[0][0]; c++) {
+        memcpy(key + offset, record + hdr->keys[0][1+c*2], hdr->keys[0][1+c*2+1]);
+        offset += hdr->keys[0][1+c*2+1];
+    }    
+    key[offset] = 0;
+
+    int ret = memfh_idx_search(hdr, 0, key);
+    if (ret == 0) {
+        depth = hdr->depth[0];
+        idx = hdr->path[0][depth];
+        int pos = hdr->pos[0][depth];
+        ptr = idx->buf;
+        ptr = idx->buf + pos * (idx->keylen + sizeof(char *));
+        memcpy(key, ptr, idx->keylen);
+        key[idx->keylen] = 0;    
+        memcpy(&buf, ptr+idx->keylen, sizeof(char *));
+        if (!update) {
+            memcpy(record, buf, hdr->reclen);
+        } else {
+            if (memcmp(buf, record, idx->keylen)) {
+                fprintf(stderr, "erro update\n");
+                exit(-1);
+            }
+            memcpy(buf, record, hdr->reclen);
+        }
+        if (dbg >= 3) {
+            fprintf(flog, "%04d [%s] [%s]\n", pos, key, buf);
+        }
+    }
+    return ret == 0;    
+}
+
 bool memfh_start(memfh_hdr_t *hdr, char *record, int k) {
 
     int depth;    
@@ -159,9 +206,9 @@ bool memfh_start(memfh_hdr_t *hdr, char *record, int k) {
     }    
     key[offset] = 0;
 
-    int ret = memfh_idx_search_page(hdr, k, hdr->idx[k], key);
+    int ret = memfh_idx_search(hdr, k, key);
 
-    if (ret >= 0) {
+    if (ret <= 0) {
         depth = hdr->depth[k];
         idx = hdr->path[k][depth];
         ptr = idx->buf;
@@ -169,9 +216,12 @@ bool memfh_start(memfh_hdr_t *hdr, char *record, int k) {
         key[idx->keylen] = 0;    
         memcpy(&buf, ptr+idx->keylen, sizeof(char *));
         memcpy(record, buf, hdr->reclen);
-        //fprintf(flog, "%04d [%s] [%s]\n", hdr->pos[k][depth], key, buf);
+        if (dbg >= 3) {
+            fprintf(flog, "%04d [%s] [%s]\n", hdr->pos[k][depth], key, buf);
+        }
+        return true;
     }
-    return ret <= 0;    
+    return false;
 }
 
 bool memfh_next(memfh_hdr_t *hdr, char *record, int k) {
@@ -189,7 +239,9 @@ bool memfh_next(memfh_hdr_t *hdr, char *record, int k) {
         memcpy(key, ptr, idx->keylen);
         memcpy(&buf, ptr+idx->keylen, sizeof(char *));
         memcpy(record, buf, hdr->reclen);
-        //fprintf(flog, "%04d [%s] [%s]\n", hdr->pos[k][depth], key, buf);
+        if (dbg >= 3) {
+            fprintf(flog, "%04d [%s] [%s]\n", hdr->pos[k][depth], key, buf);
+        }
     }
     return ret;    
 }
@@ -198,7 +250,7 @@ extern int num_writes;
 extern int num_reads;
 
 #ifndef PQFH
-int main(int argc, char *argv[]) {
+int teste_bairro(int argc, char *argv[]) {
 
     memfh_hdr_t *hdr;
     int **keys = malloc(7 * sizeof(int *));
@@ -252,5 +304,68 @@ int main(int argc, char *argv[]) {
 
     return 0;
 }    
+
+int teste_itens(int argc, char *argv[]) {
+
+    memfh_hdr_t *hdr;
+    int **keys = malloc(1 * sizeof(int *));
+
+    keys[0] = malloc((1 + 1 * 2) * sizeof(int));
+    keys[0][0] = 1;
+    keys[0][1] = 0;
+    keys[0][2] = 6;
+
+    hdr = memfh_open("totitem", 19, 1, keys);    
+
+    int n = 999999999;
+    if (argc > 1) {
+        n = atoi(argv[1]);
+    }
+    FILE *f = fopen("itens.log", "r");
+    char buf[257];
+    char record[257];
+    int i = 0;
+    int ins = 0;
+    int upd = 0;
+    num_writes = 0;
+    record[19] = 0;
+    while (fgets(buf, 257, f) != NULL) {
+        memcpy(record, buf, 19);
+        fprintf(stderr, "+%d %d %d [%s]\n", i, ins, upd, record);
+        bool existe = memfh_read(hdr, record, false);
+        if (existe) {
+            long vlr_atual = atol(record+6);    
+            long vlr_adicionar = atol(buf+6);    
+            sprintf(buf+6, "%013ld", vlr_atual + vlr_adicionar);
+            memfh_read(hdr, buf, true);
+            upd++;
+        } else {
+            memfh_write(hdr, record);
+            ins++;
+        }
+        if (++i == n) {
+            break;
+        }
+    }
+    fclose(f);
+
+    memset(record, 0, 257);
+    memfh_start(hdr, record, 0);
+
+    for (;;) {
+        fprintf(stderr, "[%s]\n", record);
+
+        if (!memfh_next(hdr, record, 0)) {
+            break;
+        }
+    }
+
+    return 0;
+}    
+
+int main(int argc, char *argv[]) {
+    teste_itens(argc, argv);
+    return 0;
+}
 #endif
 

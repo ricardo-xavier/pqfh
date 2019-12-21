@@ -35,6 +35,10 @@ void command(PGconn *conn, fcd_t *fcd) {
         table_mode = fcd->record[5];    
     }
 
+    if (!memcmp(fcd->record, "FREE", 4)) {
+        table_mode = 'F';
+    }
+
     if (!memcmp(fcd->record, "COPY:", 5)) {
         char salva_mode = mode;
         mode = 'B';   

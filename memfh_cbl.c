@@ -21,7 +21,6 @@ void memfh_cbl_open_input(fcd_t *fcd, char *filename) {
             memcpy(fcd->status, ST_OK, 2);    
             fcd->open_mode = 0;
             int fileid = (int) hdrs[i];
-            hdrs[i]->open++;
             putint(fcd->file_id, fileid);
             return;
         }
@@ -37,7 +36,6 @@ void memfh_cbl_open_io(fcd_t *fcd, char *filename) {
             memcpy(fcd->status, ST_OK, 2);    
             fcd->open_mode = 1;
             int fileid = (int) hdrs[i];
-            hdrs[i]->open++;
             putint(fcd->file_id, fileid);
             return;
         }
@@ -91,7 +89,6 @@ void memfh_cbl_open_output(fcd_t *fcd, char *filename) {
     }    
 
     hdr = memfh_open(filename, reclen, nkeys, keys);
-    hdr->open++;
     fileid = (int) hdr;
     putint(fcd->file_id, fileid);
 
@@ -110,7 +107,6 @@ void memfh_cbl_open_output(fcd_t *fcd, char *filename) {
         }
     }    
 
-    //fprintf(flog, "memfh_cbl_open_output %08x %s\n", fileid, hdr->filename);
 }    
 
 void memfh_cbl_write(fcd_t *fcd) {
@@ -126,7 +122,9 @@ void memfh_cbl_write(fcd_t *fcd) {
     fileid = getint(fcd->file_id);    
     hdr = (memfh_hdr_t *) fileid;
 
-    //fprintf(flog, "memfh_cbl_write %08x %s %d\n", fileid, hdr->filename, hdr->count);
+    if (dbg >= 2) {
+        fprintf(flog, "memfh_cbl_write %08x %s %d\n", fileid, hdr->filename, hdr->count);
+    }
 
     for (int i=0; i<MAX_HDRS; i++) {
         if (hdrs[i] == hdr) {    
@@ -139,7 +137,7 @@ void memfh_cbl_write(fcd_t *fcd) {
     memcpy(fcd->status, ST_NOT_OPENED_WRITE, 2);    
 }
 
-void memfh_cbl_close(fcd_t *fcd) {
+void memfh_cbl_close(fcd_t *fcd, bool free) {
 
     int fileid;
     memfh_hdr_t *hdr;
@@ -152,18 +150,21 @@ void memfh_cbl_close(fcd_t *fcd) {
     fileid = getint(fcd->file_id);    
     hdr = (memfh_hdr_t *) fileid;
 
-    //fprintf(flog, "memfh_cbl_close %08x %s %d\n", fileid, hdr->filename, hdr->count);
+    if (dbg >= 2) {
+        fprintf(flog, "memfh_cbl_close %08x %s %d\n", fileid, hdr->filename, hdr->count);
+    }
+
+    if (!free) {
+        memcpy(fcd->status, ST_OK, 2);    
+        fcd->open_mode = 128;
+        return;
+    }
 
     for (int i=0; i<MAX_HDRS; i++) {
         if (hdrs[i] == hdr) {    
-            hdr->open--;
-            //memfh_idx_list(hdr);
-            //memfh_list(hdr);
-            if (hdr->open == 0) {    
-                memfh_close(hdr);
-                hdrs[i] = 0;
-                nhdrs--;
-            }
+            memfh_close(hdr);
+            hdrs[i] = 0;
+            nhdrs--;
             memcpy(fcd->status, ST_OK, 2);    
             fcd->open_mode = 128;
             return;
@@ -171,6 +172,52 @@ void memfh_cbl_close(fcd_t *fcd) {
     }    
     
     memcpy(fcd->status, ST_ALREADY_CLOSED, 2);    
+}
+
+void memfh_cbl_rewrite(fcd_t *fcd) {
+
+    int fileid;
+    memfh_hdr_t *hdr;
+
+    if (fcd->open_mode == 128) {
+        memcpy(fcd->status, ST_NOT_OPENED_WRITE, 2);
+        return;
+    }
+
+    fileid = getint(fcd->file_id);    
+    hdr = (memfh_hdr_t *) fileid;
+
+    if (dbg > 2) {
+        fprintf(flog, "memfh_cbl_rewrite %08x %s %d\n", fileid, hdr->filename, hdr->count);
+    }    
+    if (memfh_read(hdr, (char *) fcd->record, true)) {
+        memcpy(fcd->status, ST_OK, 2);    
+    } else {
+        memcpy(fcd->status, ST_REC_NOT_FOUND, 2);    
+    }        
+}
+
+void memfh_cbl_read(fcd_t *fcd) {
+
+    int fileid;
+    memfh_hdr_t *hdr;
+
+    if (fcd->open_mode == 128) {
+        memcpy(fcd->status, ST_NOT_OPENED_READ, 2);
+        return;
+    }
+
+    fileid = getint(fcd->file_id);    
+    hdr = (memfh_hdr_t *) fileid;
+
+    if (dbg > 2) {
+        fprintf(flog, "memfh_cbl_read %08x %s %d\n", fileid, hdr->filename, hdr->count);
+    }    
+    if (memfh_read(hdr, (char *) fcd->record, false)) {
+        memcpy(fcd->status, ST_OK, 2);    
+    } else {
+        memcpy(fcd->status, ST_REC_NOT_FOUND, 2);    
+    }        
 }
 
 void memfh_cbl_start(fcd_t *fcd) {
@@ -219,7 +266,9 @@ void memfh_cbl_next(fcd_t *fcd) {
         return;
     }
 
-    //fprintf(flog, "memfh_cbl_next %08x %s %d\n", fileid, hdr->filename, hdr->count);
+    if (dbg >= 2) {
+        fprintf(flog, "memfh_cbl_next %08x %s %d\n", fileid, hdr->filename, hdr->count);
+    }
     if (memfh_next(hdr, (char *) fcd->record, keyid)) {
         memcpy(fcd->status, ST_OK, 2);    
     } else {
@@ -227,7 +276,7 @@ void memfh_cbl_next(fcd_t *fcd) {
     }    
 }
 
-void memfh_cbl(unsigned short op, fcd_t *fcd, char *filename) {
+void memfh_cbl(char mode, unsigned short op, fcd_t *fcd, char *filename) {
 
     if (dbg > 1) {    
         fprintf(flog, "memfh_cbl %04x [%s]\n", op, filename);
@@ -251,6 +300,14 @@ void memfh_cbl(unsigned short op, fcd_t *fcd, char *filename) {
             memfh_cbl_write(fcd);
             break;
 
+        case OP_REWRITE:    
+            memfh_cbl_rewrite(fcd);
+            break;
+
+        case OP_READ_RANDOM:    
+            memfh_cbl_read(fcd);
+            break;
+
         case OP_START_GE:    
             memfh_cbl_start(fcd);
             break;
@@ -260,7 +317,7 @@ void memfh_cbl(unsigned short op, fcd_t *fcd, char *filename) {
             break;
 
         case OP_CLOSE:    
-            memfh_cbl_close(fcd);
+            memfh_cbl_close(fcd, mode == 'F');
             break;
     }        
 

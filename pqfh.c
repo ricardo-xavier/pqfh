@@ -15,7 +15,7 @@
 // insert into tabela_api values('sp05a51', 'planoGerencial');
 //
 
-#define VERSAO "v3.5.2 28/11/2019"
+#define VERSAO "v3.5.3 22/12/2019"
 
 int dbg=-1;
 int dbg_upd=-1;
@@ -360,12 +360,12 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
         fcd->isam = 0;
     }    
     table_mode = 0;
-    if (fcd->mode && (strchr("ABWIM", fcd->mode) != NULL)) {
+    if (fcd->mode && (strchr("ABWIMF", fcd->mode) != NULL)) {
         mode = fcd->mode;
     }        
 
-    if (mode == 'M') {
-        memfh_cbl(op, fcd, filename);
+    if ((mode == 'M') || (mode == 'F'))  {
+        memfh_cbl(mode, op, fcd, filename);
         return;
     }
 
@@ -1129,4 +1129,5 @@ bool is_weak(char *table) {
 // 3.4.4  - 18/11 - prefixo < 4
 // 3.5.0  - 21/11 - memfh
 // 3.5.1  - 27/11 - setar file status no memfh
+// 3.5.2  - 22/12 - correcoes no memfh
  

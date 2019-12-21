@@ -6,6 +6,9 @@
 #define MEMFH_MAX_KEYLEN 256
 #define MEMFH_MAX_DEPTH  16
 
+#define MEMFH_LEAF   0
+#define MEMFH_BRANCH 1
+
 // -1 = espaco para adicionar o novo item antes de dividir a pagina
 #define MEMFH_MAX_ITEMS(keylen) ((MEMFH_PAGELEN - 12) / (keylen + sizeof(char *)) - 1)
 
@@ -37,7 +40,6 @@ typedef struct memfh_hdr_s {
     int   reclen;
     int   nkeys;
     int   **keys;
-    int   open;
     memfh_data_t *head;
     memfh_data_t *tail;
     memfh_idx_t **idx;
@@ -49,6 +51,8 @@ typedef struct memfh_hdr_s {
 memfh_hdr_t *memfh_open(char *filename, int reclen, int nkeys, int **keys);
 void memfh_close(memfh_hdr_t *hdr);
 void memfh_write(memfh_hdr_t *hdr, char *record);
+void memfh_rewrite(memfh_hdr_t *hdr, char *record);
+bool memfh_read(memfh_hdr_t *hdr, char *record, bool update);
 bool memfh_start(memfh_hdr_t *hdr, char *record, int k);
 bool memfh_next(memfh_hdr_t *hdr, char *record, int k);
 void memfh_list(memfh_hdr_t *hdr);
@@ -60,6 +64,7 @@ bool memfh_idx_next(memfh_hdr_t *hdr, memfh_idx_t *idx, int k);
 void memfh_idx_list(memfh_hdr_t *hdr);
 void memfh_idx_list_k(memfh_hdr_t *hdr, int k);
 void memfh_idx_show_page(memfh_hdr_t *hdr, memfh_idx_t *idx);
+int memfh_idx_search(memfh_hdr_t *hdr, int k, char *key);
 int memfh_idx_search_page(memfh_hdr_t *hdr, int k, memfh_idx_t *idx, char *key);
 
 extern FILE *flog;

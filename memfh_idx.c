@@ -7,6 +7,11 @@
 #define PTRSZ sizeof(char *)
 #define PTRIDXSZ sizeof(memfh_idx_t *)
 
+#ifndef PQFH
+#define flog stderr
+#endif
+extern int dbg;
+
 void debugidx() {}
 
 int num_writes = 0;
@@ -15,13 +20,16 @@ int num_reads  = 0;
 bool memfh_idx_first(memfh_hdr_t *hdr, int k) {
 
     memfh_idx_t *idx = hdr->idx[k];
+    if (dbg >= 4) {
+        fprintf(flog, "memfh_idx_first k=%d tp=%d n=%d\n", k, idx->tp, idx->n);
+    }
     if (idx->n == 0) {
         return false;
     }    
     hdr->depth[k] = 0;    
     hdr->path[k][0] = idx;
     hdr->pos[k][0] = 0;
-    while (idx->tp == 1) {
+    while (idx->tp == MEMFH_BRANCH) {
         memcpy(&idx, idx->buf+idx->keylen, PTRIDXSZ);
         int depth = hdr->depth[k];
         depth++;
@@ -37,6 +45,9 @@ bool memfh_idx_first(memfh_hdr_t *hdr, int k) {
 bool memfh_idx_next(memfh_hdr_t *hdr, memfh_idx_t *idx, int k) {
 
     int depth = hdr->depth[k];
+    if (dbg >= 4) {
+        fprintf(flog, "memfh_idx_next k=%d depth=%d pos=%d n=%d\n", k, depth, hdr->pos[k][depth], idx->n);
+    }
     if (hdr->pos[k][depth] < (idx->n - 1)) {
         hdr->pos[k][depth]++;
         num_reads++;
@@ -63,7 +74,7 @@ bool memfh_idx_next(memfh_hdr_t *hdr, memfh_idx_t *idx, int k) {
             hdr->pos[k][depth] = pos;
 
             // avanca ate chegar em uma folha
-            while (idx->tp == 1) {
+            while (idx->tp == MEMFH_BRANCH) {
                 // adiciona o no interno ao caminho de busca
                 depth++;
                 hdr->depth[k] = depth;    
@@ -94,7 +105,7 @@ void memfh_idx_create(memfh_hdr_t *hdr, int k) {
 
     num_writes = 0;
     hdr->idx[k] = malloc(sizeof(memfh_idx_t));
-    hdr->idx[k]->tp = 0;
+    hdr->idx[k]->tp = MEMFH_LEAF;
     hdr->idx[k]->n = 0;
     hdr->idx[k]->next = NULL;
 
@@ -172,8 +183,8 @@ void memfh_idx_list_k(memfh_hdr_t *hdr, int k) {
     memcpy(key, ptr, idx->keylen);
     key[idx->keylen] = 0;    
     memcpy(&record, ptr+idx->keylen, PTRSZ);
-    //int r = 1;
-    //fprintf(flog, "%09d %04d [%s] [%s]\n", r, hdr->pos[k][depth], key, record);
+    int r = 1;
+    fprintf(flog, "%09d %04d [%s] [%s]\n", r, hdr->pos[k][depth], key, record);
     while (memfh_idx_next(hdr, idx, k)) {
         depth = hdr->depth[k];
         idx = hdr->path[k][depth];
@@ -181,7 +192,7 @@ void memfh_idx_list_k(memfh_hdr_t *hdr, int k) {
         memcpy(key, ptr, idx->keylen);
         key[idx->keylen] = 0;    
         memcpy(&record, ptr+idx->keylen, PTRSZ);
-        //fprintf(flog, "%09d %04d [%s] [%s]\n", ++r, hdr->pos[k][depth], key, record);
+        fprintf(flog, "%09d %04d [%s] [%s]\n", ++r, hdr->pos[k][depth], key, record);
     }
 }
 
@@ -196,12 +207,13 @@ void memfh_idx_show_page(memfh_hdr_t *hdr, memfh_idx_t *idx) {
 
     char *ptr, key[257], *record;
 
-    fprintf(flog, "idx n=%d %08x %08x\n", idx->n, (CAST) idx, (CAST) idx->next);
+    fprintf(flog, "===========================================\n");    
+    fprintf(flog, "idx tp=%d n=%d %08x %08x\n", idx->tp, idx->n, (CAST) idx, (CAST) idx->next);
     ptr = idx->buf;
     for (int i=0; i<idx->n; i++) {
         memcpy(key, ptr, idx->keylen);
         key[idx->keylen] = 0;    
-        if (idx->tp == 0) {
+        if (idx->tp == MEMFH_LEAF) {
             memcpy(&record, ptr+idx->keylen, PTRSZ);
             fprintf(flog, "%d [%s] [%s]\n", i, key, record);
             ptr += (idx->keylen + PTRSZ);
@@ -220,27 +232,22 @@ int memfh_idx_search_page(memfh_hdr_t *hdr, int k, memfh_idx_t *idx, char *key) 
     memfh_idx_t *next;
     int c=1;
 
-    //fprintf(flog, "memfh_idx_search_page %d [%s] %d %d\n", idx->keylen, key, idx->tp, idx->n);    
+    if (dbg >= 4) {
+        fprintf(flog, "memfh_idx_search_page %d [%s] %d %d\n", idx->keylen, key, idx->tp, idx->n);    
+    }
 
     int depth = hdr->depth[k];
     for (int i=0; i<idx->n; i++) {
         c = memcmp(key, ptr, idx->keylen);
         if (c == 0) {
             hdr->pos[k][depth] = i;
-            if (idx->tp == 0) {
+            if (idx->tp == MEMFH_LEAF) {
                 return 0;
-
-            } else {
-                memcpy(&next, ptr+idx->keylen, PTRIDXSZ);
-                depth++;
-                hdr->depth[k] = depth;
-                hdr->path[k][depth] = next;
-                return memfh_idx_search_page(hdr, k, next, key);
             }        
         }
         if (c < 0) {
             hdr->pos[k][depth] = i;
-            if (idx->tp == 0) {
+            if (idx->tp == MEMFH_LEAF) {
                 return -1;
 
             } else {
@@ -255,7 +262,7 @@ int memfh_idx_search_page(memfh_hdr_t *hdr, int k, memfh_idx_t *idx, char *key) 
     }        
 
     hdr->pos[k][depth] = idx->n;
-    if (idx->tp == 0) {
+    if (idx->tp == MEMFH_LEAF) {
         return c;
 
     } else {    
@@ -270,11 +277,18 @@ int memfh_idx_search_page(memfh_hdr_t *hdr, int k, memfh_idx_t *idx, char *key) 
 
 int memfh_idx_search(memfh_hdr_t *hdr, int k, char *key) {
 
+    if (dbg >= 4) {
+        fprintf(flog, "memfh_idx_search %d [%s]\n", k, key);
+    }
     memfh_idx_t *idx = hdr->idx[k];
     hdr->path[k][0] = idx;
     hdr->pos[k][0] = 0;    
     hdr->depth[k] = 0;
-    return memfh_idx_search_page(hdr, k, idx, key);
+    int ret = memfh_idx_search_page(hdr, k, idx, key);
+    if (dbg >= 4) {
+        fprintf(flog, "ret = %d\n", ret);
+    }
+    return ret;
 
 }
 
@@ -343,7 +357,7 @@ void memfh_idx_insert_parent(memfh_hdr_t *hdr, int k, int d, memfh_idx_t *idx1, 
         idx1->n = n1;
         memfh_idx_t *idx2 = malloc(sizeof(memfh_idx_t));
         idx2->keylen = idx1->keylen;
-        idx2->tp = 1;
+        idx2->tp = MEMFH_BRANCH;
         idx2->next = idx1->next;
         idx1->next = idx2;
         idx2->n = n2;
@@ -356,13 +370,13 @@ void memfh_idx_insert_parent(memfh_hdr_t *hdr, int k, int d, memfh_idx_t *idx1, 
             ptr1 += (idx1->keylen + PTRIDXSZ);
             ptr2 += (idx1->keylen + PTRIDXSZ);
         }
-        //memfh_idx_show_page(hdr, idx1, idx1->keylen);
-        //memfh_idx_show_page(hdr, idx2, idx1->keylen);
+        //memfh_idx_show_page(hdr, idx1);
+        //memfh_idx_show_page(hdr, idx2);
 
         if (d == 0) {    
             parent = malloc(sizeof(memfh_idx_t));
             parent->keylen = idx1->keylen;
-            parent->tp = 1;
+            parent->tp = MEMFH_BRANCH;
             parent->n = 1;
             ptr2 = idx2->buf;
             memcpy(parent->buf, ptr2, idx1->keylen);
@@ -370,7 +384,7 @@ void memfh_idx_insert_parent(memfh_hdr_t *hdr, int k, int d, memfh_idx_t *idx1, 
             parent->next = idx2;
 
             hdr->idx[k] = parent;
-            //memfh_idx_show_page(hdr, parent, idx1->keylen);
+            //memfh_idx_show_page(hdr, parent);
 
         } else {
             memfh_idx_insert_parent(hdr, k, d-1, idx1, idx2);
@@ -380,7 +394,9 @@ void memfh_idx_insert_parent(memfh_hdr_t *hdr, int k, int d, memfh_idx_t *idx1, 
 
 void memfh_idx_write(memfh_hdr_t *hdr, int k, char *key, char *record) {
 
-    //fprintf(flog, "memfh_idx_write %d [%s]\n", k, key);
+    if (dbg >= 4) {
+        fprintf(flog, "memfh_idx_write %d [%s]\n", k, key);
+    }
     int exists = memfh_idx_search(hdr, k, key);
     if (exists == 0) {
         exit(-1);    
@@ -414,7 +430,7 @@ void memfh_idx_write(memfh_hdr_t *hdr, int k, char *key, char *record) {
         idx->n = n1;
         memfh_idx_t *idx2 = malloc(sizeof(memfh_idx_t));
         idx2->keylen = idx->keylen;
-        idx2->tp = 0;
+        idx2->tp = MEMFH_LEAF;
         idx2->next = NULL;
         idx2->n = n2;
 
@@ -432,7 +448,7 @@ void memfh_idx_write(memfh_hdr_t *hdr, int k, char *key, char *record) {
         if (depth == 0) {    
             memfh_idx_t *parent = malloc(sizeof(memfh_idx_t));
             parent->keylen = idx->keylen;
-            parent->tp = 1;
+            parent->tp = MEMFH_BRANCH;
             parent->n = 1;
             ptr2 = idx2->buf;
             memcpy(parent->buf, ptr2, idx->keylen);
@@ -440,7 +456,7 @@ void memfh_idx_write(memfh_hdr_t *hdr, int k, char *key, char *record) {
             parent->next = idx2;
 
             hdr->idx[k] = parent;
-            //memfh_idx_show_page(hdr, parent, idx->keylen);
+            //memfh_idx_show_page(hdr, parent);
 
         } else {
             memfh_idx_insert_parent(hdr, k, depth-1, idx, idx2);
