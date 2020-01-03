@@ -1,0 +1,14 @@
+CC = gcc -m32 -I/usr/include/postgresql -Wall -Werror -I/u/cobol/include -I/usr/java/jdk1.8.0_144/include -I/usr/java/jdk1.8.0_144/include/linux -DIGNORELOCK -DISAM
+COB = /u/cobol/bin/cob
+OBJS = pqfh.o fhtypes.o utils.o op_write.o command.o cmp_isam.o op_open.o
+
+all: pqfh_isam
+
+clean:
+	rm -f pqfh_isam $(OBJS)
+
+pqfh_isam: $(OBJS)
+	$(COB) $(OBJS) -o pqfh_isam
+
+.c.o: .c
+	$(CC) -c $<
