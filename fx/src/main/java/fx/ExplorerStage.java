@@ -14,6 +14,7 @@ import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeTableColumn;
@@ -22,6 +23,8 @@ import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
+import javafx.scene.text.Text;
+import javafx.scene.layout.FlowPane;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 
@@ -103,7 +106,6 @@ public class ExplorerStage  extends Stage {
 			}
 		});
 		
-		
 		BorderPane main = new BorderPane();
 		main.setCenter(treeView);
 		
@@ -138,10 +140,26 @@ public class ExplorerStage  extends Stage {
 				final FileNode file = userProp.getValue();
 				return file.getName().get().contains(newVal); 
 			});
-		});		
+		});
+		
+		FlowPane msgPanel = new FlowPane();
+		msgPanel.setMinHeight(45);
+		main.setBottom(msgPanel);
+		
+		msgPanel.getStyleClass().add("pnlMensagemComentario");
+
+		Button btnComentario = new Button();
+        btnComentario.setId("btnComentario");
+        btnComentario.getStyleClass().add("imagemComentario");
+        Text txtMensagem = new Text("ENTER ou duplo click para selecionar. ESC para sair.");
+        
+        msgPanel.getChildren().add(btnComentario);
+        msgPanel.getChildren().add(txtMensagem);
+		
 		
 		setTitle("Seleção de Arquivo");
 		Scene scene = new Scene(main, 750, 500);
+		scene.getStylesheets().add(ExplorerStage.class.getResource("linx.css").toExternalForm());
 		setScene(scene);
 		initModality(Modality.WINDOW_MODAL);
 		
