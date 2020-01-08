@@ -15,7 +15,7 @@
 // insert into tabela_api values('sp05a51', 'planoGerencial');
 //
 
-#define VERSAO "v3.5.3 22/12/2019"
+#define VERSAO "v3.5.5 07/01/2020"
 
 int dbg=-1;
 int dbg_upd=-1;
@@ -356,8 +356,10 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
 
 
     if ((op >= OP_OPEN_INPUT) && (op <= OP_OPEN_EXTEND)) {
-        fcd->mode = table_mode;
-        fcd->isam = 0;
+        if (fcd->open_mode == 128) {
+            fcd->mode = table_mode;
+            fcd->isam = 0;
+        }
     }    
     table_mode = 0;
     if (fcd->mode && (strchr("ABWIMF", fcd->mode) != NULL)) {
@@ -1130,4 +1132,8 @@ bool is_weak(char *table) {
 // 3.5.0  - 21/11 - memfh
 // 3.5.1  - 27/11 - setar file status no memfh
 // 3.5.2  - 22/12 - correcoes no memfh
+// 3.5.5  - 07/01 - nao trocar o mode e isam no open se o arquivo nao estiver fechado
+//                  open i-o       seta isam = S
+//                  open input     estava resetando o isam e retornando 41
+//                  close          estava abortando no op_close porque nao estava tratando como isam
  
