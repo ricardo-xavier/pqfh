@@ -12,6 +12,12 @@ import com.jcraft.jsch.Session;
 public class Comunicacao extends Thread {
 
 	private static final int TAMBUF = 8192;
+	private Terminal terminal;
+	private Session sessao;
+
+	public Comunicacao(Terminal terminal) {
+		this.terminal = terminal;
+	}
 
 	@Override
 	public void run() {
@@ -25,8 +31,10 @@ public class Comunicacao extends Thread {
 		int pos = 0;
 
 		try {
+			
+			// conecta
 			JSch jsch = new JSch();
-			Session sessao = jsch.getSession(usuario, servidor, porta);
+			sessao = jsch.getSession(usuario, servidor, porta);
 			Properties config = new Properties();
 			config.setProperty("StrictHostKeyChecking", "no");
 			sessao.setConfig(config);
@@ -34,16 +42,16 @@ public class Comunicacao extends Thread {
 			sessao.connect();
 			ChannelShell canal = (ChannelShell) sessao.openChannel("shell");
 			InputStream entrada = canal.getInputStream();
-			// OutputStream saida = canal.getOutputStream();
 			canal.connect();
-			System.err.println("conectado");
 
+			// loop para ler entrada
 			while (sessao.isConnected()) {
 
 				int n = entrada.read(buf, pos, TAMBUF - pos);
 				if (n < 0) {
 					break;
 				}
+				pos = n;
 
 				while (entrada.available() > 0) {
 					
@@ -54,15 +62,17 @@ public class Comunicacao extends Thread {
 					}
 				}
 
-				String s = new String(buf, 0, pos);
-				System.err.println(s);
-
+				terminal.atualiza(buf, pos);
 			}
 
 		} catch (JSchException | IOException e) {
 			e.printStackTrace();
 		}
 
+	}
+	
+	public void close() {
+		sessao.disconnect();
 	}
 
 }
