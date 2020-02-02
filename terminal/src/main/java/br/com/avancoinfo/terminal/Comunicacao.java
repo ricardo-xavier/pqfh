@@ -1,4 +1,4 @@
-package br.com.linx.avancoinfo.terminal;
+package br.com.avancoinfo.terminal;
 
 import java.io.IOException;
 import java.io.InputStream;

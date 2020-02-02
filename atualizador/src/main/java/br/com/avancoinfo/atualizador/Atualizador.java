@@ -1,93 +1,102 @@
 package br.com.avancoinfo.atualizador;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.File;
+import java.io.FileFilter;
+import java.util.Properties;
+import java.util.Vector;
 
-import org.apache.http.HttpResponse;
-import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
+import com.jcraft.jsch.ChannelSftp;
+import com.jcraft.jsch.ChannelSftp.LsEntry;
+import com.jcraft.jsch.JSch;
+import com.jcraft.jsch.Session;
 
-import br.com.linx.avancoinfo.terminal.TerminalAvanco;
-import javafx.application.Application;
-import javafx.application.Platform;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Alert.AlertType;
-import javafx.scene.control.ButtonType;
-import javafx.stage.Stage;
-
-public class Atualizador extends Application {
-
-	public static TerminalAvanco terminal;
-	
-	public static int getVersaoAtual() throws ClientProtocolException, IOException {
-
-		String url = "http://ricardoxavier.no-ip.org" + "/atualizadorws/versao/terminal";
-
-		CloseableHttpClient httpClient = HttpClients.createDefault();
-
-		HttpGet httpGet = new HttpGet(url);
-		HttpResponse httpResponse = httpClient.execute(httpGet);
-
-		InputStream inputStream = httpResponse.getEntity().getContent();
-		BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
-		String line = "";
-		StringBuilder resultStr = new StringBuilder();
-		while ((line = bufferedReader.readLine()) != null) {
-			resultStr.append(line);
-		}
-		inputStream.close();
-
-		return Integer.parseInt(resultStr.toString());
-
-	}
+public class Atualizador {
 
 	public static void main(String[] args) {
 
-		int versaoInstalada = TerminalAvanco.getVersao();
-
-		try {
-			int versaoAtual = 2;//getVersaoAtual();
-			if (versaoAtual > versaoInstalada) {
-				launch(args);
-				if (terminal != null) {
-					terminal.close();
-				}
-			} else {
-				TerminalAvanco.main(args);
+		if (args.length < 1) {
+			System.out.println("Argumento <produto> nao informado");
+			System.exit(-1);
+			return;
+		}
+		String produto = args[0];
+		
+		String central = System.getenv("CENTRAL_AVANCO");
+		if (central == null) {
+			System.out.println("Variavel CENTRAL_AVANCO nao definida");
+			System.exit(-1);
+			return;			
+		}
+		
+		FileFilter filtro = new FileFilter() {
+			
+			@Override
+			public boolean accept(File pathname) {
+				return pathname.getName().startsWith(produto+"-")
+						&& pathname.getName().endsWith(".jar");
 			}
-		} catch (Exception e) {
-			TerminalAvanco.main(args);
-		}
-
-	}
-
-	@Override
-	public void start(Stage primaryStage) throws Exception {
-
-		Alert alert = new Alert(AlertType.CONFIRMATION);
-		alert.setTitle("Aviso");
-		alert.setHeaderText("Atualização de versão");
-		alert.showAndWait();
-		ButtonType result = alert.getResult();
-		if (result == ButtonType.CANCEL) {
-			Platform.runLater(new Runnable() {
-
-				@Override
-				public void run() {
-					try {
-						terminal = new TerminalAvanco();
-						terminal.start(null);
-					} catch (Exception e) {
-						e.printStackTrace();
-					}
+		};
+		
+		int versaoInstalada = 0;
+		File dir = new File(".");
+		for (File arq : dir.listFiles(filtro)) {
+			try {
+				int v = Integer.parseInt(arq.getName().replace(produto+"-", "").replace(".jar", ""));
+				if (v > versaoInstalada) {
+					versaoInstalada = v;
 				}
-			});
-
+			} catch (Exception e) {
+			}
 		}
+		
+		String usuario = "avanco";
+		String senha = "Bigu";
+		String servidor = central.split(":")[0];
+		int porta = Integer.parseInt(central.split(":")[1]);
+		
+		try {
+			
+			// conecta
+			JSch jsch = new JSch();
+			Session sessao = jsch.getSession(usuario, servidor, porta);
+			Properties config = new Properties();
+			config.setProperty("StrictHostKeyChecking", "no");
+			sessao.setConfig(config);
+			sessao.setPassword(senha);
+			sessao.connect();
+			ChannelSftp canal = (ChannelSftp) sessao.openChannel("sftp");
+			canal.connect();
+			
+			// lista arquivos
+			canal.cd("/u/sist/exec/atualizador");
+			Vector<?> arquivos = canal.ls(".");
+			for (Object arquivo : arquivos) {
+				try {
+					String arq = ((LsEntry) arquivo).getFilename();
+					if (arq.startsWith(produto+"-") && arq.endsWith(".jar")) {
+						int versaoPublicada = Integer.parseInt(arq.replace(produto+"-", "").replace(".jar", ""));
+						if (versaoPublicada > versaoInstalada) {
+							canal.get(arq, arq);
+							versaoInstalada = versaoPublicada;
+							break;
+						}
+					}
+				} catch (Exception e) {
+				}
+			}
+			
+			// desconecta
+			canal.quit();
+			
+		} catch(Exception e) {
+		}
+
+		if (versaoInstalada == 0) {
+			System.exit(-1);
+		}
+		
+		System.out.println(produto + "-" + versaoInstalada + ".jar");
+		System.exit(0);
 
 	}
 

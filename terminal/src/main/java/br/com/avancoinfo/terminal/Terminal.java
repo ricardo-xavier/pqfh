@@ -1,4 +1,4 @@
-package br.com.linx.avancoinfo.terminal;
+package br.com.avancoinfo.terminal;
 
 import com.sun.javafx.geom.Rectangle;
 import com.sun.javafx.tk.FontMetrics;
@@ -55,7 +55,7 @@ public class Terminal extends Stage {
 		tela.getChildren().add(canvas);
 		
 		// cria a cena
-		setTitle("Terminal Avanço");
+		setTitle("Terminal Avanço v1");
 		Scene scene = new Scene(tela);
 		setScene(scene);
 		initModality(Modality.WINDOW_MODAL);
