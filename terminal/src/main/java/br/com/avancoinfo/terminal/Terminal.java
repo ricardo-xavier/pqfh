@@ -9,6 +9,7 @@ import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.layout.Pane;
+import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
@@ -24,6 +25,7 @@ public class Terminal extends Stage {
 	private GraphicsContext contexto;
 	private int larCar;
 	private int altLin;
+	private Font fonte;
 	
     private char[][] dados;
 
@@ -34,7 +36,7 @@ public class Terminal extends Stage {
 	
 	public Terminal() {
 		
-		Font fonte = new Font(FONTE, TAMFONTE);
+		fonte = new Font(FONTE, TAMFONTE);
 
 		// calcula métricas
 		FontMetrics fm = Toolkit.getToolkit().getFontLoader().getFontMetrics(fonte);
@@ -55,7 +57,7 @@ public class Terminal extends Stage {
 		tela.getChildren().add(canvas);
 		
 		// cria a cena
-		setTitle("Terminal Avanço v1");
+		setTitle("Terminal Avanço v2");
 		Scene scene = new Scene(tela);
 		setScene(scene);
 		initModality(Modality.WINDOW_MODAL);
@@ -138,16 +140,23 @@ public class Terminal extends Stage {
 					}
 				}
 				
+				contexto.setFill(Color.WHITE);
 				int x = r.x * larCar;
 				int y = r.y * altLin;
 				int lar = r.width * larCar;
 				int alt = r.height * altLin; 
 				contexto.fillRect(x, y, lar, alt);
+				contexto.setFill(Color.BLACK);
 				
-				contexto.strokeText("X", MARGEM + 0*larCar, MARGEM + altLin);
-				contexto.strokeText("X", MARGEM + 0*larCar, MARGEM + LINHAS*altLin);
-				contexto.strokeText("X", MARGEM + (COLUNAS-1)*larCar, MARGEM + altLin);
-				contexto.strokeText("X", MARGEM + (COLUNAS-1)*larCar, MARGEM + LINHAS*altLin);		
+				for (int i=r.y; i<r.y+r.height; i++) {
+					if (i >= 25) {
+						break;
+					}
+					String s = new String(dados[i], r.x, r.x+r.width);
+					//System.out.println(i + " " + s);
+					contexto.strokeText(s, MARGEM + r.x*larCar, MARGEM + i * altLin + altLin);
+				}
+				
 			}
 		});
 	}

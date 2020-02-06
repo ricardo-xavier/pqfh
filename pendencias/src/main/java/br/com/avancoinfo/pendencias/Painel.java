@@ -18,6 +18,7 @@ import com.jfoenix.controls.JFXComboBox;
 import com.jfoenix.controls.JFXDatePicker;
 import com.jfoenix.controls.JFXRadioButton;
 import com.jfoenix.controls.JFXTextField;
+import com.jfoenix.controls.JFXToggleButton;
 import com.jfoenix.controls.JFXTreeTableColumn;
 import com.jfoenix.controls.JFXTreeTableView;
 import com.jfoenix.controls.RecursiveTreeItem;
@@ -28,6 +29,7 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
+import javafx.event.Event;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -54,6 +56,7 @@ public class Painel extends Stage {
 	private JFXTreeTableView<Pendencia> treeView;
 	private Connection conn;
 	private ObservableList<Pendencia> pendencias;
+	private ThreadRefresh threadRefresh;
 	
 	private JFXRadioButton rbProcessadasSim;
 	private JFXRadioButton rbProcessadasNao;
@@ -78,7 +81,10 @@ public class Painel extends Stage {
 	private List<String> cnpjs = new ArrayList<String>();			
 	private List<String> nomes = new ArrayList<String>();
 	
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public Painel(Connection conn) {
+		
+		Painel contexto = this;
 		
 		ipAtual = BancoDados.getIp();
 		
@@ -103,7 +109,7 @@ public class Painel extends Stage {
 		}
 
 		this.conn = conn;
-
+		
 		List<JFXTreeTableColumn<Pendencia, ?>> colunas = criaColunas();
 
 		List<Pendencia> pendenciasBd = PendenciaDao.list(conn, 
@@ -394,6 +400,31 @@ public class Painel extends Stage {
 						|| pendencia.getCnpj().get().contains(newVal);						
 			});
 		});		
+
+		JFXTextField filterSerie = new JFXTextField();
+		filterSerie.setPromptText("Selecione uma série");
+		pnlFiltro.add(filterSerie, 6, 1);
+		
+		filterSerie.textProperty().addListener((o, oldVal, newVal) -> {
+			treeView.setPredicate(userProp -> {
+				final Pendencia pendencia = userProp.getValue();
+				return pendencia.getSerie().get().contains(newVal);
+			});
+		});		
+		
+		filterField.textProperty().addListener((o, oldVal, newVal) -> {
+			treeView.setPredicate(userProp -> {
+				final Pendencia pendencia = userProp.getValue();
+				return pendencia.getData().get().contains(newVal) 
+						|| pendencia.getCupom().get().contains(newVal)
+						|| pendencia.getNota().get().contains(newVal) 
+						|| pendencia.getSerie().get().contains(newVal)
+						|| pendencia.getTipo().get().contains(newVal)
+						|| pendencia.getSituacao().get().contains(newVal)
+						|| pendencia.getDescricao().get().contains(newVal)
+						|| pendencia.getCnpj().get().contains(newVal);						
+			});
+		});		
 		
 		ObservableList<String> empresas = FXCollections.observableList(nomes);
 		cbxEmpresas = new JFXComboBox<String>(empresas );
@@ -488,6 +519,27 @@ public class Painel extends Stage {
         	atualizaStatus();
         });
 		pnlFiltro.add(cbxEmpresas, 6, 2);
+		
+		threadRefresh = new ThreadRefresh(contexto);
+
+		JFXToggleButton chkAtualizar = new JFXToggleButton();
+		chkAtualizar.setText("Atualizar a cada 30 seg");
+		pnlFiltro.add(chkAtualizar, 6, 3);
+		chkAtualizar.setOnAction(new EventHandler() {
+			
+			@SuppressWarnings("deprecation")
+			@Override
+			public void handle(Event ev) {
+				if (chkAtualizar.isSelected()) {
+					threadRefresh.start();
+				} else {
+					if (threadRefresh.isAlive()) {
+						threadRefresh.stop();
+					}
+				}
+				
+			}
+		});
 		
 		dtInicial = new JFXDatePicker();
 		dtInicial.setMaxWidth(140);
@@ -767,7 +819,8 @@ public class Painel extends Stage {
 
 	}
 
-	private void atualiza() {
+	public void atualiza() {
+		System.err.println("atualiza");
 		int idx = cbxEmpresas.getSelectionModel().getSelectedIndex();
 		List<Pendencia> pendenciasBd = PendenciaDao.list(conn, 
 				rbProcessadasTodas.isSelected(), rbProcessadasSim.isSelected(), rbProcessadasNao.isSelected(),

@@ -46,6 +46,7 @@ public class Atualizador {
 					versaoInstalada = v;
 				}
 			} catch (Exception e) {
+				e.printStackTrace();
 			}
 		}
 		
@@ -82,6 +83,7 @@ public class Atualizador {
 						}
 					}
 				} catch (Exception e) {
+					e.printStackTrace();
 				}
 			}
 			
@@ -89,9 +91,11 @@ public class Atualizador {
 			canal.quit();
 			
 		} catch(Exception e) {
+			e.printStackTrace();
 		}
 
 		if (versaoInstalada == 0) {
+			System.err.println("versaoInstalada=0");
 			System.exit(-1);
 		}
 		
