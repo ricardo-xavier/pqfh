@@ -1,6 +1,7 @@
 package br.com.avancoinfo.terminal;
 
 import java.io.FileNotFoundException;
+import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.Date;
 import java.util.concurrent.BlockingQueue;
@@ -22,7 +23,7 @@ import javafx.stage.Stage;
 
 public class Terminal extends Stage {
 	
-	private static final int VERSAO = 3;
+	private static final int VERSAO = 4;
 	private static final int LINHAS = 25;
 	private static final int COLUNAS = 80;
 	private static final int MARGEM = 5;
@@ -50,7 +51,10 @@ public class Terminal extends Stage {
     private PrintStream log;
     
     private Terminal terminal;
-	
+    private Teclado teclado;
+    
+    private boolean cursorReverso;
+    
 	public Terminal() {
 		
 		terminal = this;
@@ -102,7 +106,13 @@ public class Terminal extends Stage {
         }
         r.setBounds(-1, -1, 0, 0);
 		
-	}
+        // thread para atualização do cursor
+        new Cursor(this).start();
+        
+        teclado = new Teclado(log);
+        canvas.setFocusTraversable(true);
+        canvas.setOnKeyPressed(teclado);
+    }
 	
 	void atualiza() {
 
@@ -112,20 +122,21 @@ public class Terminal extends Stage {
 			public void run() {
 				
 				Buffer buf = null;
+				int tam = 0;
+				byte[] comandos = null;
+				
 				synchronized (fila) {
+
 					buf = fila.poll();
-				}
 				
-				int tam = buf.getTam();
-				byte[] comandos = buf.getDados();
+					tam = buf.getTam();
+					comandos = buf.getDados();
 				
-				//System.err.println(tam);
-				/*
-				if (terminal.getLog() != null) {
-					terminal.getLog().printf("%s %d %s%n", Thread.currentThread().getName(), tam, new String(comandos, 0, tam));
-					terminal.getLog().flush();
+					if (terminal.getLog() != null) {
+						terminal.getLog().printf("%s -FILA %d %d %s%n", Thread.currentThread().getName(), fila.size(), tam, new String(comandos, 0, tam));
+						terminal.getLog().flush();
+					}
 				}
-				*/
 				
 				for (int i=0; i<tam; i++) {
 					
@@ -215,14 +226,15 @@ public class Terminal extends Stage {
 	}
 	
 	public void mostra() {
+
 		contexto.setFill(Color.WHITE);
 		int x = r.x * larCar;
 		int y = r.y * altLin;
 		int lar = r.width * larCar;
-		int alt = r.height * altLin; 
+		int alt = r.height * altLin + altLin; 
 		contexto.fillRect(x, y, lar, alt);
-		contexto.setFill(Color.BLACK);
 		
+		contexto.setFill(Color.BLACK);
 		for (int i=r.y; i<r.y+r.height; i++) {
 			if (i >= 25) {
 				break;
@@ -231,6 +243,7 @@ public class Terminal extends Stage {
 			//System.out.println(i + " " + s);
 			contexto.strokeText(s, MARGEM + r.x*larCar, MARGEM + i * altLin + altLin);
 		}		
+		
 	}
 	
 	private void gravaTela(int n) {
@@ -242,6 +255,33 @@ public class Terminal extends Stage {
 		}
 		log.println();
 		log.flush();
+	}
+	
+	public void mostraCursor() {
+		
+		if (!fila.isEmpty()) {
+			return;
+			
+		}
+		
+		Platform.runLater(new Runnable() {
+			
+			@Override
+			public void run() {
+				if (cursorReverso) {
+					contexto.setFill(Color.BLACK);
+				} else {
+					contexto.setFill(Color.WHITE);
+				}
+				cursorReverso = !cursorReverso;
+				int x = col * larCar + larCar / 2;
+				int y = lin * altLin + altLin / 2;
+				int lar = larCar;
+				int alt = altLin; 
+				contexto.fillRect(x, y, lar, alt);				
+			}
+		});
+		
 	}
 
 	public PrintStream getLog() {
@@ -294,6 +334,10 @@ public class Terminal extends Stage {
 
 	public void setFila(BlockingQueue<Buffer> fila) {
 		this.fila = fila;
+	}
+
+	public void setSaida(OutputStream saida) {
+		teclado.setSaida(saida);
 	}
 
 }

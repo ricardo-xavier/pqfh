@@ -1,5 +1,7 @@
 package br.com.avancoinfo.terminal;
 
+import java.util.Arrays;
+
 public class Buffer {
 	
 	private int tam;
@@ -8,7 +10,7 @@ public class Buffer {
 	public Buffer(int tam, byte[] dados) {
 		super();
 		this.tam = tam;
-		this.dados = dados;
+		this.dados = Arrays.copyOf(dados, tam);
 	}
 	public int getTam() {
 		return tam;

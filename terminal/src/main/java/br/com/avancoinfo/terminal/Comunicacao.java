@@ -14,6 +14,8 @@ public class Comunicacao extends Thread {
 	private static final int TAMBUF = 8192;
 	private Terminal terminal;
 	private Session sessao;
+	private String servidor;
+	private int porta;
 
 	public Comunicacao(Terminal terminal) {
 		this.terminal = terminal;
@@ -24,8 +26,10 @@ public class Comunicacao extends Thread {
 
 		String usuario = "avanco";
 		String senha = "Bigu";
-		String servidor = "avancoinfo.ddns.com.br";
-		int porta = 65531;
+		if (servidor == null) {
+			servidor = "avancoinfo.ddns.com.br";
+			porta = 65531;
+		}
 
 		byte[] buf = new byte[TAMBUF];
 		int pos = 0;
@@ -48,8 +52,9 @@ public class Comunicacao extends Thread {
 			sessao.connect();
 			ChannelShell canal = (ChannelShell) sessao.openChannel("shell");
 			InputStream entrada = canal.getInputStream();
+			terminal.setSaida(canal.getOutputStream());
 			canal.connect();
-
+			
 			// loop para ler entrada
 			while (sessao.isConnected()) {
 
@@ -76,12 +81,13 @@ public class Comunicacao extends Thread {
 					}
 				}
 
-				if (terminal.getLog() != null) {
-					terminal.getLog().printf("%s %d %s%n", Thread.currentThread().getName(), pos, new String(buf, 0, pos));
-					terminal.getLog().flush();
-				}
-
 				synchronized (terminal.getFila()) {
+
+					if (terminal.getLog() != null) {
+						terminal.getLog().printf("%s +FILA %d %s%n", Thread.currentThread().getName(), terminal.getFila().size(), pos, new String(buf, 0, pos));
+						terminal.getLog().flush();
+					}
+					
 					terminal.getFila().add(new Buffer(pos, buf));
 				}
 				terminal.atualiza();
@@ -96,6 +102,22 @@ public class Comunicacao extends Thread {
 	
 	public void close() {
 		sessao.disconnect();
+	}
+
+	public String getServidor() {
+		return servidor;
+	}
+
+	public void setServidor(String servidor) {
+		this.servidor = servidor;
+	}
+
+	public int getPorta() {
+		return porta;
+	}
+
+	public void setPorta(int porta) {
+		this.porta = porta;
 	}
 
 }
