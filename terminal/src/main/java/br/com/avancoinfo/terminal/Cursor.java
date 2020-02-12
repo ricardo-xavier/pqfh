@@ -12,7 +12,7 @@ public class Cursor extends Thread {
 	@Override
 	public void run() {
 		
-		while (true) {
+		while (terminal.isConectado()) {
 			
 			terminal.mostraCursor();
 			

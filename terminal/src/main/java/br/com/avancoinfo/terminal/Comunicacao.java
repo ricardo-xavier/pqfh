@@ -54,6 +54,7 @@ public class Comunicacao extends Thread {
 			InputStream entrada = canal.getInputStream();
 			terminal.setSaida(canal.getOutputStream());
 			canal.connect();
+			terminal.setConectado(true);
 			
 			// loop para ler entrada
 			while (sessao.isConnected()) {

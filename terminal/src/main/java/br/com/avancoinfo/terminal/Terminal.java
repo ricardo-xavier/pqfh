@@ -23,7 +23,7 @@ import javafx.stage.Stage;
 
 public class Terminal extends Stage {
 	
-	private static final int VERSAO = 4;
+	private static final int VERSAO = 5;
 	private static final int LINHAS = 25;
 	private static final int COLUNAS = 80;
 	private static final int MARGEM = 5;
@@ -52,8 +52,14 @@ public class Terminal extends Stage {
     
     private Terminal terminal;
     private Teclado teclado;
+    private Escape escape;
     
     private boolean cursorReverso;
+    private boolean conectado;
+    
+	private int atributo = 0;
+	private char corFrente = ' ';
+	private char corFundo = ' ';
     
 	public Terminal() {
 		
@@ -105,9 +111,8 @@ public class Terminal extends Stage {
         	}
         }
         r.setBounds(-1, -1, 0, 0);
-		
-        // thread para atualização do cursor
-        new Cursor(this).start();
+
+        escape = new Escape();
         
         teclado = new Teclado(log);
         canvas.setFocusTraversable(true);
@@ -206,7 +211,7 @@ public class Terminal extends Stage {
 					case ESC:
 						seq[iseq++] = c;
 						if (Character.isAlphabetic(c)) {
-							Escape.processaSeq(terminal, seq, iseq);
+							escape.processaSeq(terminal, seq, iseq);
 							iseq = 0;
 							estado = ESTADO_INICIAL;
 						}
@@ -338,6 +343,43 @@ public class Terminal extends Stage {
 
 	public void setSaida(OutputStream saida) {
 		teclado.setSaida(saida);
+	}
+
+	public boolean isConectado() {
+		return conectado;
+	}
+
+	public void setConectado(boolean conectado) {
+		this.conectado = conectado;
+		if (conectado) {
+			// thread para atualização do cursor
+			new Cursor(this).start();
+		}
+
+	}
+
+	public int getAtributo() {
+		return atributo;
+	}
+
+	public void setAtributo(int atributo) {
+		this.atributo = atributo;
+	}
+
+	public char getCorFrente() {
+		return corFrente;
+	}
+
+	public void setCorFrente(char corFrente) {
+		this.corFrente = corFrente;
+	}
+
+	public char getCorFundo() {
+		return corFundo;
+	}
+
+	public void setCorFundo(char corFundo) {
+		this.corFundo = corFundo;
 	}
 
 }
