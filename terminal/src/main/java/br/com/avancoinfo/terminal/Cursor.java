@@ -14,7 +14,7 @@ public class Cursor extends Thread {
 		
 		while (terminal.isConectado()) {
 			
-			terminal.mostraCursor();
+			terminal.mostraCursor(false);
 			
 			try {
 				Thread.sleep(1000);

@@ -61,9 +61,8 @@ public class Escape {
 	}
 
 	private void setaAtributos(String seq) {
-		System.err.println("ATRIBUTOS " + seq);
 
-		String[] atrs = seq.replace("m", "").split(";");
+		String[] atrs = seq.replace("[", "").replace("m", "").split(";");
 		int atributo = terminal.getAtributo();
 
 		for (String atr : atrs) {

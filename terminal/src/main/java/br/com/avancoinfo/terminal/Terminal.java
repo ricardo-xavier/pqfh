@@ -12,6 +12,7 @@ import com.sun.javafx.tk.FontMetrics;
 import com.sun.javafx.tk.Toolkit;
 
 import javafx.application.Platform;
+import javafx.geometry.VPos;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
@@ -91,6 +92,7 @@ public class Terminal extends Stage {
 		
 		// seta a fonte
 		contexto = canvas.getGraphicsContext2D();
+		contexto.setTextBaseline(VPos.TOP);  
 		contexto.setFont(fonte);
 		
 		// cria um painel com o canvas
@@ -143,6 +145,13 @@ public class Terminal extends Stage {
 					}
 				}
 				
+				r.x = col;
+				r.y = lin;
+				r.width = 1;
+				r.height = 1;
+
+				mostraCursor(true);
+				
 				for (int i=0; i<tam; i++) {
 					
 					byte c = comandos[i];
@@ -180,6 +189,19 @@ public class Terminal extends Stage {
 							}
 						
 							break;
+							
+						case '\b':
+						
+							if (col > 0) {
+					
+								dados[lin][--col] = ' ';
+								if (col < r.x) {
+									r.x--;
+									r.width++;
+								}
+							}
+						
+							break;
 						
 						case ESC:
 							estado = ESC;
@@ -187,14 +209,7 @@ public class Terminal extends Stage {
 					
 						default:
 						
-							if (col < COLUNAS && lin < LINHAS) {
-							
-								if (r.x == -1) {
-									r.x = col;
-									r.y = lin;
-									r.width = 1;
-									r.height = 1;
-								}
+							if ((col < (COLUNAS - 1)) && (lin < LINHAS)) {
 							
 								if (col >= (r.x + r.width)) {
 									r.width = col - r.x + 1;
@@ -233,10 +248,10 @@ public class Terminal extends Stage {
 	public void mostra() {
 
 		contexto.setFill(Color.WHITE);
-		int x = r.x * larCar;
-		int y = r.y * altLin;
+		int x = MARGEM + r.x * larCar;
+		int y = MARGEM + r.y * altLin;
 		int lar = r.width * larCar;
-		int alt = r.height * altLin + altLin; 
+		int alt = r.height * altLin; 
 		contexto.fillRect(x, y, lar, alt);
 		
 		contexto.setFill(Color.BLACK);
@@ -246,7 +261,7 @@ public class Terminal extends Stage {
 			}
 			String s = new String(dados[i], r.x, r.x+r.width);
 			//System.out.println(i + " " + s);
-			contexto.strokeText(s, MARGEM + r.x*larCar, MARGEM + i * altLin + altLin);
+			contexto.strokeText(s, MARGEM + r.x*larCar, MARGEM + i*altLin);
 		}		
 		
 	}
@@ -262,11 +277,12 @@ public class Terminal extends Stage {
 		log.flush();
 	}
 	
-	public void mostraCursor() {
-		
-		if (!fila.isEmpty()) {
+	public void mostraCursor(boolean remove) {
+		if (!fila.isEmpty() && !remove) {
 			return;
-			
+		}
+		if (remove) {
+			cursorReverso = true;
 		}
 		
 		Platform.runLater(new Runnable() {
@@ -279,11 +295,9 @@ public class Terminal extends Stage {
 					contexto.setFill(Color.WHITE);
 				}
 				cursorReverso = !cursorReverso;
-				int x = col * larCar + larCar / 2;
-				int y = lin * altLin + altLin / 2;
-				int lar = larCar;
-				int alt = altLin; 
-				contexto.fillRect(x, y, lar, alt);				
+				int x = MARGEM + col * larCar;
+				int y = MARGEM + lin * altLin;
+				contexto.fillRect(x, y, larCar, altLin);				
 			}
 		});
 		
