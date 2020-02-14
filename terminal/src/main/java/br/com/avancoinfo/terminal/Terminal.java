@@ -29,7 +29,7 @@ import javafx.stage.WindowEvent;
 
 public class Terminal extends Stage {
 	
-	private static final int VERSAO = 5;
+	private static final int VERSAO = 6;
 	private static final int LINHAS = 25;
 	private static final int COLUNAS = 80;
 	private static final int MARGEM = 5;
@@ -67,7 +67,7 @@ public class Terminal extends Stage {
     private boolean conectado;
     
 	private int atributo = 0;
-	private char corFrente = 'B';
+	private char corFrente = 'b';
 	private char corFundo = 'W';
 	
 	private StatusBar statusBar;
@@ -262,7 +262,7 @@ public class Terminal extends Stage {
 				}
 				
 				if (log != null) {
-					gravaTela(tam);
+					Debug.gravaTela(terminal, tam);
 				}
 				
 				mostra();
@@ -284,9 +284,10 @@ public class Terminal extends Stage {
 			if (i >= 25) {
 				break;
 			}
-			//System.err.printf("%d %d %d %d%n", i, r.x, r.width, dados[i].length);
-			String s = new String(dados[i], r.x, r.width);
-			contexto.strokeText(s, MARGEM + r.x*larCar, MARGEM + i*altLin);
+			for (int j=r.x; j<r.x+r.width; j++) {
+				String s = String.valueOf(dados[i][j]);
+				contexto.strokeText(s, MARGEM + j*larCar, MARGEM + i*altLin);
+			}
 		}		
 		
 	}
@@ -303,17 +304,6 @@ public class Terminal extends Stage {
 		case 'C': return Color.CYAN;
 		}
 		return Color.WHITE;
-	}
-
-	private void gravaTela(int n) {
-		log.println();
-		log.printf("%s %d,%d%n", Thread.currentThread().getName(), lin, col);
-		log.println(n + " " + r);
-		for (int y=0; y<LINHAS; y++) {
-			log.printf("%02d %s%n", y+1, new String(dados[y], 0, COLUNAS));
-		}
-		log.println();
-		log.flush();
 	}
 	
 	public void mostraCursor(boolean remove) {
