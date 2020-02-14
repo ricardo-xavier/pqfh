@@ -7,20 +7,25 @@ import java.util.Date;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import org.controlsfx.control.StatusBar;
+
 import com.sun.javafx.geom.Rectangle;
 import com.sun.javafx.tk.FontMetrics;
 import com.sun.javafx.tk.Toolkit;
 
 import javafx.application.Platform;
+import javafx.event.EventHandler;
+import javafx.geometry.Insets;
 import javafx.geometry.VPos;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.layout.Pane;
+import javafx.scene.layout.BorderPane;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import javafx.stage.WindowEvent;
 
 public class Terminal extends Stage {
 	
@@ -39,6 +44,9 @@ public class Terminal extends Stage {
 	private Font fonte;
 	
     private char[][] dados;
+    private int[][] atributos;
+    private char[][] frente;
+    private char[][] fundo;
     private BlockingQueue<Buffer> fila;
 
     private int estado = ESTADO_INICIAL;
@@ -59,8 +67,10 @@ public class Terminal extends Stage {
     private boolean conectado;
     
 	private int atributo = 0;
-	private char corFrente = ' ';
-	private char corFundo = ' ';
+	private char corFrente = 'B';
+	private char corFundo = 'W';
+	
+	private StatusBar statusBar;
     
 	public Terminal() {
 		
@@ -96,8 +106,16 @@ public class Terminal extends Stage {
 		contexto.setFont(fonte);
 		
 		// cria um painel com o canvas
-		Pane tela = new Pane();
-		tela.getChildren().add(canvas);
+		BorderPane tela = new BorderPane();
+		tela.setPadding(new Insets(0));
+		tela.setCenter(canvas);
+	
+		// barra de status
+		statusBar = new StatusBar();
+		statusBar.setText(null);
+		statusBar.setId("statusbar");
+		statusBar.setProgress(0);
+		tela.setBottom(statusBar);
 		
 		// cria a cena
 		setTitle("Terminal Avanço v" + VERSAO);
@@ -107,18 +125,25 @@ public class Terminal extends Stage {
 		
 		// inicializa o terminal
         dados = new char[LINHAS][COLUNAS];
-        for (int y=0; y<LINHAS; y++) {
-        	for (int x=0;x<COLUNAS; x++) {
-        		dados[y][x] = ' ';
-        	}
-        }
+        atributos = new int[LINHAS][COLUNAS];
+        frente = new char[LINHAS][COLUNAS];
+        fundo = new char[LINHAS][COLUNAS];
         r.setBounds(-1, -1, 0, 0);
 
-        escape = new Escape();
+        escape = new Escape(terminal);
+        escape.clear();
         
         teclado = new Teclado(log);
         canvas.setFocusTraversable(true);
         canvas.setOnKeyPressed(teclado);
+        
+        setOnCloseRequest(new EventHandler<WindowEvent>() {
+			
+			@Override
+			public void handle(WindowEvent event) {
+				System.err.println("close");
+			}
+		});
     }
 	
 	void atualiza() {
@@ -226,7 +251,7 @@ public class Terminal extends Stage {
 					case ESC:
 						seq[iseq++] = c;
 						if (Character.isAlphabetic(c)) {
-							escape.processaSeq(terminal, seq, iseq);
+							escape.processaSeq(seq, iseq);
 							iseq = 0;
 							estado = ESTADO_INICIAL;
 						}
@@ -247,25 +272,39 @@ public class Terminal extends Stage {
 	
 	public void mostra() {
 
-		contexto.setFill(Color.WHITE);
+		contexto.setFill(converteCor(corFundo));
 		int x = MARGEM + r.x * larCar;
 		int y = MARGEM + r.y * altLin;
 		int lar = r.width * larCar;
 		int alt = r.height * altLin; 
 		contexto.fillRect(x, y, lar, alt);
 		
-		contexto.setFill(Color.BLACK);
+		contexto.setStroke(converteCor(corFrente));
 		for (int i=r.y; i<r.y+r.height; i++) {
 			if (i >= 25) {
 				break;
 			}
-			String s = new String(dados[i], r.x, r.x+r.width);
-			//System.out.println(i + " " + s);
+			//System.err.printf("%d %d %d %d%n", i, r.x, r.width, dados[i].length);
+			String s = new String(dados[i], r.x, r.width);
 			contexto.strokeText(s, MARGEM + r.x*larCar, MARGEM + i*altLin);
 		}		
 		
 	}
 	
+	private Color converteCor(char cor) {
+		switch (cor) { 
+		case 'W': return Color.WHITE;
+		case 'b': return Color.BLACK;
+		case 'R': return Color.RED;
+		case 'G': return Color.GREEN;
+		case 'Y': return Color.YELLOW;
+		case 'B': return Color.BLUE;
+		case 'M': return Color.MAGENTA;
+		case 'C': return Color.CYAN;
+		}
+		return Color.WHITE;
+	}
+
 	private void gravaTela(int n) {
 		log.println();
 		log.printf("%s %d,%d%n", Thread.currentThread().getName(), lin, col);
@@ -290,19 +329,29 @@ public class Terminal extends Stage {
 			@Override
 			public void run() {
 				if (cursorReverso) {
-					contexto.setFill(Color.BLACK);
+					contexto.setFill(converteCor(corFrente));
 				} else {
-					contexto.setFill(Color.WHITE);
+					contexto.setFill(converteCor(corFundo));
 				}
-				cursorReverso = !cursorReverso;
 				int x = MARGEM + col * larCar;
 				int y = MARGEM + lin * altLin;
-				contexto.fillRect(x, y, larCar, altLin);				
+				contexto.fillRect(x, y, larCar, altLin);
+				if (dados[lin][col] != ' ') {
+					if (cursorReverso) {
+						contexto.setStroke(converteCor(corFundo));
+					} else {
+						contexto.setStroke(converteCor(corFrente));
+					}					
+					String s = String.valueOf(dados[lin][col]);
+					contexto.strokeText(s, x, y);
+				}
+				cursorReverso = !cursorReverso;
+				
 			}
 		});
 		
 	}
-
+	
 	public PrintStream getLog() {
 		return log;
 	}
@@ -363,11 +412,11 @@ public class Terminal extends Stage {
 		return conectado;
 	}
 
-	public void setConectado(boolean conectado) {
+	public void setConectado(boolean conectado, String servidor, int porta, String usuario) {
 		this.conectado = conectado;
 		if (conectado) {
-			// thread para atualização do cursor
 			new Cursor(this).start();
+			Platform.runLater(() -> statusBar.setText("Conectado a: " + servidor + ":" + porta + "  Usuário: " + usuario));
 		}
 
 	}
@@ -394,6 +443,34 @@ public class Terminal extends Stage {
 
 	public void setCorFundo(char corFundo) {
 		this.corFundo = corFundo;
+	}
+
+	public StatusBar getStatusBar() {
+		return statusBar;
+	}
+
+	public int[][] getAtributos() {
+		return atributos;
+	}
+
+	public void setAtributos(int[][] atributos) {
+		this.atributos = atributos;
+	}
+
+	public char[][] getFrente() {
+		return frente;
+	}
+
+	public void setFrente(char[][] frente) {
+		this.frente = frente;
+	}
+
+	public char[][] getFundo() {
+		return fundo;
+	}
+
+	public void setFundo(char[][] fundo) {
+		this.fundo = fundo;
 	}
 
 }

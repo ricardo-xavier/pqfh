@@ -2,36 +2,66 @@ package br.com.avancoinfo.terminal;
 
 public class Escape {
 
-	private static final char[] BRANCOS = "                                                                                                                                                                "
-			.toCharArray();
-	
-    private static final int A_REVERSE = 0x01;
-    private static final int A_ACS = 0x02;
-    private static final int A_BOLD = 0x04;
-    private static final int A_UNDERLINE = 0x08;
-    private static final int A_BLINK = 0x10;
-    private static final int A_INVISIBLE = 0x20;
-	
+	private static final int A_REVERSE = 0x01;
+	private static final int A_ACS = 0x02;
+	private static final int A_BOLD = 0x04;
+	private static final int A_UNDERLINE = 0x08;
+	private static final int A_BLINK = 0x10;
+	private static final int A_INVISIBLE = 0x20;
+
 	private Terminal terminal;
-
-	public void processaSeq(Terminal terminal, byte[] seq, int iseq) {
-
+	
+	public Escape(Terminal terminal) {
 		this.terminal = terminal;
+	}
+
+	public void processaSeq(byte[] seq, int iseq) {
+
 		String cmd = new String(seq, 0, iseq);
 
 		if (terminal.getLog() != null) {
 			terminal.getLog().println("ESCAPE " + cmd);
 			terminal.getLog().flush();
 		}
+		
+		String prms = "";
+		System.err.println(iseq);
+		if (seq[0] == '[') {
+			prms = new String(seq, 1, iseq-2);
+		} else {
+			prms = new String(seq, 0, iseq-1);
+		}
+		System.err.println(prms);
 
 		switch (seq[iseq - 1]) {
+		
+        case 'A':
+            cursorUp(prms);
+            break;
+
+        case 'B':
+            cursorDown(prms);
+            break;
+
+        case 'C':
+            cursorForward(prms);
+            break;
+
+        case 'D':
+            cursorBackward(prms);
+            break;
+		
 
 		case 'H':
-			home();
+			home(prms);
 			break;
 
 		case 'J':
 			clear();
+			break;
+
+		case 'K':
+			el();
 			break;
 
 		case 'm':
@@ -47,17 +77,79 @@ public class Escape {
 		}
 	}
 
-	private void clear() {
+	private void cursorUp(String prms) {
+        int n = prms.equals("") ? 1 : Integer.parseInt(prms);
+        terminal.setLin(terminal.getLin() - n);		
+	}
+
+	private void cursorDown(String prms) {
+        int n = prms.equals("") ? 1 : Integer.parseInt(prms);
+        terminal.setLin(terminal.getLin() + n);		
+	}
+
+	private void cursorForward(String prms) {
+        int n = prms.equals("") ? 1 : Integer.parseInt(prms);
+        terminal.setCol(terminal.getCol() + n);				
+	}
+
+	private void cursorBackward(String prms) {
+        int n = prms.equals("") ? 1 : Integer.parseInt(prms);
+        int col = terminal.getCol();
+        if (col > n) {
+                col -= n;
+        } else {
+                col = 0;
+        }
+        terminal.setCol(col);
+	}
+
+	public void clear() {
+		char[][] dados = terminal.getDados();
+		int[][] atributos = terminal.getAtributos();
+		char[][] frente = terminal.getFrente();
+		char[][] fundo = terminal.getFundo();
 		for (int i = 0; i < Terminal.getLinhas(); i++) {
-			System.arraycopy(BRANCOS, 0, terminal.getDados()[i], 0, Terminal.getColunas());
+			for (int j = 0; j < Terminal.getColunas(); j++) {
+				dados[i][j] = ' ';
+				atributos[i][j] = terminal.getAtributo();
+				frente[i][j] = terminal.getCorFrente();
+				fundo[i][j] = terminal.getCorFundo();
+			}
 		}
 		terminal.getR().setBounds(0, 0, Terminal.getColunas(), Terminal.getLinhas());
 		terminal.mostra();
 	}
 
-	private void home() {
-		terminal.setLin(0);
-		terminal.setCol(0);
+	private void home(String prms) {
+		System.err.println("home " + prms);
+        if (prms.contains(";")) {
+            String[] coordenadas = prms.split(";");
+            terminal.setLin(Integer.parseInt(coordenadas[0]) - 1);
+            terminal.setCol(Integer.parseInt(coordenadas[1]) - 1);
+        } else {
+        	terminal.setLin(0);
+        	terminal.setCol(0);
+        }
+	}
+
+	private void el() {
+		char[][] dados = terminal.getDados();
+		int[][] atributos = terminal.getAtributos();
+		char[][] frente = terminal.getFrente();
+		char[][] fundo = terminal.getFundo();
+		for (int i = terminal.getLin(); i < (Terminal.getLinhas() - 1); i++) {
+			System.arraycopy(dados[i], 0, dados[i + 1], 0, Terminal.getColunas());
+			System.arraycopy(atributos[i], 0, atributos[i + 1], 0, Terminal.getColunas());
+			System.arraycopy(frente[i], 0, frente[i + 1], 0, Terminal.getColunas());
+			System.arraycopy(fundo[i], 0, fundo[i + 1], 0, Terminal.getColunas());
+		}
+		int ultimaLinha = Terminal.getLinhas() - 1;
+		for (int j = 0; j < Terminal.getColunas(); j++) {
+			dados[ultimaLinha][j] = ' ';
+			atributos[ultimaLinha][j] = 0;
+			frente[ultimaLinha][j] = ' ';
+			fundo[ultimaLinha][j] = ' ';
+		}
 	}
 
 	private void setaAtributos(String seq) {

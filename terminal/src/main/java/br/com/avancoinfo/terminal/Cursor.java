@@ -6,6 +6,7 @@ public class Cursor extends Thread {
 
 	public Cursor(Terminal terminal) {
 		this.terminal = terminal;
+		setName("CURSOR");
 	}
 	
 	

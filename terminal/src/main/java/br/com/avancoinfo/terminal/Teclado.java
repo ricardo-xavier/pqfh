@@ -22,7 +22,7 @@ public class Teclado implements EventHandler<KeyEvent> {
 		try {
 
 			if (log != null) {
-				log.println("> " + event.getText());
+				log.println("> " + event.toString());
 				log.flush();
 			}
 			

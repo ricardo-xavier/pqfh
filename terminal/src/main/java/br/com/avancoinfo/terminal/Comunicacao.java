@@ -54,7 +54,7 @@ public class Comunicacao extends Thread {
 			InputStream entrada = canal.getInputStream();
 			terminal.setSaida(canal.getOutputStream());
 			canal.connect();
-			terminal.setConectado(true);
+			terminal.setConectado(true, servidor, porta, usuario);
 			
 			// loop para ler entrada
 			while (sessao.isConnected()) {
@@ -103,6 +103,7 @@ public class Comunicacao extends Thread {
 	
 	public void close() {
 		sessao.disconnect();
+		terminal.setConectado(false, null, 0, null);
 	}
 
 	public String getServidor() {
