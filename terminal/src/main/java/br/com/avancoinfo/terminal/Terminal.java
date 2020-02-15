@@ -62,6 +62,7 @@ public class Terminal extends Stage {
     private Terminal terminal;
     private Teclado teclado;
     private Escape escape;
+    private Acs acs;
     
     private boolean cursorReverso;
     private boolean conectado;
@@ -131,6 +132,7 @@ public class Terminal extends Stage {
 
         escape = new Escape(terminal);
         escape.clear();
+        acs = new Acs(terminal, contexto);
         
         teclado = new Teclado(log);
         canvas.setFocusTraversable(true);
@@ -224,6 +226,9 @@ public class Terminal extends Stage {
 						default:
 					
 							dados[lin][col] = (char) c;
+							atributos[lin][col] = atributo;
+							frente[lin][col] = corFrente;
+							fundo[lin][col] = corFundo;
 							
 							if (col < (COLUNAS - 1)) {
 								col++;
@@ -273,23 +278,25 @@ public class Terminal extends Stage {
 		contexto.fillRect(x, y, lar, alt);
 		
 		contexto.setStroke(converteCor(corFrente));
-		//System.err.println(r);
 		for (int i=r.y; i<r.y+r.height; i++) {
 			if (i >= 25) {
 				break;
 			}
-			//System.err.println(i + " " + r.x);
 			for (int j=r.x; j<r.x+r.width; j++) {
+				
+				if ((atributos[i][j] & Escape.A_ACS) == Escape.A_ACS) {
+					acs.processa(i, j);
+					continue;
+				}
+				
 				String s = String.valueOf(dados[i][j]);
-				//System.err.print(s);
 				contexto.strokeText(s, MARGEM + j*larCar, MARGEM + i*altLin);
 			}
-			//System.err.println();
 		}		
 		
 	}
 	
-	private Color converteCor(char cor) {
+	public Color converteCor(char cor) {
 		switch (cor) { 
 		case 'W': return Color.WHITE;
 		case 'b': return Color.BLACK;
@@ -503,6 +510,18 @@ public class Terminal extends Stage {
 
 	public void setFundo(char[][] fundo) {
 		this.fundo = fundo;
+	}
+
+	public static int getMargem() {
+		return MARGEM;
+	}
+
+	public int getLarCar() {
+		return larCar;
+	}
+
+	public int getAltLin() {
+		return altLin;
 	}
 
 }

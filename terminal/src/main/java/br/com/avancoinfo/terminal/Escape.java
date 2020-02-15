@@ -2,12 +2,12 @@ package br.com.avancoinfo.terminal;
 
 public class Escape {
 
-	private static final int A_REVERSE = 0x01;
-	private static final int A_ACS = 0x02;
-	private static final int A_BOLD = 0x04;
-	private static final int A_UNDERLINE = 0x08;
-	private static final int A_BLINK = 0x10;
-	private static final int A_INVISIBLE = 0x20;
+	public static final int A_REVERSE = 0x01;
+	public static final int A_ACS = 0x02;
+	public static final int A_BOLD = 0x04;
+	public static final int A_UNDERLINE = 0x08;
+	public static final int A_BLINK = 0x10;
+	public static final int A_INVISIBLE = 0x20;
 
 	private Terminal terminal;
 
