@@ -116,7 +116,7 @@ public class Terminal extends Stage {
 		statusBar.setId("statusbar");
 		statusBar.setProgress(0);
 		tela.setBottom(statusBar);
-		
+
 		// cria a cena
 		setTitle("Terminal Avanço v" + VERSAO);
 		Scene scene = new Scene(tela);
@@ -128,7 +128,6 @@ public class Terminal extends Stage {
         atributos = new int[LINHAS][COLUNAS];
         frente = new char[LINHAS][COLUNAS];
         fundo = new char[LINHAS][COLUNAS];
-        r.setBounds(-1, -1, 0, 0);
 
         escape = new Escape(terminal);
         escape.clear();
@@ -180,7 +179,7 @@ public class Terminal extends Stage {
 				for (int i=0; i<tam; i++) {
 					
 					byte c = comandos[i];
-					//System.out.printf("%d %d %d %c %d %d %d %d %n", lin, col, c, (char) c, r.y, r.x, r.height, r.width);
+					//log.printf("%d %d %d %c %d %d %d %d %n", lin, col, c, (char) c, r.y, r.x, r.height, r.width); log.flush(); 
 					
 					switch (estado) {
 					
@@ -189,43 +188,33 @@ public class Terminal extends Stage {
 						switch (c) {
 					
 						case '\r':
-						
 							col = 0;
-							if (col <  r.x) {
-								int dif = r.x - col;
-								r.x = col;
-								r.width += dif;
-							}						
+							alteraRegiao(0, -1);
 							break;
 					
 						case '\n':
 						
-							if (lin < LINHAS) {
-					
-								if (++lin >= (r.y + r.height)) {
-									r.height = lin - r.y + 1;
-								}
+							if (lin < (LINHAS - 1)) {
+								lin++;
+								alteraRegiao(-1, lin);
 							
 							} else {
-							
-								//TODO
-								i = comandos.length;
+					
+								int aux = lin;
 								lin = 0;
+								escape.el();
+								lin = aux;
+								alteraRegiao(-1, -1);
 							}
 						
 							break;
 							
 						case '\b':
-						
 							if (col > 0) {
-					
-								dados[lin][--col] = ' ';
-								if (col < r.x) {
-									r.x--;
-									r.width++;
-								}
+								col--;
+								dados[lin][col] = ' ';
+								alteraRegiao(col, -1);
 							}
-						
 							break;
 						
 						case ESC:
@@ -233,15 +222,17 @@ public class Terminal extends Stage {
 							break;
 					
 						default:
-						
-							if ((col < (COLUNAS - 1)) && (lin < LINHAS)) {
+					
+							dados[lin][col] = (char) c;
 							
-								if (col >= (r.x + r.width)) {
-									r.width = col - r.x + 1;
-								}
-							
-								dados[lin][col++] = (char) c;
-							
+							if (col < (COLUNAS - 1)) {
+								col++;
+								alteraRegiao(col, -1);
+								
+							} else {
+								col = 0;
+								lin++;
+								alteraRegiao(col, lin);
 							}
 						
 							break;
@@ -266,8 +257,10 @@ public class Terminal extends Stage {
 				}
 				
 				mostra();
+				
 			}
 		});
+		
 	}
 	
 	public void mostra() {
@@ -280,14 +273,18 @@ public class Terminal extends Stage {
 		contexto.fillRect(x, y, lar, alt);
 		
 		contexto.setStroke(converteCor(corFrente));
+		//System.err.println(r);
 		for (int i=r.y; i<r.y+r.height; i++) {
 			if (i >= 25) {
 				break;
 			}
+			//System.err.println(i + " " + r.x);
 			for (int j=r.x; j<r.x+r.width; j++) {
 				String s = String.valueOf(dados[i][j]);
+				//System.err.print(s);
 				contexto.strokeText(s, MARGEM + j*larCar, MARGEM + i*altLin);
 			}
+			//System.err.println();
 		}		
 		
 	}
@@ -339,6 +336,51 @@ public class Terminal extends Stage {
 				
 			}
 		});
+		
+	}
+	
+	public void alteraRegiao(int x, int y) {
+		
+		int dif;
+		
+		if ((x == -1) && (x == -1)) {
+			r.setBounds(0, 0, COLUNAS, LINHAS);
+			return;
+		}
+		
+		if (x != -1) {
+			
+			if (x < r.x) {
+				dif = r.x - x;
+				r.x -= dif;
+				r.width += dif;
+			}
+		
+			if (x >= (r.x + r.width)) {
+				dif = x - r.x;
+				r.width += dif;
+			}
+			
+			if (r.width > 80) {
+				System.err.println("debug");
+			}
+			
+		}
+		
+		if (y != -1) {
+			
+			if (y < r.y) {
+				dif = r.y - y;
+				r.y -= dif;
+				r.width += dif;
+			}
+		
+			if (y >= (r.y + r.height)) {
+				dif = y - r.y;
+				r.height += dif;
+			}
+			
+		}
 		
 	}
 	
