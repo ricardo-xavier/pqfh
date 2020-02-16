@@ -7,19 +7,22 @@ import java.util.Date;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import org.controlsfx.control.StatusBar;
-
 import com.sun.javafx.geom.Rectangle;
 import com.sun.javafx.tk.FontMetrics;
 import com.sun.javafx.tk.Toolkit;
 
 import javafx.application.Platform;
+import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.VPos;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
@@ -29,7 +32,7 @@ import javafx.stage.WindowEvent;
 
 public class Terminal extends Stage {
 	
-	private static final int VERSAO = 6;
+	private static final int VERSAO = 7;
 	private static final int LINHAS = 25;
 	private static final int COLUNAS = 80;
 	private static final int MARGEM = 5;
@@ -71,8 +74,8 @@ public class Terminal extends Stage {
 	private char corFrente = 'b';
 	private char corFundo = 'W';
 	
-	private StatusBar statusBar;
-    
+	private Label lblStatus;
+	
 	public Terminal() {
 		
 		terminal = this;
@@ -112,12 +115,28 @@ public class Terminal extends Stage {
 		tela.setCenter(canvas);
 	
 		// barra de status
-		statusBar = new StatusBar();
-		statusBar.setText(null);
+		BorderPane statusBar = new BorderPane();
+		statusBar.setMinHeight(48);
+		statusBar.setMaxHeight(48);
+		statusBar.setPadding(new Insets(0, 5, 0, 0));
 		statusBar.setId("statusbar");
-		statusBar.setProgress(0);
 		tela.setBottom(statusBar);
+		
+		Image imageOk = new Image(getClass().getResourceAsStream("config.png"));
+		Button btnConfig = new Button("", new ImageView(imageOk));
+		statusBar.setRight(btnConfig);
+		btnConfig.setOnAction(new EventHandler<ActionEvent>() {
+			
+			@Override
+			public void handle(ActionEvent event) {
+				Configuracao config = new Configuracao();
+				config.show();
+			}
+		});
 
+		lblStatus = new Label("Conectando ...");
+		statusBar.setCenter(lblStatus);
+		
 		// cria a cena
 		setTitle("Terminal Avanço v" + VERSAO);
 		Scene scene = new Scene(tela);
@@ -455,7 +474,7 @@ public class Terminal extends Stage {
 		this.conectado = conectado;
 		if (conectado) {
 			new Cursor(this).start();
-			Platform.runLater(() -> statusBar.setText("Conectado a: " + servidor + ":" + porta + "  Usuário: " + usuario));
+			Platform.runLater(() -> lblStatus.setText("Conectado a: " + servidor + ":" + porta + "  Usuário: " + usuario));
 		}
 
 	}
@@ -482,10 +501,6 @@ public class Terminal extends Stage {
 
 	public void setCorFundo(char corFundo) {
 		this.corFundo = corFundo;
-	}
-
-	public StatusBar getStatusBar() {
-		return statusBar;
 	}
 
 	public int[][] getAtributos() {
