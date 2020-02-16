@@ -73,8 +73,6 @@ public class Acs {
 		int x2 = Terminal.getMargem() + x * terminal.getLarCar() + terminal.getLarCar();
 		int y1 = Terminal.getMargem() + y * terminal.getAltLin() + terminal.getAltLin() / 2;
 		
-		contexto.setStroke(terminal.converteCor(terminal.getCorFrente()));
-		
 		int x1 = x2 - terminal.getLarCar() / 2;
 		contexto.strokeLine(x1, y1, x2, y1);
 		
@@ -89,8 +87,6 @@ public class Acs {
 		
 		int x1 = Terminal.getMargem() + x * terminal.getLarCar();
 		int y1 = Terminal.getMargem() + y * terminal.getAltLin() + terminal.getAltLin() / 2;
-		
-		contexto.setStroke(terminal.converteCor(terminal.getCorFrente()));
 		
 		int x2 = x1 + terminal.getLarCar() / 2;
 		contexto.strokeLine(x1, y1, x2, y1);
@@ -107,8 +103,6 @@ public class Acs {
 		int x1 = Terminal.getMargem() + x * terminal.getLarCar() + terminal.getLarCar() / 2;
 		int y1 = Terminal.getMargem() + y * terminal.getAltLin();
 		
-		contexto.setStroke(terminal.converteCor(terminal.getCorFrente()));
-		
 		int y2 = y1 + terminal.getAltLin() / 2;
 		contexto.strokeLine(x1, y1, x1, y2);
 		
@@ -124,8 +118,6 @@ public class Acs {
 		int x2 = Terminal.getMargem() + x * terminal.getLarCar() + terminal.getLarCar() / 2;
 		int y1 = Terminal.getMargem() + y * terminal.getAltLin();
 		
-		contexto.setStroke(terminal.converteCor(terminal.getCorFrente()));
-		
 		int y2 = y1 + terminal.getAltLin() / 2;
 		contexto.strokeLine(x2, y1, x2, y2);
 		
@@ -140,8 +132,6 @@ public class Acs {
 		
 		int x1 = Terminal.getMargem() + x * terminal.getLarCar() + terminal.getLarCar() / 2;
 		int y1 = Terminal.getMargem() + y * terminal.getAltLin();
-		
-		contexto.setStroke(terminal.converteCor(terminal.getCorFrente()));
 		
 		int y2 = y1 + terminal.getAltLin() / 2;
 		int y3 = y2 + terminal.getAltLin() / 2;
@@ -159,8 +149,6 @@ public class Acs {
 		
 		int x2 = Terminal.getMargem() + x * terminal.getLarCar() + terminal.getLarCar() / 2;
 		int y1 = Terminal.getMargem() + y * terminal.getAltLin();
-		
-		contexto.setStroke(terminal.converteCor(terminal.getCorFrente()));
 		
 		int y2 = y1 + terminal.getAltLin() / 2;
 		int y3 = y2 + terminal.getAltLin() / 2;
@@ -192,7 +180,6 @@ public class Acs {
 		
 		x2 = Terminal.getMargem() + x2 * terminal.getLarCar() + terminal.getLarCar();
 		
-		contexto.setStroke(terminal.converteCor(terminal.getCorFrente()));
 		contexto.strokeLine(x1, y1, x2, y1);
 		
 		//System.err.printf("%d %d %d %d %n", x1, x2, y1, y1);
@@ -217,7 +204,6 @@ public class Acs {
 		
 		y2 = Terminal.getMargem() + y2 * terminal.getAltLin() + terminal.getAltLin();
 		
-		contexto.setStroke(terminal.converteCor(terminal.getCorFrente()));
 		contexto.strokeLine(x1, y1, x1, y2);
 		
 		//System.err.printf("%d %d %d %d %n", x1, x2, y1, y1);

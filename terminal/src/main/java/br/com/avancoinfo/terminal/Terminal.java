@@ -150,12 +150,13 @@ public class Terminal extends Stage {
         fundo = new char[LINHAS][COLUNAS];
 
         escape = new Escape(terminal);
-        escape.clear();
+        escape.clear("2");
         acs = new Acs(terminal, contexto);
         
         teclado = new Teclado(log);
         canvas.setFocusTraversable(true);
-        canvas.setOnKeyPressed(teclado);
+
+        tela.setOnKeyPressed(teclado);
         
         setOnCloseRequest(new EventHandler<WindowEvent>() {
 			
@@ -289,19 +290,47 @@ public class Terminal extends Stage {
 	
 	public void mostra() {
 
-		contexto.setFill(converteCor(corFundo));
-		int x = MARGEM + r.x * larCar;
-		int y = MARGEM + r.y * altLin;
-		int lar = r.width * larCar;
-		int alt = r.height * altLin; 
-		contexto.fillRect(x, y, lar, alt);
+		// pinta o fundo
+		for (int i=r.y; i<r.y+r.height; i++) {
+			if (i >= 25) {
+				break;
+			}
+			
+			for (int j=r.x; j<r.x+r.width; j++) {
+				int x1 = j;
+				char corX1 = fundo[i][x1];
+				int x2 = x1;
+				for (; x2<r.x+r.width; x2++) {
+					char corX2 = fundo[i][x2];
+					if (corX2 != corX1) {
+						break;
+					}
+				}
+				if (x2 == (r.x+r.width)) {
+					x2--;
+				}
+				contexto.setFill(converteCor(corX1));
+				int x = MARGEM + x1 * larCar;
+				int y = MARGEM + i * altLin;
+				int lar = (x2 - x1 + 1) * larCar;
+				contexto.fillRect(x, y, lar, altLin);				
+				j = x2;
+			}
+		}
 		
-		contexto.setStroke(converteCor(corFrente));
+		// mostra a frente
+		char ultimaCor = '?';
 		for (int i=r.y; i<r.y+r.height; i++) {
 			if (i >= 25) {
 				break;
 			}
 			for (int j=r.x; j<r.x+r.width; j++) {
+
+				char cor = frente[i][j];
+				if (cor != ultimaCor) {
+					contexto.setStroke(converteCor(cor));
+					ultimaCor = cor;
+				}
 				
 				if ((atributos[i][j] & Escape.A_ACS) == Escape.A_ACS) {
 					acs.processa(i, j);
@@ -370,7 +399,7 @@ public class Terminal extends Stage {
 		int dif;
 		
 		if ((x == -1) && (x == -1)) {
-			r.setBounds(0, 0, COLUNAS, LINHAS);
+			r.setBounds(0, 0, COLUNAS-1, LINHAS-1);
 			return;
 		}
 		
@@ -384,11 +413,7 @@ public class Terminal extends Stage {
 		
 			if (x >= (r.x + r.width)) {
 				dif = x - r.x;
-				r.width += dif;
-			}
-			
-			if (r.width > 80) {
-				System.err.println("debug");
+				r.width = dif + 1;
 			}
 			
 		}

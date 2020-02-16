@@ -22,10 +22,6 @@ public class Escape {
 		if (terminal.getLog() != null) {
 			terminal.getLog().println("ESCAPE " + cmd);
 			terminal.getLog().flush();
-			if (cmd.contains("4;80H")) {
-				System.err.println("debug");
-			}
-
 		}
 
 		String prms = "";
@@ -58,7 +54,7 @@ public class Escape {
 			break;
 
 		case 'J':
-			clear();
+			clear(prms);
 			break;
 
 		case 'K':
@@ -126,7 +122,7 @@ public class Escape {
 		terminal.alteraRegiao(terminal.getCol(), -1);
 	}
 
-	public void clear() {
+	public void clear(String prms) {
 
 		char[][] dados = terminal.getDados();
 		int[][] atributos = terminal.getAtributos();
@@ -136,6 +132,10 @@ public class Escape {
 		int x1 = terminal.getCol();
 		int x2 = Terminal.getColunas() - 1;
 		int y2 = Terminal.getLinhas() - 1;
+		
+		if (prms.equals("2")) {
+			home("");
+		}
 		
 		// apaga até o final da linha atual
 		int i = terminal.getLin();
@@ -187,7 +187,7 @@ public class Escape {
 			frente[i][j] = ' ';
 			fundo[i][j] = ' ';
 		}
-		terminal.alteraRegiao(Terminal.getColunas(), -1);
+		terminal.alteraRegiao(Terminal.getColunas()-1, -1);
 	}
 
 	private void setaAtributos(String seq) {
