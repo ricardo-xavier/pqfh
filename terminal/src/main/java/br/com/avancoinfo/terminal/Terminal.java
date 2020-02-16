@@ -79,15 +79,17 @@ public class Terminal extends Stage {
 	public Terminal() {
 		
 		terminal = this;
-		try {
-			log = new PrintStream("terminal.log");
-			log.println("terminal v" + VERSAO);
-			log.println(new Date());
-			log.println();
-			log.flush();
+		if (System.getenv("TERMINAL_DBG") != null) {
+			try {
+				log = new PrintStream("terminal.log");
+				log.println("terminal v" + VERSAO);
+				log.println(new Date());
+				log.println();
+				log.flush();
 			
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
+			} catch (FileNotFoundException e) {
+				e.printStackTrace();
+			}
 		}
 		
 		fila = new LinkedBlockingQueue<>();
