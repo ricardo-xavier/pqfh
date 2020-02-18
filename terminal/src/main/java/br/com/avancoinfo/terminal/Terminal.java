@@ -32,7 +32,7 @@ import javafx.stage.WindowEvent;
 
 public class Terminal extends Stage {
 	
-	private static final int VERSAO = 7;
+	private static final int VERSAO = 8;
 	private static final int LINHAS = 25;
 	private static final int COLUNAS = 80;
 	private static final int MARGEM = 5;
@@ -401,7 +401,7 @@ public class Terminal extends Stage {
 		int dif;
 		
 		if ((x == -1) && (x == -1)) {
-			r.setBounds(0, 0, COLUNAS-1, LINHAS-1);
+			r.setBounds(0, 0, COLUNAS, LINHAS);
 			return;
 		}
 		
@@ -430,7 +430,7 @@ public class Terminal extends Stage {
 		
 			if (y >= (r.y + r.height)) {
 				dif = y - r.y;
-				r.height += dif;
+				r.height = dif + 1;
 			}
 			
 		}
