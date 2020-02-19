@@ -10,6 +10,7 @@ public class TerminalAvanco extends Application {
 	private static int porta = 22;
 	
 	public static void main(String[] args) {
+		
 		if (args.length > 1) {
 			servidor = args[0];
 			porta = Integer.parseInt(args[1]);

@@ -66,6 +66,7 @@ public class Terminal extends Stage {
     private Teclado teclado;
     private Escape escape;
     private Acs acs;
+    private Configuracao cfg;
     
     private boolean cursorReverso;
     private boolean conectado;
@@ -91,6 +92,9 @@ public class Terminal extends Stage {
 				e.printStackTrace();
 			}
 		}
+		
+		cfg = new Configuracao();
+		cfg.carrega();
 		
 		fila = new LinkedBlockingQueue<>();
 		fonte = new Font(FONTE, TAMFONTE);
@@ -131,8 +135,9 @@ public class Terminal extends Stage {
 			
 			@Override
 			public void handle(ActionEvent event) {
-				Configuracao config = new Configuracao();
-				config.show();
+				cfg.showAndWait();
+				r.setBounds(0, 0, COLUNAS, LINHAS);
+				mostra();
 			}
 		});
 
@@ -348,14 +353,14 @@ public class Terminal extends Stage {
 	
 	public Color converteCor(char cor) {
 		switch (cor) { 
-		case 'W': return Color.WHITE;
-		case 'b': return Color.BLACK;
-		case 'R': return Color.RED;
-		case 'G': return Color.GREEN;
-		case 'Y': return Color.YELLOW;
-		case 'B': return Color.BLUE;
-		case 'M': return Color.MAGENTA;
-		case 'C': return Color.CYAN;
+		case 'W': return Configuracao.getWhite();
+		case 'b': return Configuracao.getBlack();
+		case 'R': return Configuracao.getRed();
+		case 'G': return Configuracao.getGreen();
+		case 'Y': return Configuracao.getYellow();
+		case 'B': return Configuracao.getBlue();
+		case 'M': return Configuracao.getMagenta();
+		case 'C': return Configuracao.getCyan();
 		}
 		return Color.WHITE;
 	}
