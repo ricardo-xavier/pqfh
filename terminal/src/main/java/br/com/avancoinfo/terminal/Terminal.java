@@ -32,7 +32,7 @@ import javafx.stage.WindowEvent;
 
 public class Terminal extends Stage {
 	
-	private static final int VERSAO = 8;
+	private static final int VERSAO = 9;
 	private static final int LINHAS = 25;
 	private static final int COLUNAS = 80;
 	private static final int MARGEM = 5;
@@ -300,10 +300,10 @@ public class Terminal extends Stage {
 			
 			for (int j=r.x; j<r.x+r.width; j++) {
 				int x1 = j;
-				char corX1 = fundo[i][x1];
+				char corX1 = (atributos[i][x1] & Escape.A_REVERSE) == Escape.A_REVERSE ? frente[i][x1] : fundo[i][x1];
 				int x2 = x1;
 				for (; x2<r.x+r.width; x2++) {
-					char corX2 = fundo[i][x2];
+					char corX2 = (atributos[i][x2] & Escape.A_REVERSE) == Escape.A_REVERSE ? frente[i][x2] : fundo[i][x2];
 					if (corX2 != corX1) {
 						break;
 					}
@@ -328,7 +328,7 @@ public class Terminal extends Stage {
 			}
 			for (int j=r.x; j<r.x+r.width; j++) {
 
-				char cor = frente[i][j];
+				char cor = (atributos[i][j] & Escape.A_REVERSE) == Escape.A_REVERSE ? fundo[i][j] : frente[i][j];
 				if (cor != ultimaCor) {
 					contexto.setStroke(converteCor(cor));
 					ultimaCor = cor;
@@ -372,7 +372,7 @@ public class Terminal extends Stage {
 			
 			@Override
 			public void run() {
-				if (cursorReverso) {
+				if (cursorReverso && ((atributo & Escape.A_REVERSE) != Escape.A_REVERSE)) {
 					contexto.setFill(converteCor(corFrente));
 				} else {
 					contexto.setFill(converteCor(corFundo));
@@ -381,13 +381,20 @@ public class Terminal extends Stage {
 				int y = MARGEM + lin * altLin;
 				contexto.fillRect(x, y, larCar, altLin);
 				if (dados[lin][col] != ' ') {
-					if (cursorReverso) {
+					if (cursorReverso && ((atributo & Escape.A_REVERSE) != Escape.A_REVERSE)) {
 						contexto.setStroke(converteCor(corFundo));
 					} else {
 						contexto.setStroke(converteCor(corFrente));
 					}					
 					String s = String.valueOf(dados[lin][col]);
-					contexto.strokeText(s, x, y);
+					if ((atributos[lin][col] & Escape.A_ACS) != Escape.A_ACS) {
+						contexto.strokeText(s, x, y);
+					} else {
+						x += terminal.getLarCar() / 2;
+						int y2 = y + terminal.getAltLin();
+						contexto.strokeLine(x, y, x, y2);
+
+					}
 				}
 				cursorReverso = !cursorReverso;
 				

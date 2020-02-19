@@ -57,6 +57,66 @@ public class Teclado implements EventHandler<KeyEvent> {
 				saida.write("\u001b[D".getBytes());
 				saida.flush();				
 				break;
+				
+			case F1:
+				saida.write("\u001b[M".getBytes());
+				saida.flush();				
+				break;				
+				
+			case F2:
+				saida.write("\u001b[N".getBytes());
+				saida.flush();				
+				break;				
+				
+			case F3:
+				saida.write("\u001b[O".getBytes());
+				saida.flush();				
+				break;				
+				
+			case F4:
+				saida.write("\u001b[P".getBytes());
+				saida.flush();				
+				break;				
+				
+			case F5:
+				saida.write("\u001b[Q".getBytes());
+				saida.flush();				
+				break;				
+				
+			case F6:
+				saida.write("\u001b[R".getBytes());
+				saida.flush();				
+				break;				
+				
+			case F7:
+				saida.write("\u001b[S".getBytes());
+				saida.flush();				
+				break;				
+				
+			case F8:
+				saida.write("\u001b[T".getBytes());
+				saida.flush();				
+				break;				
+				
+			case F9:
+				saida.write("\u001b[U".getBytes());
+				saida.flush();				
+				break;				
+				
+			case F10:
+				saida.write("\u001b[V".getBytes());
+				saida.flush();				
+				break;				
+				
+			case F11:
+				saida.write("\u001b[W".getBytes());
+				saida.flush();				
+				break;				
+				
+			case F12:
+				saida.write("\u001b[X".getBytes());
+				saida.flush();				
+				break;				
 
 			default:
 				saida.write(event.getText().getBytes());
