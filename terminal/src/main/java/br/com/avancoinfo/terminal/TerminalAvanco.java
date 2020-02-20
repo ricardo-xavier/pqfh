@@ -43,17 +43,23 @@ public class TerminalAvanco extends Application {
 		Terminal terminal = new Terminal(cfg);
 		terminal.show();
 		
-		com = new Comunicacao(terminal);
-		if (servidor != null) {
-			com.setServidor(servidor);
-			com.setPorta(porta);
-		}
+		com = new Comunicacao(terminal, cfg);
 		com.setName("COMUNICACAO");
 		com.start();
 		
 	}
 
 	public void close() {
-		com.close();
+		if (com.isAlive()) {
+			com.close();
+		}
+	}
+
+	public static Comunicacao getCom() {
+		return com;
+	}
+
+	public static void setCom(Comunicacao com) {
+		TerminalAvanco.com = com;
 	}
 }

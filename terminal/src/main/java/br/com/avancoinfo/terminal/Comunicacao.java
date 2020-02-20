@@ -13,23 +13,16 @@ public class Comunicacao extends Thread {
 
 	private static final int TAMBUF = 8192;
 	private Terminal terminal;
+	private Configuracao cfg;
 	private Session sessao;
-	private String servidor;
-	private int porta;
 
-	public Comunicacao(Terminal terminal) {
+	public Comunicacao(Terminal terminal, Configuracao cfg) {
 		this.terminal = terminal;
+		this.cfg = cfg;
 	}
 
 	@Override
 	public void run() {
-
-		String usuario = "avanco";
-		String senha = "Bigu";
-		if (servidor == null) {
-			servidor = "avancoinfo.ddns.com.br";
-			porta = 65531;
-		}
 
 		byte[] buf = new byte[TAMBUF];
 		int pos = 0;
@@ -38,23 +31,23 @@ public class Comunicacao extends Thread {
 			
 			// conecta
 			if (terminal.getLog() != null) {
-				terminal.getLog().println("servidor: " + servidor);
-				terminal.getLog().println("porta: " + porta);
+				terminal.getLog().println("servidor: " + cfg.getServidor());
+				terminal.getLog().println("porta: " + cfg.getPorta());
 				terminal.getLog().println();
 				terminal.getLog().flush();
 			}
 			JSch jsch = new JSch();
-			sessao = jsch.getSession(usuario, servidor, porta);
+			sessao = jsch.getSession(cfg.getUsuario(), cfg.getServidor(), cfg.getPorta());
 			Properties config = new Properties();
 			config.setProperty("StrictHostKeyChecking", "no");
 			sessao.setConfig(config);
-			sessao.setPassword(senha);
+			sessao.setPassword(cfg.getSenha());
 			sessao.connect();
 			ChannelShell canal = (ChannelShell) sessao.openChannel("shell");
 			InputStream entrada = canal.getInputStream();
 			terminal.setSaida(canal.getOutputStream());
 			canal.connect();
-			terminal.setConectado(true, servidor, porta, usuario);
+			terminal.setConectado(true, cfg.getServidor(), cfg.getPorta(), cfg.getUsuario());
 			
 			// loop para ler entrada
 			while (sessao.isConnected()) {
@@ -97,6 +90,13 @@ public class Comunicacao extends Thread {
 
 		} catch (JSchException | IOException e) {
 			e.printStackTrace();
+
+			if (terminal.getLog() != null) {
+				e.printStackTrace(terminal.getLog());
+				terminal.getLog().flush();
+			}
+			
+			terminal.reconecta(e.getMessage());
 		}
 
 	}
@@ -104,22 +104,6 @@ public class Comunicacao extends Thread {
 	public void close() {
 		sessao.disconnect();
 		terminal.setConectado(false, null, 0, null);
-	}
-
-	public String getServidor() {
-		return servidor;
-	}
-
-	public void setServidor(String servidor) {
-		this.servidor = servidor;
-	}
-
-	public int getPorta() {
-		return porta;
-	}
-
-	public void setPorta(int porta) {
-		this.porta = porta;
 	}
 
 }

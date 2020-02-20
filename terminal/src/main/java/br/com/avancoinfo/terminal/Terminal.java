@@ -19,8 +19,10 @@ import javafx.geometry.VPos;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.Alert.AlertType;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
@@ -32,12 +34,11 @@ import javafx.stage.WindowEvent;
 
 public class Terminal extends Stage {
 	
-	private static final int VERSAO = 10;
+	private static final int VERSAO = 11;
 	private static final int LINHAS = 25;
 	private static final int COLUNAS = 80;
 	private static final int MARGEM = 5;
 	private static final String FONTE = "Courier New";
-	private static final int TAMFONTE = 20;
 	private static final int ESC = 27;
 	private static final int ESTADO_INICIAL = 0;
 	
@@ -66,6 +67,7 @@ public class Terminal extends Stage {
     private Teclado teclado;
     private Escape escape;
     private Acs acs;
+    private Configuracao cfg;
     
     private boolean cursorReverso;
     private boolean conectado;
@@ -76,8 +78,11 @@ public class Terminal extends Stage {
 	
 	private Label lblStatus;
 	
+	private Canvas canvas;
+	
 	public Terminal(Configuracao cfg) {
 		
+		this.cfg = cfg;
 		terminal = this;
 		if (System.getenv("TERMINAL_DBG") != null) {
 			try {
@@ -93,7 +98,7 @@ public class Terminal extends Stage {
 		}
 		
 		fila = new LinkedBlockingQueue<>();
-		fonte = new Font(FONTE, TAMFONTE);
+		fonte = new Font(FONTE, cfg.getTamFonte());
 		seq = new byte[32];
 
 		// calcula métricas
@@ -104,7 +109,7 @@ public class Terminal extends Stage {
 		int larTela = larCar * COLUNAS + MARGEM * 2;
 		
 		// cria um canvas do tamanho da tela
-		Canvas canvas = new Canvas(larTela, altTela);
+		canvas = new Canvas(larTela, altTela);
 		
 		// seta a fonte
 		contexto = canvas.getGraphicsContext2D();
@@ -131,7 +136,23 @@ public class Terminal extends Stage {
 			
 			@Override
 			public void handle(ActionEvent event) {
+
+				//int tamFonteAnterior = cfg.getTamFonte();
 				cfg.showAndWait();
+				
+				// recalcula métricas
+				/*
+				if (tamFonteAnterior != cfg.getTamFonte()) {
+					FontMetrics fm = Toolkit.getToolkit().getFontLoader().getFontMetrics(fonte);
+					altLin = (int) fm.getLineHeight();
+					larCar = (int) fm.computeStringWidth("W");
+					int altTela = altLin * LINHAS + MARGEM * 2;
+					int larTela = larCar * COLUNAS + MARGEM * 2;
+					canvas.setHeight(altTela);
+					canvas.setWidth(larTela);
+				}
+				*/
+
 				r.setBounds(0, 0, COLUNAS, LINHAS);
 				mostra();
 			}
@@ -402,6 +423,33 @@ public class Terminal extends Stage {
 			}
 		});
 		
+	}
+	
+	public void reconecta(String msg) {
+		Platform.runLater(new Runnable() {
+			
+			@Override
+			public void run() {
+				
+				Alert alert = new Alert(AlertType.ERROR);
+				alert.setTitle("Erro");
+				alert.setHeaderText("Erro na comunicação com o servidor");
+				alert.setContentText(msg);
+				alert.showAndWait();		
+				
+				cfg.showAndWait();
+				if (cfg.isCancelado()) {
+					close();
+					return;
+				}
+				
+				Comunicacao com = new Comunicacao(terminal, cfg);
+				com.setName("COMUNICACAO");
+				com.start();				
+				TerminalAvanco.setCom(com);
+				
+			}
+		});
 	}
 	
 	public void alteraRegiao(int x, int y) {

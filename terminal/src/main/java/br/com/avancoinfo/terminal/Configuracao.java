@@ -37,6 +37,8 @@ public class Configuracao extends Stage {
 	private JFXTextField edtUsuario;
 	private JFXPasswordField edtSenha;
 	private JFXTextField edtComando;
+	
+	private Spinner<Integer> spFonte;
 
 	private static Color black = Color.BLACK;;
 	private static Color white = Color.WHITE;
@@ -61,6 +63,8 @@ public class Configuracao extends Stage {
 	private String usuario;
 	private String senha;
 	private String comando = "TERM=ansi cobrun integral";
+	
+	private int tamFonte = 20;
 	
 	private boolean cancelado;
 	
@@ -259,7 +263,7 @@ public class Configuracao extends Stage {
         Label lblFonte = new Label("Fonte");
         GridPane.setMargin(lblFonte, new Insets(10, 30, 0, 10));
         
-        Spinner<Integer> spFonte = new Spinner<>(16, 24, 20, 1);
+        spFonte = new Spinner<>(16, 22, tamFonte, 1);
         GridPane.setMargin(spFonte, new Insets(10, 30, 0, 10));
 
         pnlAparencia.add(lblFonte, 0, 9);
@@ -340,6 +344,11 @@ public class Configuracao extends Stage {
 						continue;
 					}
 					
+					if (linha.startsWith("[FONTE]")) {
+						sessao = 3;
+						continue;
+					}
+					
 					int p = linha.indexOf("=");
 					if (p <= 0) {
 						continue;
@@ -396,7 +405,17 @@ public class Configuracao extends Stage {
 						case "CYAN": setCyan(Color.rgb(r, g, b)); break;
 						}
 						break;
-					
+
+					case 3:
+						switch (chave) {
+						case "TAMANHO": 
+							try {
+								setTamFonte(Integer.parseInt(valor));
+							} catch (NumberFormatException e) {
+								
+							}
+							break;
+						}
 					}
 					
 				}
@@ -417,6 +436,8 @@ public class Configuracao extends Stage {
 				cpAmarelo.setValue(getYellow());
 				cpMagenta.setValue(getMagenta());
 				cpCyan.setValue(getCyan());
+				
+				spFonte.getValueFactory().setValue(tamFonte);
 				
 			} catch (Exception  e) {
 				e.printStackTrace();
@@ -439,6 +460,8 @@ public class Configuracao extends Stage {
 			usuario = edtUsuario.getText();
 			senha = edtSenha.getText();
 			comando = edtComando.getText();
+			
+			tamFonte = spFonte.getValue();
 			
 			Configuracao.setBlack(cpPreto.getValue());
 			Configuracao.setWhite(cpBranco.getValue());
@@ -478,6 +501,12 @@ public class Configuracao extends Stage {
 			cfg.printf("AMARELO=#%02x%02x%02x%n", (int) (getYellow().getRed() * 255), (int) (getYellow().getGreen() * 255), (int) (getYellow().getBlue() * 255));
 			cfg.printf("MAGENTA=#%02x%02x%02x%n", (int) (getMagenta().getRed() * 255), (int) (getMagenta().getGreen() * 255), (int) (getMagenta().getBlue() * 255));
 			cfg.printf("CYAN=#%02x%02x%02x%n", (int) (getCyan().getRed() * 255), (int) (getCyan().getGreen() * 255), (int) (getCyan().getBlue() * 255));
+
+
+			cfg.println("[FONTE]");
+			if (tamFonte != 0) {
+				cfg.printf("TAMANHO=%d%n", tamFonte);
+			}
 			
 			cfg.close();
 			
@@ -599,5 +628,13 @@ public class Configuracao extends Stage {
 
 	public void setCancelado(boolean cancelado) {
 		this.cancelado = cancelado;
+	}
+
+	public int getTamFonte() {
+		return tamFonte;
+	}
+
+	public void setTamFonte(int tamFonte) {
+		this.tamFonte = tamFonte;
 	}
 }
