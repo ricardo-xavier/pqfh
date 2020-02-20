@@ -69,6 +69,8 @@ public class Atualizador {
 			canal.connect();
 			
 			// lista arquivos
+			int ultimaVersaoPublicada = versaoInstalada;
+			String arqDownload = null;
 			canal.cd("/u/sist/exec/atualizador");
 			Vector<?> arquivos = canal.ls(".");
 			for (Object arquivo : arquivos) {
@@ -76,15 +78,24 @@ public class Atualizador {
 					String arq = ((LsEntry) arquivo).getFilename();
 					if (arq.startsWith(produto+"-") && arq.endsWith(".jar")) {
 						int versaoPublicada = Integer.parseInt(arq.replace(produto+"-", "").replace(".jar", ""));
-						if (versaoPublicada > versaoInstalada) {
-							canal.get(arq, arq);
-							versaoInstalada = versaoPublicada;
-							break;
+						if (versaoPublicada > ultimaVersaoPublicada) {
+							arqDownload = arq;
+							ultimaVersaoPublicada = versaoPublicada;
 						}
 					}
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
+			}
+			
+			// baixa a ultima versao
+			if (arqDownload != null) {
+				try {
+					canal.get(arqDownload, arqDownload);
+					versaoInstalada = ultimaVersaoPublicada;
+				} catch (Exception e) {
+					e.printStackTrace();
+				}					
 			}
 			
 			// desconecta
