@@ -57,7 +57,7 @@ public class Configuracao extends Stage {
 	private ColorPicker cpCyan;
 	
 	private String servidor;
-	private int porta;
+	private int porta = 22;
 	private String usuario;
 	private String senha;
 	private String comando = "TERM=ansi cobrun integral";
