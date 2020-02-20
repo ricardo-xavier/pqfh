@@ -16,13 +16,31 @@ public class TerminalAvanco extends Application {
 			porta = Integer.parseInt(args[1]);
 		}
 		launch(args);
-		com.close();
+		if (com != null) {
+			com.close();
+		}
 	}
 	
 	@Override
 	public void start(Stage primaryStage) throws Exception {
 		
-		Terminal terminal = new Terminal();
+		Configuracao cfg = new Configuracao();
+		cfg.carrega();
+		
+		if (servidor != null) {
+			if (cfg.getServidor() == null) {
+				cfg.setServidor(servidor);
+				cfg.setPorta(porta);
+			}
+		}
+		while ((cfg.getServidor() == null) || (cfg.getUsuario() == null) || (cfg.getSenha() == null)) {
+			cfg.showAndWait();
+			if (cfg.isCancelado()) {
+				return;
+			}
+		}
+		
+		Terminal terminal = new Terminal(cfg);
 		terminal.show();
 		
 		com = new Comunicacao(terminal);

@@ -32,7 +32,7 @@ import javafx.stage.WindowEvent;
 
 public class Terminal extends Stage {
 	
-	private static final int VERSAO = 9;
+	private static final int VERSAO = 10;
 	private static final int LINHAS = 25;
 	private static final int COLUNAS = 80;
 	private static final int MARGEM = 5;
@@ -66,7 +66,6 @@ public class Terminal extends Stage {
     private Teclado teclado;
     private Escape escape;
     private Acs acs;
-    private Configuracao cfg;
     
     private boolean cursorReverso;
     private boolean conectado;
@@ -77,7 +76,7 @@ public class Terminal extends Stage {
 	
 	private Label lblStatus;
 	
-	public Terminal() {
+	public Terminal(Configuracao cfg) {
 		
 		terminal = this;
 		if (System.getenv("TERMINAL_DBG") != null) {
@@ -92,9 +91,6 @@ public class Terminal extends Stage {
 				e.printStackTrace();
 			}
 		}
-		
-		cfg = new Configuracao();
-		cfg.carrega();
 		
 		fila = new LinkedBlockingQueue<>();
 		fonte = new Font(FONTE, TAMFONTE);

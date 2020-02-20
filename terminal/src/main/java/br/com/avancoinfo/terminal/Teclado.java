@@ -32,6 +32,14 @@ public class Teclado implements EventHandler<KeyEvent> {
 				saida.write("\u0008".getBytes());
 				saida.flush();
 				break;
+				
+			case INSERT:
+				break;
+				
+			case DELETE:
+				saida.write("\u007f".getBytes());
+				saida.flush();
+				break;
 			
 			case TAB:
 				saida.write("\u0009".getBytes());
@@ -43,8 +51,18 @@ public class Teclado implements EventHandler<KeyEvent> {
 				saida.flush();
 				break;
 				
+			case PAGE_UP:
+				saida.write("\u001b[I".getBytes());
+				saida.flush();
+				break;
+				
 			case DOWN:
 				saida.write("\u001b[B".getBytes());
+				saida.flush();				
+				break;
+				
+			case PAGE_DOWN:
+				saida.write("\u001b[G".getBytes());
 				saida.flush();				
 				break;
 				

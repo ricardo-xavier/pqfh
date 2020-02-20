@@ -2,9 +2,7 @@ package br.com.avancoinfo.terminal;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
-import java.io.IOException;
 import java.io.PrintStream;
 
 import com.jfoenix.controls.JFXButton;
@@ -12,6 +10,7 @@ import com.jfoenix.controls.JFXPasswordField;
 import com.jfoenix.controls.JFXTextField;
 import com.jfoenix.controls.JFXToggleButton;
 
+import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -32,6 +31,12 @@ import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 
 public class Configuracao extends Stage {
+	
+	private JFXTextField edtServidor;
+	private JFXTextField edtPorta;
+	private JFXTextField edtUsuario;
+	private JFXPasswordField edtSenha;
+	private JFXTextField edtComando;
 
 	private static Color black = Color.BLACK;;
 	private static Color white = Color.WHITE;
@@ -51,10 +56,19 @@ public class Configuracao extends Stage {
 	private ColorPicker cpMagenta;
 	private ColorPicker cpCyan;
 	
+	private String servidor;
+	private int porta;
+	private String usuario;
+	private String senha;
+	private String comando = "TERM=ansi cobrun integral";
+	
+	private boolean cancelado;
+	
 	public Configuracao() {
 		
         setTitle("Configuração");
 
+        setCancelado(false);
         BorderPane pnlTela = new BorderPane();
         
         FlowPane pnlImagem = new FlowPane();
@@ -86,36 +100,30 @@ public class Configuracao extends Stage {
 
         // conexão
 		
-		String servidor = "";
-		String porta = "";
-		String usuario = "";
-		String senha = "";
-		String comando = "";
-
         Label lblServidor = new Label("Servidor");
         VBox.setMargin(lblServidor, new Insets(10, 10, 0, 10));
         
-        JFXTextField edtServidor = new JFXTextField(servidor);
+        edtServidor = new JFXTextField(servidor);
         VBox.setMargin(edtServidor, new Insets(0, 10, 4, 10));
 
         Label lblPorta = new Label("Porta");
         VBox.setMargin(lblPorta, new Insets(10, 10, 0, 10));
         
-        JFXTextField edtPorta = new JFXTextField(porta);
+        edtPorta = new JFXTextField(String.valueOf(porta));
         edtPorta.setMaxWidth(50);
         VBox.setMargin(edtPorta, new Insets(0, 10, 4, 10));
 
         Label lblUsuario = new Label("Usuário");
         VBox.setMargin(lblUsuario, new Insets(10, 10, 0, 10));
         
-        JFXTextField edtUsuario = new JFXTextField(usuario);
+        edtUsuario = new JFXTextField(usuario);
         edtUsuario.setMaxWidth(300);
         VBox.setMargin(edtUsuario, new Insets(0, 10, 4, 10));
 
         Label lblSenha = new Label("Senha");
         VBox.setMargin(lblSenha, new Insets(10, 10, 0, 10));
         
-        JFXPasswordField edtSenha = new JFXPasswordField();
+        edtSenha = new JFXPasswordField();
         edtSenha.setText(senha);
         edtSenha.setMaxWidth(300);
         VBox.setMargin(edtSenha, new Insets(0, 10, 4, 10));
@@ -123,7 +131,7 @@ public class Configuracao extends Stage {
         Label lblComando = new Label("Comando");
         VBox.setMargin(lblComando, new Insets(10, 10, 0, 10));
         
-        JFXTextField edtComando = new JFXTextField(comando);
+        edtComando = new JFXTextField(comando);
         VBox.setMargin(edtComando, new Insets(0, 10, 4, 10));
         
         pnlConexao.getChildren().addAll(lblServidor, edtServidor, lblPorta, edtPorta, lblUsuario, edtUsuario,
@@ -188,7 +196,7 @@ public class Configuracao extends Stage {
         TextField edtVerde = new TextField();
         edtVerde.setMaxWidth(50);
         GridPane.setMargin(edtVerde, new Insets(10, 30, 0, 10));
-        edtVerde.setStyle("-fx-control-inner-background: red");
+        edtVerde.setStyle("-fx-control-inner-background: green");
         cpVerde = new ColorPicker();
         cpVerde.setValue(Color.GREEN);
         GridPane.setMargin(cpVerde, new Insets(10, 30, 0, 10));
@@ -276,7 +284,10 @@ public class Configuracao extends Stage {
         
         JFXButton btnCancela = new JFXButton("Cancela");
         btnCancela.setCursor(javafx.scene.Cursor.HAND);
-        btnCancela.setOnAction(event -> close());
+        btnCancela.setOnAction(event -> { 
+        	cancelado = true; 
+        	close(); 
+        });
 
         HBox.setMargin(btnConfirma, new Insets(10, 0, 10, 10));
         HBox.setMargin(btnCancela, new Insets(10, 0, 0, 10));
@@ -286,7 +297,25 @@ public class Configuracao extends Stage {
         
         Scene scene = new Scene(pnlTela);
         setScene(scene);
+
+        // seta o foco
         
+        Platform.runLater(new Runnable() {
+			
+			@Override
+			public void run() {
+		        pnlConfiguracao.getSelectionModel().select(0);
+		        if ((servidor == null) || servidor.trim().equals("")) {
+		        	edtServidor.requestFocus();
+		        } else if ((usuario == null) || usuario.trim().equals("")) {
+		        	edtUsuario.requestFocus();
+		        } else if ((senha == null) || senha.trim().equals("")) {
+		        	edtSenha.requestFocus();
+		        } else {
+		        	edtServidor.requestFocus();
+		        }
+			}
+		});
 
 	}
 
@@ -300,16 +329,58 @@ public class Configuracao extends Stage {
 				String linha;
 				int sessao = 0;
 				while ((linha = reader.readLine()) != null) {
-					
-					if (linha.startsWith("[CORES]")) {
+
+					if (linha.startsWith("[CONEXAO]")) {
 						sessao = 1;
 						continue;
 					}
 					
-					switch(sessao) {
+					if (linha.startsWith("[CORES]")) {
+						sessao = 2;
+						continue;
+					}
 					
+					int p = linha.indexOf("=");
+					if (p <= 0) {
+						continue;
+					}
+					
+					String chave = linha.substring(0, p);
+					String valor = linha.substring(p+1);
+					
+					switch (sessao) {
+
 					case 1:
-						String rgb = linha.split("=")[1];
+						switch (chave) {
+						case "SERVIDOR": 
+							servidor = valor; 
+							break;
+						
+						case "PORTA":
+							try {
+								porta = Integer.parseInt(valor);
+							} catch (NumberFormatException e) {
+								
+							}
+							break;
+							
+						case "USUARIO": 
+							usuario = valor; 
+							break;
+						
+						case "SENHA":
+							Criptografia cript = new Criptografia();
+							senha = cript.descriptografa(valor); 
+							break;
+							
+						case "COMANDO": 
+							comando = valor; 
+							break;
+						}						
+						break;
+					
+					case 2:
+						String rgb = valor;
 						int r = Integer.parseInt(rgb.substring(1, 3), 16);
 						int g = Integer.parseInt(rgb.substring(3, 5), 16);
 						int b = Integer.parseInt(rgb.substring(5, 7), 16);
@@ -324,12 +395,19 @@ public class Configuracao extends Stage {
 						case "MAGENTA": setMagenta(Color.rgb(r, g, b)); break;
 						case "CYAN": setCyan(Color.rgb(r, g, b)); break;
 						}
+						break;
 					
 					}
 					
 				}
 				
 				reader.close();
+				
+				edtServidor.setText(servidor);
+				edtPorta.setText(String.valueOf(porta));
+				edtUsuario.setText(usuario);
+				edtSenha.setText(senha);
+				edtComando.setText(comando);
 				
 				cpBranco.setValue(getWhite());
 				cpPreto.setValue(getBlack());
@@ -340,7 +418,7 @@ public class Configuracao extends Stage {
 				cpMagenta.setValue(getMagenta());
 				cpCyan.setValue(getCyan());
 				
-			} catch (IOException e) {
+			} catch (Exception  e) {
 				e.printStackTrace();
 			}
 			
@@ -351,6 +429,16 @@ public class Configuracao extends Stage {
 	private void confirma() {
 		
 		try {
+			
+			servidor = edtServidor.getText();
+			try {
+				porta = Integer.parseInt(edtPorta.getText());
+			} catch (NumberFormatException e) {
+				porta = 0;
+			}
+			usuario = edtUsuario.getText();
+			senha = edtSenha.getText();
+			comando = edtComando.getText();
 			
 			Configuracao.setBlack(cpPreto.getValue());
 			Configuracao.setWhite(cpBranco.getValue());
@@ -363,6 +451,24 @@ public class Configuracao extends Stage {
 			
 			PrintStream cfg = new PrintStream("terminal.cfg");
 
+			cfg.println("[CONEXAO]");
+			if (servidor != null) {
+				cfg.printf("SERVIDOR=%s%n", servidor);
+			}
+			if (porta != 0) {
+				cfg.printf("PORTA=%d%n", porta);
+			}
+			if (usuario != null) {
+				cfg.printf("USUARIO=%s%n", usuario);
+			}
+			if (senha != null) {
+				Criptografia crip = new Criptografia();
+				cfg.printf("SENHA=%s%n", crip.criptografa(senha));
+			}
+			if (comando != null) {
+				cfg.printf("COMANDO=%s%n", comando);
+			}
+			
 			cfg.println("[CORES]");
 			cfg.printf("PRETO=#%02x%02x%02x%n", (int) (getBlack().getRed() * 255), (int) (getBlack().getGreen() * 255), (int) (getBlack().getBlue() * 255));
 			cfg.printf("BRANCO=#%02x%02x%02x%n", (int) (getWhite().getRed()* 255), (int) (getWhite().getGreen() * 255), (int) (getWhite().getBlue() * 255));
@@ -375,7 +481,7 @@ public class Configuracao extends Stage {
 			
 			cfg.close();
 			
-		} catch (FileNotFoundException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		
@@ -445,5 +551,53 @@ public class Configuracao extends Stage {
 
 	public static void setYellow(Color yellow) {
 		Configuracao.yellow = yellow;
+	}
+
+	public String getServidor() {
+		return servidor;
+	}
+
+	public void setServidor(String servidor) {
+		this.servidor = servidor;
+	}
+
+	public int getPorta() {
+		return porta;
+	}
+
+	public void setPorta(int porta) {
+		this.porta = porta;
+	}
+
+	public String getUsuario() {
+		return usuario;
+	}
+
+	public void setUsuario(String usuario) {
+		this.usuario = usuario;
+	}
+
+	public String getSenha() {
+		return senha;
+	}
+
+	public void setSenha(String senha) {
+		this.senha = senha;
+	}
+
+	public String getComando() {
+		return comando;
+	}
+
+	public void setComando(String comando) {
+		this.comando = comando;
+	}
+
+	public boolean isCancelado() {
+		return cancelado;
+	}
+
+	public void setCancelado(boolean cancelado) {
+		this.cancelado = cancelado;
 	}
 }
