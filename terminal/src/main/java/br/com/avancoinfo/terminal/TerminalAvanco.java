@@ -33,7 +33,7 @@ public class TerminalAvanco extends Application {
 				cfg.setPorta(porta);
 			}
 		}
-		while ((cfg.getServidor() == null) || (cfg.getUsuario() == null) || (cfg.getSenha() == null)) {
+		while ((cfg.getServidor() == null) || (cfg.getPorta() == 0) || (cfg.getUsuario() == null) || (cfg.getSenha() == null)) {
 			cfg.showAndWait();
 			if (cfg.isCancelado()) {
 				return;
