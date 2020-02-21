@@ -2,6 +2,7 @@ package br.com.avancoinfo.terminal;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Properties;
 
 import com.jcraft.jsch.ChannelShell;
@@ -26,6 +27,7 @@ public class Comunicacao extends Thread {
 
 		byte[] buf = new byte[TAMBUF];
 		int pos = 0;
+		boolean enviarComando = true;
 
 		try {
 			
@@ -45,10 +47,11 @@ public class Comunicacao extends Thread {
 			sessao.connect();
 			ChannelShell canal = (ChannelShell) sessao.openChannel("shell");
 			InputStream entrada = canal.getInputStream();
-			terminal.setSaida(canal.getOutputStream());
+			OutputStream saida = canal.getOutputStream();
+			terminal.setSaida(saida);
 			canal.connect();
 			terminal.setConectado(true, cfg.getServidor(), cfg.getPorta(), cfg.getUsuario());
-			
+
 			// loop para ler entrada
 			while (sessao.isConnected()) {
 
@@ -74,7 +77,14 @@ public class Comunicacao extends Thread {
 						break;
 					}
 				}
-
+				
+				char ch = '?';
+				if (enviarComando) {
+					int u;
+					for (u=pos-1; u>0 && buf[u] == ' '; u--);
+					ch = (char) buf[u];
+				}
+					
 				synchronized (terminal.getFila()) {
 
 					if (terminal.getLog() != null) {
@@ -86,6 +96,26 @@ public class Comunicacao extends Thread {
 				}
 				terminal.atualiza();
 				pos = 0;
+				
+				if (enviarComando && (ch == '$')) {
+					
+					enviarComando = false;
+					
+					if (terminal.getLog() != null) {
+						terminal.getLog().println("> " + cfg.getComando());
+						terminal.getLog().flush();
+					}
+					
+					try {
+						saida.write((cfg.getComando() + "\r\n").getBytes());
+						saida.flush();
+						System.err.println(cfg.getComando());
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+
+				}
+				
 			}
 
 		} catch (JSchException | IOException e) {
