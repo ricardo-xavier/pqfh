@@ -20,9 +20,9 @@ import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.control.Alert.AlertType;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
@@ -69,7 +69,6 @@ public class Terminal extends Stage {
     private Acs acs;
     private Configuracao cfg;
     
-    private boolean cursorReverso;
     private boolean conectado;
     
 	private int atributo = 0;
@@ -79,6 +78,11 @@ public class Terminal extends Stage {
 	private Label lblStatus;
 	
 	private Canvas canvas;
+	
+	// salva posição do cursor reverso para restaurar quando mudar de posição
+	private boolean cursorReverso;
+	private int linCursor = -1;
+	private int colCursor;
 	
 	public Terminal(Configuracao cfg) {
 		
@@ -181,6 +185,7 @@ public class Terminal extends Stage {
         canvas.setFocusTraversable(true);
 
         tela.setOnKeyPressed(teclado);
+        canvas.requestFocus();
         
         setOnCloseRequest(new EventHandler<WindowEvent>() {
 			
@@ -209,9 +214,9 @@ public class Terminal extends Stage {
 					tam = buf.getTam();
 					comandos = buf.getDados();
 				
-					if (terminal.getLog() != null) {
-						terminal.getLog().printf("%s -FILA %d %d %s%n", Thread.currentThread().getName(), fila.size(), tam, new String(comandos, 0, tam));
-						terminal.getLog().flush();
+					if (log != null) {
+						log.printf("%s -FILA %d %d %s%n", Thread.currentThread().getName(), fila.size(), tam, new String(comandos, 0, tam));
+						log.flush();
 					}
 				}
 				
@@ -220,8 +225,6 @@ public class Terminal extends Stage {
 				r.width = 1;
 				r.height = 1;
 
-				mostraCursor(true);
-				
 				for (int i=0; i<tam; i++) {
 					
 					byte c = comandos[i];
@@ -327,6 +330,7 @@ public class Terminal extends Stage {
 				for (; x2<r.x+r.width; x2++) {
 					char corX2 = (atributos[i][x2] & Escape.A_REVERSE) == Escape.A_REVERSE ? frente[i][x2] : fundo[i][x2];
 					if (corX2 != corX1) {
+						x2--;
 						break;
 					}
 				}
@@ -336,8 +340,8 @@ public class Terminal extends Stage {
 				contexto.setFill(converteCor(corX1));
 				int x = MARGEM + x1 * larCar;
 				int y = MARGEM + i * altLin;
-				int lar = (x2 - x1 + 1) * larCar;
-				contexto.fillRect(x, y, lar, altLin);				
+				int lar = x2 - x1 + 1;
+				contexto.fillRect(x, y, lar * larCar, altLin);				
 				j = x2;
 			}
 		}
@@ -382,42 +386,97 @@ public class Terminal extends Stage {
 		return Color.WHITE;
 	}
 	
-	public void mostraCursor(boolean remove) {
-		if (!fila.isEmpty() && !remove) {
+	public void mostraCursor() {
+		
+		// não mostra o cursor enquando estiver recebendo dados
+		if (!fila.isEmpty()) {
 			return;
 		}
-		if (remove) {
+		
+		// o cursor estava em reverso e mudou de posição
+		// apaga o cursor
+		if ((linCursor != -1) && ((linCursor != lin) || (colCursor != col))) {
+			
+			final int linRestaurar = linCursor;
+			final int colRestaurar = colCursor;
+			
+			Platform.runLater(new Runnable() {
+
+				@Override
+				public void run() {
+
+					boolean acs = (atributos[linRestaurar][colRestaurar] & Escape.A_ACS) == Escape.A_ACS;
+
+					if (!acs) {
+						boolean reverso = (atributos[linRestaurar][colRestaurar] & Escape.A_REVERSE) == Escape.A_REVERSE;
+						Color fundoCursor = converteCor(reverso ? frente[linRestaurar][colRestaurar] : fundo[linRestaurar][colRestaurar]);
+						Color frenteCursor = converteCor(reverso ? fundo[linRestaurar][colRestaurar] : frente[linRestaurar][colRestaurar]);
+						char ch = dados[linRestaurar][colRestaurar];
+					
+						contexto.setFill(fundoCursor);
+						contexto.setStroke(frenteCursor);
+					
+						int x = MARGEM + colRestaurar * larCar;
+						int y = MARGEM + linRestaurar * altLin;
+					
+						contexto.fillRect(x, y, larCar, altLin);
+						String s = String.valueOf(ch);
+						contexto.strokeText(s, x, y);
+					}
+				
+				}
+					
+			});
+
 			cursorReverso = true;
+			linCursor = -1;
 		}
 		
 		Platform.runLater(new Runnable() {
 			
 			@Override
 			public void run() {
-				if (cursorReverso && ((atributo & Escape.A_REVERSE) != Escape.A_REVERSE)) {
-					contexto.setFill(converteCor(corFrente));
-				} else {
-					contexto.setFill(converteCor(corFundo));
-				}
-				int x = MARGEM + col * larCar;
-				int y = MARGEM + lin * altLin;
-				contexto.fillRect(x, y, larCar, altLin);
-				if (dados[lin][col] != ' ') {
-					if (cursorReverso && ((atributo & Escape.A_REVERSE) != Escape.A_REVERSE)) {
-						contexto.setStroke(converteCor(corFundo));
-					} else {
-						contexto.setStroke(converteCor(corFrente));
-					}					
-					String s = String.valueOf(dados[lin][col]);
-					if ((atributos[lin][col] & Escape.A_ACS) != Escape.A_ACS) {
-						contexto.strokeText(s, x, y);
-					} else {
-						x += terminal.getLarCar() / 2;
-						int y2 = y + terminal.getAltLin();
-						contexto.strokeLine(x, y, x, y2);
 
+				boolean acs = (atributos[lin][col] & Escape.A_ACS) == Escape.A_ACS;
+				if (!acs) {
+					boolean reverso = (atributos[lin][col] & Escape.A_REVERSE) == Escape.A_REVERSE;
+					Color fundoCursor = converteCor(reverso ? frente[lin][col] : fundo[lin][col]);
+					Color frenteCursor = converteCor(reverso ? fundo[lin][col] : frente[lin][col]);
+					char ch = dados[lin][col];
+				
+					int x = MARGEM + col * larCar;
+					int y = MARGEM + lin * altLin;
+				
+					// fundo do cursor
+					if (cursorReverso) {
+						contexto.setFill(frenteCursor);
+					} else {
+						contexto.setFill(fundoCursor);
 					}
+					contexto.fillRect(x, y, larCar, altLin);
+
+					// frente do cursor
+					if (cursorReverso) {
+						contexto.setStroke(fundoCursor);
+					} else {
+						contexto.setStroke(frenteCursor);
+					}	
+				
+					if (ch != ' ') {
+						String s = String.valueOf(ch);
+						contexto.strokeText(s, x, y);
+					}
+					
 				}
+
+				// salva
+				if (cursorReverso) {
+					linCursor = lin;
+					colCursor = col;
+				} else {
+					linCursor = -1;
+				}
+				
 				cursorReverso = !cursorReverso;
 				
 			}

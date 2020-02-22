@@ -20,9 +20,9 @@ public class Teclado implements EventHandler<KeyEvent> {
 	public void handle(KeyEvent event) {
 
 		try {
-
+			
 			if (log != null) {
-				log.println("> " + event.toString());
+				log.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> " + event.toString());
 				log.flush();
 			}
 			
@@ -30,6 +30,11 @@ public class Teclado implements EventHandler<KeyEvent> {
 			
 			case BACK_SPACE:
 				saida.write("\u0008".getBytes());
+				saida.flush();
+				break;
+				
+			case ENTER:
+				saida.write("\n".getBytes());
 				saida.flush();
 				break;
 				
@@ -147,6 +152,7 @@ public class Teclado implements EventHandler<KeyEvent> {
 			e.printStackTrace();
 		}
 
+		event.consume();
 	}
 
 	public void setSaida(OutputStream saida) {
