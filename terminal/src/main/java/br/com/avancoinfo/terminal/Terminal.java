@@ -1,6 +1,7 @@
 package br.com.avancoinfo.terminal;
 
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.Date;
@@ -42,6 +43,8 @@ public class Terminal extends Stage {
 	private static final int ESC = 27;
 	private static final int BELL = 7;
 	private static final int ESTADO_INICIAL = 0;
+	private static final int ESTADO_ESC = 1;
+	private static final int ESTADO_EXEC = 2;
 	
 	private GraphicsContext contexto;
 	private int larCar;
@@ -106,7 +109,7 @@ public class Terminal extends Stage {
 		
 		fila = new LinkedBlockingQueue<>();
 		fonte = new Font(FONTE, cfg.getTamFonte());
-		seq = new byte[32];
+		seq = new byte[256];
 
 		// calcula métricas
 		FontMetrics fm = Toolkit.getToolkit().getFontLoader().getFontMetrics(fonte);
@@ -169,7 +172,7 @@ public class Terminal extends Stage {
         escape.clear("2");
         acs = new Acs(terminal, contexto);
         
-        teclado = new Teclado(log);
+        teclado = new Teclado(terminal, cfg);
         canvas.setFocusTraversable(true);
 
         tela.setOnKeyPressed(teclado);
@@ -253,7 +256,7 @@ public class Terminal extends Stage {
 							break;
 						
 						case ESC:
-							estado = ESC;
+							estado = ESTADO_ESC;
 							break;
 							
 						case BELL:
@@ -280,14 +283,42 @@ public class Terminal extends Stage {
 						}
 						break;
 					
-					case ESC:
+					case ESTADO_ESC:
 						seq[iseq++] = c;
 						if (Character.isAlphabetic(c)) {
 							escape.processaSeq(seq, iseq);
-							iseq = 0;
-							estado = ESTADO_INICIAL;
+							if ((c == 'E') && new String(seq, 0, iseq).equals("[]E")) {
+								estado = ESTADO_EXEC;
+								
+							} else {
+								iseq = 0;
+								estado = ESTADO_INICIAL;	
+							}
 						}
 						break;
+						
+					case ESTADO_EXEC:
+						seq[iseq++] = c;
+						if (c == '*') {
+							estado = ESTADO_INICIAL;
+							String cmd = new String(seq, 0, iseq);
+							System.err.println(cmd);
+							int p = cmd.indexOf("RunDLL");
+							if (p > 0) {
+								cmd = cmd.substring(p + 6);
+								p = cmd.indexOf("\u001b");
+								if (p > 0) {
+									cmd = cmd.substring(0, p);
+									try {
+										Runtime.getRuntime().exec("explorer " + cmd);
+									} catch (IOException e) {
+										e.printStackTrace();
+									}
+								}
+							}
+						}
+						break;
+						
 						
 					}
 						

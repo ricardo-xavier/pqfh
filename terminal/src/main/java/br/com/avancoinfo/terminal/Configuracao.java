@@ -65,6 +65,9 @@ public class Configuracao extends Stage {
 	private String comando = "TERM=ansi cobrun integral";
 	
 	private int tamFonte = 20;
+
+	private boolean pontoVirgula;
+	private JFXToggleButton chkDecimal;
 	
 	private boolean cancelado;
 	
@@ -271,7 +274,7 @@ public class Configuracao extends Stage {
 
         // avançado
         
-		JFXToggleButton chkDecimal = new JFXToggleButton();
+		chkDecimal = new JFXToggleButton();
 		chkDecimal.setText("Enviar ponto e vírgula como decimal");
 		GridPane.setMargin(chkDecimal, new Insets(10, 30, 0, 10));
         
@@ -349,6 +352,11 @@ public class Configuracao extends Stage {
 						continue;
 					}
 					
+					if (linha.startsWith("[AVANCADO]")) {
+						sessao = 4;
+						continue;
+					}
+					
 					int p = linha.indexOf("=");
 					if (p <= 0) {
 						continue;
@@ -416,6 +424,13 @@ public class Configuracao extends Stage {
 							}
 							break;
 						}
+
+					case 4:
+						switch (chave) {
+						case "PONTO_VIRGULA": 
+							setPontoVirgula(valor.equalsIgnoreCase("S"));
+							break;
+						}
 					}
 					
 				}
@@ -438,6 +453,8 @@ public class Configuracao extends Stage {
 				cpCyan.setValue(getCyan());
 				
 				spFonte.getValueFactory().setValue(tamFonte);
+				
+				chkDecimal.setSelected(pontoVirgula);
 				
 			} catch (Exception  e) {
 				e.printStackTrace();
@@ -472,6 +489,8 @@ public class Configuracao extends Stage {
 			Configuracao.setMagenta(cpMagenta.getValue());
 			Configuracao.setCyan(cpCyan.getValue());
 			
+			pontoVirgula = chkDecimal.isSelected();
+			
 			PrintStream cfg = new PrintStream("terminal.cfg");
 
 			cfg.println("[CONEXAO]");
@@ -502,11 +521,13 @@ public class Configuracao extends Stage {
 			cfg.printf("MAGENTA=#%02x%02x%02x%n", (int) (getMagenta().getRed() * 255), (int) (getMagenta().getGreen() * 255), (int) (getMagenta().getBlue() * 255));
 			cfg.printf("CYAN=#%02x%02x%02x%n", (int) (getCyan().getRed() * 255), (int) (getCyan().getGreen() * 255), (int) (getCyan().getBlue() * 255));
 
-
 			cfg.println("[FONTE]");
 			if (tamFonte != 0) {
 				cfg.printf("TAMANHO=%d%n", tamFonte);
 			}
+
+			cfg.println("[AVANCADO]");
+			cfg.printf("PONTO_VIRGULA=%c%n", pontoVirgula ? 'S' : 'N');
 			
 			cfg.close();
 			
@@ -636,5 +657,13 @@ public class Configuracao extends Stage {
 
 	public void setTamFonte(int tamFonte) {
 		this.tamFonte = tamFonte;
+	}
+
+	public boolean isPontoVirgula() {
+		return pontoVirgula;
+	}
+
+	public void setPontoVirgula(boolean pontoVirgula) {
+		this.pontoVirgula = pontoVirgula;
 	}
 }

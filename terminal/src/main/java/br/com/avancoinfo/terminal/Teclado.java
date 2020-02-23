@@ -2,7 +2,6 @@ package br.com.avancoinfo.terminal;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.PrintStream;
 
 import javafx.event.EventHandler;
 import javafx.scene.input.KeyEvent;
@@ -10,10 +9,12 @@ import javafx.scene.input.KeyEvent;
 public class Teclado implements EventHandler<KeyEvent> {
 
 	private OutputStream saida;
-	private PrintStream log;
+	private Terminal terminal;
+	private Configuracao cfg;
 
-	public Teclado(PrintStream log) {
-		this.log = log;
+	public Teclado(Terminal terminal, Configuracao cfg) {
+		this.terminal = terminal;
+		this.cfg = cfg;
 	}
 
 	@Override
@@ -21,10 +22,10 @@ public class Teclado implements EventHandler<KeyEvent> {
 
 		try {
 			
-			if (log != null) {
-				synchronized (log) {
-					log.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> " + event.toString());
-					log.flush();
+			if (terminal.getLog() != null) {
+				synchronized (terminal.getLog()) {
+					terminal.getLog().println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> " + event.toString());
+					terminal.getLog().flush();
 				}
 			}
 			
@@ -146,9 +147,19 @@ public class Teclado implements EventHandler<KeyEvent> {
 			case F12:
 				saida.write("\u001b[X".getBytes());
 				saida.flush();				
-				break;				
-
+				break;
+				
 			default:
+				
+				if (cfg.isPontoVirgula()) {
+					if (event.getText().equals(".") || event.getText().equals(",")) {
+						if (decimalPoint()) {
+							saida.write(".,".getBytes());
+							saida.flush();
+							break;
+						}
+					}
+				}
 				saida.write(event.getText().getBytes());
 				saida.flush();
 				break;
@@ -160,6 +171,23 @@ public class Teclado implements EventHandler<KeyEvent> {
 		}
 
 		event.consume();
+	}
+
+	private boolean decimalPoint() {
+		if (terminal.getCol() == 0) {
+			return false;
+		}
+		if (!Character.isDigit(terminal.getDados()[terminal.getLin()][terminal.getCol()-1])) {
+			return false;
+		}
+		for (int i=0; i<Terminal.getLinhas(); i++) {
+			for (int j=0; j<Terminal.getColunas(); j++) {
+				if ((terminal.getAtributos()[i][j] & Escape.A_ACS) == Escape.A_ACS) {
+					return true;
+				}
+			}
+		}
+		return false;
 	}
 
 	public void setSaida(OutputStream saida) {
