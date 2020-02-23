@@ -29,6 +29,11 @@ public class Teclado implements EventHandler<KeyEvent> {
 			}
 			
 			switch (event.getCode()) {
+
+			case ESCAPE:
+				saida.write("\u001b".getBytes());
+				saida.flush();
+				break;
 			
 			case BACK_SPACE:
 				saida.write("\u0008".getBytes());
