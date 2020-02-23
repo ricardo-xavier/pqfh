@@ -34,7 +34,7 @@ import javafx.stage.WindowEvent;
 
 public class Terminal extends Stage {
 	
-	private static final int VERSAO = 11;
+	private static final int VERSAO = 12;
 	private static final int LINHAS = 25;
 	private static final int COLUNAS = 80;
 	private static final int MARGEM = 5;
@@ -92,10 +92,12 @@ public class Terminal extends Stage {
 		if (System.getenv("TERMINAL_DBG") != null) {
 			try {
 				log = new PrintStream("terminal.log");
-				log.println("terminal v" + VERSAO);
-				log.println(new Date());
-				log.println();
-				log.flush();
+				synchronized (log) {
+					log.println("terminal v" + VERSAO);
+					log.println(new Date());
+					log.println();
+					log.flush();
+				}
 			
 			} catch (FileNotFoundException e) {
 				e.printStackTrace();
@@ -142,22 +144,7 @@ public class Terminal extends Stage {
 			@Override
 			public void handle(ActionEvent event) {
 
-				//int tamFonteAnterior = cfg.getTamFonte();
 				cfg.showAndWait();
-				
-				// recalcula métricas
-				/*
-				if (tamFonteAnterior != cfg.getTamFonte()) {
-					FontMetrics fm = Toolkit.getToolkit().getFontLoader().getFontMetrics(fonte);
-					altLin = (int) fm.getLineHeight();
-					larCar = (int) fm.computeStringWidth("W");
-					int altTela = altLin * LINHAS + MARGEM * 2;
-					int larTela = larCar * COLUNAS + MARGEM * 2;
-					canvas.setHeight(altTela);
-					canvas.setWidth(larTela);
-				}
-				*/
-
 				r.setBounds(0, 0, COLUNAS, LINHAS);
 				mostra();
 			}
@@ -216,8 +203,10 @@ public class Terminal extends Stage {
 					comandos = buf.getDados();
 				
 					if (log != null) {
-						log.printf("%s -FILA %d %d %s%n", Thread.currentThread().getName(), fila.size(), tam, new String(comandos, 0, tam));
-						log.flush();
+						synchronized (log) {
+							log.printf("%s -FILA %d %d %s%n", Thread.currentThread().getName(), fila.size(), tam, new String(comandos, 0, tam));
+							log.flush();
+						}
 					}
 				}
 				
@@ -229,7 +218,6 @@ public class Terminal extends Stage {
 				for (int i=0; i<tam; i++) {
 					
 					byte c = comandos[i];
-					//log.printf("%d %d %d %c %d %d %d %d %n", lin, col, c, (char) c, r.y, r.x, r.height, r.width); log.flush(); 
 					
 					switch (estado) {
 					
@@ -250,10 +238,7 @@ public class Terminal extends Stage {
 							
 							} else {
 					
-								int aux = lin;
-								lin = 0;
-								escape.el();
-								lin = aux;
+								scroll();
 								alteraRegiao(-1, -1);
 							}
 						
@@ -316,6 +301,27 @@ public class Terminal extends Stage {
 				
 			}
 		});
+		
+	}
+
+	private void scroll() {
+
+		for (int i=0; i<(Terminal.getLinhas() - 1); i++) {
+			for (int j = terminal.getCol(); j < Terminal.getColunas(); j++) {
+				dados[i][j] = dados[i+1][j];
+				atributos[i][j] = atributos[i+1][j];
+				frente[i][j] = frente[i+1][j];
+				fundo[i][j] = fundo[i+1][j];
+			}
+		}
+		
+		int i = Terminal.getLinhas() - 1;
+		for (int j = terminal.getCol(); j < Terminal.getColunas(); j++) {
+			dados[i][j] = ' ';
+			atributos[i][j] = terminal.getAtributo();
+			frente[i][j] = terminal.getCorFrente();
+			fundo[i][j] = terminal.getCorFundo();
+		}
 		
 	}
 	

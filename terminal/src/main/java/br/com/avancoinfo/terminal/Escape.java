@@ -20,8 +20,10 @@ public class Escape {
 		String cmd = new String(seq, 0, iseq);
 
 		if (terminal.getLog() != null) {
-			terminal.getLog().println("ESCAPE " + cmd);
-			terminal.getLog().flush();
+			synchronized (terminal.getLog()) {
+				terminal.getLog().println("ESCAPE " + cmd);
+				terminal.getLog().flush();
+			}
 		}
 
 		String prms = "";
@@ -67,8 +69,10 @@ public class Escape {
 
 		default:
 			if (terminal.getLog() != null) {
-				terminal.getLog().println("ESCAPE COMANDO PENDENTE " + cmd);
-				terminal.getLog().flush();
+				synchronized (terminal.getLog()) {
+					terminal.getLog().println("ESCAPE COMANDO PENDENTE " + cmd);
+					terminal.getLog().flush();
+				}
 			}
 
 		}
@@ -183,9 +187,9 @@ public class Escape {
 		int i = terminal.getLin();
 		for (int j = terminal.getCol(); j < Terminal.getColunas(); j++) {
 			dados[i][j] = ' ';
-			atributos[i][j] = 0;
-			frente[i][j] = ' ';
-			fundo[i][j] = ' ';
+			atributos[i][j] = terminal.getAtributo();
+			frente[i][j] = terminal.getCorFrente();
+			fundo[i][j] = terminal.getCorFundo();
 		}
 		terminal.alteraRegiao(Terminal.getColunas()-1, -1);
 	}
@@ -202,6 +206,8 @@ public class Escape {
 			case "":
 			case "0": // normal display
 				terminal.setAtributo(0);
+				terminal.setCorFrente('W');
+				terminal.setCorFundo('b');
 				break;
 
 			case "1": // bold
@@ -307,8 +313,10 @@ public class Escape {
 
 			default:
 				if (terminal.getLog() != null) {
-					terminal.getLog().println("PENDENTE ATRIBUTO:" + atr);
-					terminal.getLog().flush();
+					synchronized (terminal.getLog()) {
+						terminal.getLog().println("PENDENTE ATRIBUTO:" + atr);
+						terminal.getLog().flush();
+					}
 				}
 			}
 		}

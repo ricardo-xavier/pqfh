@@ -33,10 +33,12 @@ public class Comunicacao extends Thread {
 			
 			// conecta
 			if (terminal.getLog() != null) {
-				terminal.getLog().println("servidor: " + cfg.getServidor());
-				terminal.getLog().println("porta: " + cfg.getPorta());
-				terminal.getLog().println();
-				terminal.getLog().flush();
+				synchronized (terminal.getLog()) {
+					terminal.getLog().println("servidor: " + cfg.getServidor());
+					terminal.getLog().println("porta: " + cfg.getPorta());
+					terminal.getLog().println();
+					terminal.getLog().flush();					
+				}
 			}
 			JSch jsch = new JSch();
 			sessao = jsch.getSession(cfg.getUsuario(), cfg.getServidor(), cfg.getPorta());
@@ -57,8 +59,10 @@ public class Comunicacao extends Thread {
 
 				int n = entrada.read(buf, pos, TAMBUF - pos);
 				if (terminal.getLog() != null) {
-					terminal.getLog().printf("%s %d:%d%n", Thread.currentThread().getName(), pos, n);
-					terminal.getLog().flush();
+					synchronized (terminal.getLog()) {
+						terminal.getLog().printf("%s %d:%d%n", Thread.currentThread().getName(), pos, n);
+						terminal.getLog().flush();						
+					}
 				}				
 				if (n < 0) {
 					break;
@@ -69,8 +73,10 @@ public class Comunicacao extends Thread {
 					
 					n = entrada.read(buf, pos, TAMBUF - pos);
 					if (terminal.getLog() != null) {
-						terminal.getLog().printf("%s %d:%d%n", Thread.currentThread().getName(), pos, n);
-						terminal.getLog().flush();
+						synchronized (terminal.getLog()) {
+							terminal.getLog().printf("%s %d:%d%n", Thread.currentThread().getName(), pos, n);
+							terminal.getLog().flush();							
+						}
 					}					
 					pos += n;
 					if (pos == TAMBUF) {
@@ -88,8 +94,10 @@ public class Comunicacao extends Thread {
 				synchronized (terminal.getFila()) {
 
 					if (terminal.getLog() != null) {
-						terminal.getLog().printf("%s +FILA %d %s%n", Thread.currentThread().getName(), terminal.getFila().size(), pos, new String(buf, 0, pos));
-						terminal.getLog().flush();
+						synchronized (terminal.getLog()) {
+							terminal.getLog().printf("%s +FILA %d %s%n", Thread.currentThread().getName(), terminal.getFila().size(), pos, new String(buf, 0, pos));
+							terminal.getLog().flush();
+						}
 					}
 					
 					terminal.getFila().add(new Buffer(pos, buf));
@@ -102,8 +110,10 @@ public class Comunicacao extends Thread {
 					enviarComando = false;
 					
 					if (terminal.getLog() != null) {
-						terminal.getLog().println("> " + cfg.getComando());
-						terminal.getLog().flush();
+						synchronized (terminal.getLog()) {
+							terminal.getLog().println("> " + cfg.getComando());
+							terminal.getLog().flush();
+						}
 					}
 					
 					try {
@@ -122,8 +132,10 @@ public class Comunicacao extends Thread {
 			e.printStackTrace();
 
 			if (terminal.getLog() != null) {
-				e.printStackTrace(terminal.getLog());
-				terminal.getLog().flush();
+				synchronized (terminal.getLog()) {
+					e.printStackTrace(terminal.getLog());
+					terminal.getLog().flush();
+				}
 			}
 			
 			terminal.reconecta(e.getMessage());
