@@ -40,6 +40,7 @@ public class Terminal extends Stage {
 	private static final int MARGEM = 5;
 	private static final String FONTE = "Courier New";
 	private static final int ESC = 27;
+	private static final int BELL = 7;
 	private static final int ESTADO_INICIAL = 0;
 	
 	private GraphicsContext contexto;
@@ -269,6 +270,9 @@ public class Terminal extends Stage {
 						case ESC:
 							estado = ESC;
 							break;
+							
+						case BELL:
+							break;
 					
 						default:
 					
@@ -324,6 +328,7 @@ public class Terminal extends Stage {
 			}
 			
 			for (int j=r.x; j<r.x+r.width; j++) {
+				atributos[i][j] &= ~Acs.PROCESSADO;
 				int x1 = j;
 				char corX1 = (atributos[i][x1] & Escape.A_REVERSE) == Escape.A_REVERSE ? frente[i][x1] : fundo[i][x1];
 				int x2 = x1;
@@ -342,6 +347,9 @@ public class Terminal extends Stage {
 				int y = MARGEM + i * altLin;
 				int lar = x2 - x1 + 1;
 				contexto.fillRect(x, y, lar * larCar, altLin);				
+				for (int k=j; k<=x2; k++) {
+					atributos[i][k] &= ~Acs.PROCESSADO;
+				}
 				j = x2;
 			}
 		}
