@@ -55,8 +55,16 @@ public class Comunicacao extends Thread {
 			terminal.setConectado(true, cfg.getServidor(), cfg.getPorta(), cfg.getUsuario());
 
 			// loop para ler entrada
-			while (sessao.isConnected()) {
+			while (true) {
 
+				if (!sessao.isConnected()) {
+					break;
+				}
+				
+				if (canal.getExitStatus() != -1) {
+					break;
+				}
+				
 				int n = entrada.read(buf, pos, TAMBUF - pos);
 				if (terminal.getLog() != null) {
 					synchronized (terminal.getLog()) {
@@ -69,7 +77,19 @@ public class Comunicacao extends Thread {
 				}
 				pos = n;
 
-				while (entrada.available() > 0) {
+				while (true) {
+
+					if (!sessao.isConnected()) {
+						break;
+					}
+					
+					if (canal.getExitStatus() != -1) {
+						break;
+					}
+					
+					if (entrada.available() <= 0) {
+						break;
+					}
 					
 					n = entrada.read(buf, pos, TAMBUF - pos);
 					if (terminal.getLog() != null) {
@@ -120,6 +140,7 @@ public class Comunicacao extends Thread {
 						saida.write((cfg.getComando() + "\r\n").getBytes());
 						saida.flush();
 						System.err.println(cfg.getComando());
+						
 					} catch (IOException e) {
 						e.printStackTrace();
 					}
@@ -140,6 +161,10 @@ public class Comunicacao extends Thread {
 			
 			terminal.reconecta(e.getMessage());
 		}
+		
+		System.err.println("exit comunicacao");
+		
+		terminal.disconecta();
 
 	}
 	

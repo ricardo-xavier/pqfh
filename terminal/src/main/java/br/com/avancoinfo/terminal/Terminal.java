@@ -35,7 +35,7 @@ import javafx.stage.WindowEvent;
 
 public class Terminal extends Stage {
 	
-	private static final int VERSAO = 12;
+	private static final int VERSAO = 14;
 	private static final int LINHAS = 25;
 	private static final int COLUNAS = 80;
 	private static final int MARGEM = 5;
@@ -60,7 +60,7 @@ public class Terminal extends Stage {
     private int estado = ESTADO_INICIAL;
     private int lin;
     private int col;
-    private byte[] seq;
+    private char[] seq;
     private int iseq;
     
     private Rectangle r = new Rectangle();
@@ -109,7 +109,7 @@ public class Terminal extends Stage {
 		
 		fila = new LinkedBlockingQueue<>();
 		fonte = new Font(FONTE, cfg.getTamFonte());
-		seq = new byte[256];
+		seq = new char[256];
 
 		// calcula métricas
 		FontMetrics fm = Toolkit.getToolkit().getFontLoader().getFontMetrics(fonte);
@@ -141,6 +141,7 @@ public class Terminal extends Stage {
 		
 		Image imageOk = new Image(getClass().getResourceAsStream("config.png"));
 		Button btnConfig = new Button("", new ImageView(imageOk));
+		btnConfig.setFocusTraversable(false);
 		statusBar.setRight(btnConfig);
 		btnConfig.setOnAction(new EventHandler<ActionEvent>() {
 			
@@ -182,7 +183,7 @@ public class Terminal extends Stage {
 			
 			@Override
 			public void handle(WindowEvent event) {
-				System.err.println("close");
+				System.err.println("close terminal");
 			}
 		});
     }
@@ -217,10 +218,14 @@ public class Terminal extends Stage {
 				r.y = lin;
 				r.width = 1;
 				r.height = 1;
-
+				
+				String s = new String(comandos, 0, tam);
+				tam = s.length();
+				
 				for (int i=0; i<tam; i++) {
 					
-					byte c = comandos[i];
+					int c = s.charAt(i);
+					char ch = s.charAt(i);
 					
 					switch (estado) {
 					
@@ -264,7 +269,7 @@ public class Terminal extends Stage {
 					
 						default:
 					
-							dados[lin][col] = (char) c;
+							dados[lin][col] = ch;
 							atributos[lin][col] = atributo;
 							frente[lin][col] = corFrente;
 							fundo[lin][col] = corFundo;
@@ -284,10 +289,15 @@ public class Terminal extends Stage {
 						break;
 					
 					case ESTADO_ESC:
-						seq[iseq++] = c;
-						if (Character.isAlphabetic(c)) {
+						seq[iseq++] = ch;
+						if (Character.isAlphabetic(ch)) {
 							escape.processaSeq(seq, iseq);
-							if ((c == 'E') && new String(seq, 0, iseq).equals("[]E")) {
+							// ^[[]RunDLL32.EXE shell32.dll,ShellExec_RunDLL "\tmp\enum.pdf"^[[1*^M
+							if ((ch == 'R') 
+									&& new String(seq, 0, iseq).equals("[]R")
+									&& (i < (tam - 2))
+									&& (comandos[i+1] == 'u')
+									&& (comandos[i+2] == 'n')) {
 								estado = ESTADO_EXEC;
 								
 							} else {
@@ -298,12 +308,12 @@ public class Terminal extends Stage {
 						break;
 						
 					case ESTADO_EXEC:
-						seq[iseq++] = c;
-						if (c == '*') {
+						seq[iseq++] = ch;
+						if (ch == '*') {
 							estado = ESTADO_INICIAL;
 							String cmd = new String(seq, 0, iseq);
 							System.err.println(cmd);
-							int p = cmd.indexOf("RunDLL");
+							int p = cmd.indexOf("RunDLL ");
 							if (p > 0) {
 								cmd = cmd.substring(p + 6);
 								p = cmd.indexOf("\u001b");
@@ -554,6 +564,20 @@ public class Terminal extends Stage {
 				
 			}
 		});
+	}
+	
+	public void disconecta() {
+		Platform.runLater(new Runnable() {
+			
+			@Override
+			public void run() {
+				
+				System.err.println("disconect terminal");
+				close();
+				
+			}
+		});
+		
 	}
 	
 	public void alteraRegiao(int x, int y) {

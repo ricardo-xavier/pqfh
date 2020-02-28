@@ -15,7 +15,7 @@ public class Escape {
 		this.terminal = terminal;
 	}
 
-	public void processaSeq(byte[] seq, int iseq) {
+	public void processaSeq(char[] seq, int iseq) {
 
 		String cmd = new String(seq, 0, iseq);
 
