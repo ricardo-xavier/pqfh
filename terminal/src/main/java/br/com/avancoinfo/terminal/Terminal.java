@@ -27,6 +27,7 @@ import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.GridPane;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.stage.Modality;
@@ -35,7 +36,7 @@ import javafx.stage.WindowEvent;
 
 public class Terminal extends Stage {
 	
-	private static final int VERSAO = 14;
+	private static final int VERSAO = 15;
 	private static final int LINHAS = 25;
 	private static final int COLUNAS = 80;
 	private static final int MARGEM = 5;
@@ -87,6 +88,8 @@ public class Terminal extends Stage {
 	private boolean cursorReverso;
 	private int linCursor = -1;
 	private int colCursor;
+	
+	private GridPane pnlBotoes;
 	
 	public Terminal(Configuracao cfg) {
 		
@@ -157,6 +160,14 @@ public class Terminal extends Stage {
 		lblStatus = new Label("Conectando ...");
 		statusBar.setCenter(lblStatus);
 		
+		if (cfg.isBotoesFuncao()) {
+			pnlBotoes = new GridPane();
+			pnlBotoes.setVgap(5);
+			pnlBotoes.setMinWidth(150);
+			pnlBotoes.setMaxWidth(150);
+			tela.setRight(pnlBotoes);
+		}
+		
 		// cria a cena
 		setTitle("Terminal Avanço v" + VERSAO);
 		Scene scene = new Scene(tela);
@@ -226,6 +237,10 @@ public class Terminal extends Stage {
 					
 					int c = s.charAt(i);
 					char ch = s.charAt(i);
+					if (c == 65533) {
+						ch = ' ';
+						c = ch;
+					}
 					
 					switch (estado) {
 					
@@ -404,9 +419,20 @@ public class Terminal extends Stage {
 		// mostra a frente
 		char ultimaCor = '?';
 		for (int i=r.y; i<r.y+r.height; i++) {
+			
 			if (i >= 25) {
 				break;
 			}
+			
+			if (((i == 22) || (i == 23)) && cfg.isBotoesFuncao()) {
+				String s = new String(dados[i]);
+				if (s.contains(":") && s.contains("F")) {
+					if (new BotoesFuncao().processa(s, pnlBotoes, teclado.getSaida())) {
+						//continue;
+					}
+				}
+			}
+			
 			for (int j=r.x; j<r.x+r.width; j++) {
 
 				char cor = (atributos[i][j] & Escape.A_REVERSE) == Escape.A_REVERSE ? fundo[i][j] : frente[i][j];

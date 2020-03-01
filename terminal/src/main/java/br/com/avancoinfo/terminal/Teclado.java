@@ -189,6 +189,10 @@ public class Teclado implements EventHandler<KeyEvent> {
 		}
 		return false;
 	}
+	
+	public OutputStream getSaida() {
+		return saida;
+	}
 
 	public void setSaida(OutputStream saida) {
 		this.saida = saida;

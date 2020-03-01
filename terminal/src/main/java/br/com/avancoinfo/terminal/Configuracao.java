@@ -67,7 +67,9 @@ public class Configuracao extends Stage {
 	private int tamFonte = 20;
 
 	private boolean pontoVirgula;
-	private JFXToggleButton chkDecimal;
+	private JFXToggleButton chkPontoVirgula;
+	private boolean botoesFuncao;
+	private JFXToggleButton chkBotosFuncao;
 	
 	private boolean cancelado;
 	
@@ -274,11 +276,17 @@ public class Configuracao extends Stage {
 
         // avançado
         
-		chkDecimal = new JFXToggleButton();
-		chkDecimal.setText("Enviar ponto e vírgula como decimal");
-		GridPane.setMargin(chkDecimal, new Insets(10, 30, 0, 10));
+		chkPontoVirgula = new JFXToggleButton();
+		chkPontoVirgula.setText("Enviar ponto e vírgula como decimal");
+		GridPane.setMargin(chkPontoVirgula, new Insets(10, 30, 0, 10));
         
-        pnlAvancado.getChildren().add(chkDecimal);
+        pnlAvancado.getChildren().add(chkPontoVirgula);
+        
+		chkBotosFuncao = new JFXToggleButton();
+		chkBotosFuncao.setText("Criar botões para as teclas de função");
+		GridPane.setMargin(chkBotosFuncao, new Insets(10, 30, 0, 10));
+        
+        pnlAvancado.getChildren().add(chkBotosFuncao);
 
         // botões
         
@@ -430,6 +438,10 @@ public class Configuracao extends Stage {
 						case "PONTO_VIRGULA": 
 							setPontoVirgula(valor.equalsIgnoreCase("S"));
 							break;
+						case "BOTOES_TECLAS_FUNCAO": 
+							setBotoesFuncao(valor.equalsIgnoreCase("S"));
+							break;
+							
 						}
 					}
 					
@@ -454,7 +466,8 @@ public class Configuracao extends Stage {
 				
 				spFonte.getValueFactory().setValue(tamFonte);
 				
-				chkDecimal.setSelected(pontoVirgula);
+				chkPontoVirgula.setSelected(pontoVirgula);
+				chkBotosFuncao.setSelected(botoesFuncao);
 				
 			} catch (Exception  e) {
 				e.printStackTrace();
@@ -489,7 +502,8 @@ public class Configuracao extends Stage {
 			Configuracao.setMagenta(cpMagenta.getValue());
 			Configuracao.setCyan(cpCyan.getValue());
 			
-			pontoVirgula = chkDecimal.isSelected();
+			pontoVirgula = chkPontoVirgula.isSelected();
+			botoesFuncao = chkBotosFuncao.isSelected();
 			
 			PrintStream cfg = new PrintStream("terminal.cfg");
 
@@ -528,6 +542,7 @@ public class Configuracao extends Stage {
 
 			cfg.println("[AVANCADO]");
 			cfg.printf("PONTO_VIRGULA=%c%n", pontoVirgula ? 'S' : 'N');
+			cfg.printf("BOTOES_TECLAS_FUNCAO=%c%n", botoesFuncao ? 'S' : 'N');
 			
 			cfg.close();
 			
@@ -665,5 +680,13 @@ public class Configuracao extends Stage {
 
 	public void setPontoVirgula(boolean pontoVirgula) {
 		this.pontoVirgula = pontoVirgula;
+	}
+
+	public boolean isBotoesFuncao() {
+		return botoesFuncao;
+	}
+
+	public void setBotoesFuncao(boolean botoesFuncao) {
+		this.botoesFuncao = botoesFuncao;
 	}
 }
