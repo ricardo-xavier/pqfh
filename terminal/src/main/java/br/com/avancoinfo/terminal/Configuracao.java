@@ -37,6 +37,8 @@ public class Configuracao extends Stage {
 	private JFXTextField edtUsuario;
 	private JFXPasswordField edtSenha;
 	private JFXTextField edtComando;
+	private JFXTextField edtUsuarioIntegral;
+	private JFXPasswordField edtSenhaIntegral;
 	
 	private Spinner<Integer> spFonte;
 
@@ -63,6 +65,8 @@ public class Configuracao extends Stage {
 	private String usuario;
 	private String senha;
 	private String comando = "TERM=ansi cobrun integral";
+	private String usuarioIntegral;
+	private String senhaIntegral;
 	
 	private int tamFonte = 20;
 
@@ -122,7 +126,7 @@ public class Configuracao extends Stage {
         edtPorta.setMaxWidth(50);
         VBox.setMargin(edtPorta, new Insets(0, 10, 4, 10));
 
-        Label lblUsuario = new Label("Usuário");
+        Label lblUsuario = new Label("Usuário do Linux");
         VBox.setMargin(lblUsuario, new Insets(10, 10, 0, 10));
         
         edtUsuario = new JFXTextField(usuario);
@@ -142,9 +146,25 @@ public class Configuracao extends Stage {
         
         edtComando = new JFXTextField(comando);
         VBox.setMargin(edtComando, new Insets(0, 10, 4, 10));
+
+        Label lblUsuarioIntegral = new Label("Usuário do Integral");
+        VBox.setMargin(lblUsuarioIntegral, new Insets(10, 10, 0, 10));
+        
+        edtUsuarioIntegral = new JFXTextField(usuarioIntegral);
+        edtUsuarioIntegral.setMaxWidth(50);
+        VBox.setMargin(edtUsuarioIntegral, new Insets(0, 10, 4, 10));
+
+        Label lblSenhaIntegral = new Label("Senha");
+        VBox.setMargin(lblSenhaIntegral, new Insets(10, 10, 0, 10));
+        
+        edtSenhaIntegral = new JFXPasswordField();
+        edtSenhaIntegral.setText(senhaIntegral);
+        edtSenhaIntegral.setMaxWidth(50);
+        VBox.setMargin(edtSenhaIntegral, new Insets(0, 10, 4, 10));
         
         pnlConexao.getChildren().addAll(lblServidor, edtServidor, lblPorta, edtPorta, lblUsuario, edtUsuario,
-        		lblSenha, edtSenha, lblComando, edtComando);
+        		lblSenha, edtSenha, lblComando, edtComando, lblUsuarioIntegral, edtUsuarioIntegral,
+        		lblSenhaIntegral, edtSenhaIntegral);
 
         // aparência
 		
@@ -401,6 +421,16 @@ public class Configuracao extends Stage {
 						case "COMANDO": 
 							comando = valor; 
 							break;
+							
+						case "USUARIO_INTEGRAL": 
+							usuarioIntegral = valor; 
+							break;
+						
+						case "SENHA_INTEGRAL":
+							cript = new Criptografia();
+							senhaIntegral = cript.descriptografa(valor); 
+							break;
+							
 						}						
 						break;
 					
@@ -454,6 +484,8 @@ public class Configuracao extends Stage {
 				edtUsuario.setText(usuario);
 				edtSenha.setText(senha);
 				edtComando.setText(comando);
+				edtUsuarioIntegral.setText(usuarioIntegral);
+				edtSenhaIntegral.setText(senhaIntegral);
 				
 				cpBranco.setValue(getWhite());
 				cpPreto.setValue(getBlack());
@@ -490,6 +522,8 @@ public class Configuracao extends Stage {
 			usuario = edtUsuario.getText();
 			senha = edtSenha.getText();
 			comando = edtComando.getText();
+			usuarioIntegral = edtUsuarioIntegral.getText();
+			senhaIntegral = edtSenhaIntegral.getText();
 			
 			tamFonte = spFonte.getValue();
 			
@@ -523,6 +557,13 @@ public class Configuracao extends Stage {
 			}
 			if (comando != null) {
 				cfg.printf("COMANDO=%s%n", comando);
+			}
+			if (usuarioIntegral != null) {
+				cfg.printf("USUARIO_INTREGRAL=%s%n", usuarioIntegral);
+			}
+			if (senhaIntegral != null) {
+				Criptografia crip = new Criptografia();
+				cfg.printf("SENHA_INTEGRAL=%s%n", crip.criptografa(senhaIntegral));
 			}
 			
 			cfg.println("[CORES]");
@@ -648,6 +689,22 @@ public class Configuracao extends Stage {
 
 	public void setSenha(String senha) {
 		this.senha = senha;
+	}
+
+	public String getUsuarioIntegral() {
+		return usuarioIntegral;
+	}
+
+	public void setUsuarioIntegral(String usuarioIntegral) {
+		this.usuarioIntegral = usuarioIntegral;
+	}
+
+	public String getSenhaIntegral() {
+		return senhaIntegral;
+	}
+
+	public void setSenhaIntegral(String senhaIntegral) {
+		this.senhaIntegral = senhaIntegral;
 	}
 
 	public String getComando() {
