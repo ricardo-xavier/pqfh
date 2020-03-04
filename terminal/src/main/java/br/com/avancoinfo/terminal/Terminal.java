@@ -428,7 +428,11 @@ public class Terminal extends Stage {
 				String s = new String(dados[i]);
 				if (s.contains(":") && s.contains("F")) {
 					if (new BotoesFuncao().processa(s, pnlBotoes, teclado.getSaida())) {
-						//continue;
+						contexto.setFill(converteCor(frente[i][0]));
+						int x = MARGEM;
+						int y = MARGEM + i * altLin;
+						contexto.fillRect(x, y, COLUNAS * larCar, altLin);
+						continue;
 					}
 				}
 			}

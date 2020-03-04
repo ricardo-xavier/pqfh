@@ -13,7 +13,6 @@ import javafx.scene.layout.GridPane;
 public class BotoesFuncao {
 
 	public boolean processa(String linha, GridPane pnlBotoes, OutputStream saida) {
-
 		
 		if (pnlBotoes.getUserData() != null) {
 			String atual = (String) pnlBotoes.getUserData();

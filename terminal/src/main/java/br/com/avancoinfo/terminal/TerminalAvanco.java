@@ -40,6 +40,9 @@ public class TerminalAvanco extends Application {
 			}
 		}
 		
+		Menu menu = new Menu();
+		menu.showAndWait();
+		
 		Terminal terminal = new Terminal(cfg);
 		terminal.show();
 		
