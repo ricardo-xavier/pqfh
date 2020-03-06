@@ -151,7 +151,7 @@ public class Configuracao extends Stage {
         VBox.setMargin(lblUsuarioIntegral, new Insets(10, 10, 0, 10));
         
         edtUsuarioIntegral = new JFXTextField(usuarioIntegral);
-        edtUsuarioIntegral.setMaxWidth(50);
+        edtUsuarioIntegral.setMaxWidth(60);
         VBox.setMargin(edtUsuarioIntegral, new Insets(0, 10, 4, 10));
 
         Label lblSenhaIntegral = new Label("Senha");
@@ -159,7 +159,7 @@ public class Configuracao extends Stage {
         
         edtSenhaIntegral = new JFXPasswordField();
         edtSenhaIntegral.setText(senhaIntegral);
-        edtSenhaIntegral.setMaxWidth(50);
+        edtSenhaIntegral.setMaxWidth(60);
         VBox.setMargin(edtSenhaIntegral, new Insets(0, 10, 4, 10));
         
         pnlConexao.getChildren().addAll(lblServidor, edtServidor, lblPorta, edtPorta, lblUsuario, edtUsuario,
@@ -559,7 +559,7 @@ public class Configuracao extends Stage {
 				cfg.printf("COMANDO=%s%n", comando);
 			}
 			if (usuarioIntegral != null) {
-				cfg.printf("USUARIO_INTREGRAL=%s%n", usuarioIntegral);
+				cfg.printf("USUARIO_INTEGRAL=%s%n", usuarioIntegral);
 			}
 			if (senhaIntegral != null) {
 				Criptografia crip = new Criptografia();

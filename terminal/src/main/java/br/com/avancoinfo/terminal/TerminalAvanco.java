@@ -27,6 +27,7 @@ public class TerminalAvanco extends Application {
 		Configuracao cfg = new Configuracao();
 		cfg.carrega();
 		
+		
 		if (servidor != null) {
 			if (cfg.getServidor() == null) {
 				cfg.setServidor(servidor);
@@ -39,9 +40,6 @@ public class TerminalAvanco extends Application {
 				return;
 			}
 		}
-		
-		Menu menu = new Menu();
-		menu.showAndWait();
 		
 		Terminal terminal = new Terminal(cfg);
 		terminal.show();

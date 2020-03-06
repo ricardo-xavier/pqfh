@@ -34,9 +34,16 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 
+
+enum EstadoLogin {
+	OK,
+	AGUARDANDO_PROMPT,
+	AGUARDANDO_RESPOSTA
+}
+
 public class Terminal extends Stage {
 	
-	private static final int VERSAO = 15;
+	private static final int VERSAO = 16;
 	private static final int LINHAS = 25;
 	private static final int COLUNAS = 80;
 	private static final int MARGEM = 5;
@@ -90,6 +97,8 @@ public class Terminal extends Stage {
 	private int colCursor;
 	
 	private GridPane pnlBotoes;
+	
+	private EstadoLogin estadoLogin;
 	
 	public Terminal(Configuracao cfg) {
 		
@@ -197,6 +206,13 @@ public class Terminal extends Stage {
 				System.err.println("close terminal");
 			}
 		});
+        
+		estadoLogin = EstadoLogin.OK;
+		
+		if ((cfg.getUsuarioIntegral() != null) && !cfg.getUsuarioIntegral().trim().equals("")) {
+			estadoLogin = EstadoLogin.AGUARDANDO_PROMPT;
+		}
+        
     }
 	
 	void atualiza() {
@@ -352,6 +368,72 @@ public class Terminal extends Stage {
 				if (log != null) {
 					Debug.gravaTela(terminal, tam);
 				}
+
+				if (estadoLogin == EstadoLogin.AGUARDANDO_PROMPT) {
+					String msg = new String(dados[12]).toLowerCase();
+					
+					if (msg.contains("senha:")) {
+						try {
+							teclado.getSaida().write((cfg.getUsuarioIntegral()).getBytes());
+							if (cfg.getUsuarioIntegral().length() < 4) {
+								teclado.getSaida().write("\n".getBytes());
+							}
+							teclado.getSaida().flush();
+							Thread.sleep(100);
+							teclado.getSaida().write((cfg.getSenhaIntegral()).getBytes());
+							if (cfg.getSenhaIntegral().length() < 5) {
+								teclado.getSaida().write("\n".getBytes());
+							}
+							teclado.getSaida().flush();
+							estadoLogin = EstadoLogin.AGUARDANDO_RESPOSTA;
+							
+						} catch (IOException | InterruptedException e) {
+							e.printStackTrace();
+						}
+					}
+					return;
+				}
+
+				if (estadoLogin == EstadoLogin.AGUARDANDO_RESPOSTA) {
+					String msg = new String(dados[22]).toLowerCase();
+					if (msg.contains("senha invalida")) {
+						erro("Erro no acesso ao sistema", "Senha do integral inválida");
+						return;
+					}
+
+					if (msg.contains("nao cadastrado")) {
+						erro("Erro no acesso ao sistema", "Usuário do integral não cadastrado");
+						return;						
+					}
+					
+					msg = new String(dados[5]);
+					if (msg.contains("P  r  i  n  c  i  p  a  l")) {
+						
+						Menu menu = new Menu();
+						menu.showAndWait();
+						System.err.println(menu.getOpcaoSelecionada());
+						
+						if (menu.getOpcaoSelecionada() == null) {
+							close();
+							return;
+						}
+						
+						for (int i=0; i<menu.getOpcaoSelecionada().length(); i++) {
+							if (Character.isUpperCase(menu.getOpcaoSelecionada().charAt(i))) {
+								try {
+									teclado.getSaida().write(menu.getOpcaoSelecionada().charAt(i));
+									teclado.getSaida().flush();
+									
+								} catch (IOException e) {
+									e.printStackTrace();
+								}
+							}
+						}
+
+						estadoLogin = EstadoLogin.OK;
+					}
+					return;
+				}
 				
 				mostra();
 				
@@ -382,6 +464,10 @@ public class Terminal extends Stage {
 	}
 	
 	public void mostra() {
+		
+		if (estadoLogin != EstadoLogin.OK) {
+			return;
+		}
 
 		// pinta o fundo
 		for (int i=r.y; i<r.y+r.height; i++) {
@@ -591,6 +677,31 @@ public class Terminal extends Stage {
 				com.setName("COMUNICACAO");
 				com.start();				
 				TerminalAvanco.setCom(com);
+				
+			}
+		});
+	}
+	
+	public void erro(String titulo, String msg) {
+		Platform.runLater(new Runnable() {
+			
+			@Override
+			public void run() {
+				
+				Alert alert = new Alert(AlertType.ERROR);
+				alert.setTitle("Erro");
+				alert.setHeaderText(titulo);
+				alert.setContentText(msg);
+				alert.showAndWait();		
+				
+				cfg.showAndWait();
+				
+				alert = new Alert(AlertType.INFORMATION);
+				alert.setTitle("Aviso");
+				alert.setHeaderText("O terminal será fechado. Execute novamente para carregar as novas configurações.");
+				alert.showAndWait();		
+				
+				close();
 				
 			}
 		});
