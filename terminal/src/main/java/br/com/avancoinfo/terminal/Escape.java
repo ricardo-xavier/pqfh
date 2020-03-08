@@ -19,12 +19,14 @@ public class Escape {
 
 		String cmd = new String(seq, 0, iseq);
 
+		/*
 		if (terminal.getLog() != null) {
 			synchronized (terminal.getLog()) {
 				terminal.getLog().println("ESCAPE " + cmd);
 				terminal.getLog().flush();
 			}
 		}
+		*/
 
 		String prms = "";
 		if (seq[0] == '[') {

@@ -1,7 +1,11 @@
 package br.com.avancoinfo.terminal;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
@@ -17,24 +21,15 @@ import javafx.stage.Stage;
 
 public class Menu extends Stage {
 
-	private String opcaoSelecionada;
-
-	private String[] opcoes = { "Cadastros basicos" ,
-			"administracao Materiais",
-			"administracao Financeira",
-			"administracao Fiscal",
-			"preco por Grupo",
-			"vendas - Automacao",
-			"mOvimento - caixa",
-			"controle de Producao",
-			"Exportar/importar arquivos",
-			"SPED/EFD - NFe/NFCe",
-			"Frota - veiculos"
-	};
+	private static List<String> opcoes;
+	private Comunicacao com;
+	private boolean encerrar;
 	
-	public Menu() {
+	public Menu(char[][] dados, Comunicacao com) {
 		
-		FlowPane pnlMenu = new FlowPane(50, 50);
+		encerrar = true;
+		this.com = com;
+		FlowPane pnlMenu = new FlowPane();
 
 		pnlMenu.setOnKeyPressed(new EventHandler<KeyEvent>() {
 
@@ -44,24 +39,46 @@ public class Menu extends Stage {
 			}
 		});
 		
+		if (opcoes == null) {
+			opcoes = new ArrayList<String>();
+			for (int i=7; i<=17; i++) {
+				String s = new String(dados[i], 35, 40).trim();
+				opcoes.add(s);
+			}
+		}
+		
 		for (String opcao : opcoes) {
-			
+
 			VBox pnl = new VBox(5);
 			pnl.setMinWidth(200);
 			pnl.setMaxWidth(200);
 			pnl.setAlignment(Pos.CENTER);
-			
-			Image imagem = new Image(getClass().getResourceAsStream("logo2.png"));
+
+			Image imagem;
+			try {
+				String nomeImagem = opcao.trim().toLowerCase() + ".png";
+				while (nomeImagem.contains(" ")) {
+					nomeImagem = nomeImagem.replace(" ", "");
+				}
+				imagem = new Image(getClass().getResourceAsStream(nomeImagem));
+			} catch (Exception e) {
+				imagem = new Image(getClass().getResourceAsStream("logo2.png"));
+			}
 			ImageView iv = new ImageView(imagem);
 			Button btnOpcao = new Button("", iv);
+			btnOpcao.setId(opcao);
 			
 			btnOpcao.setOnAction(new EventHandler<ActionEvent>() {
 				
 				@Override
 				public void handle(ActionEvent event) {
-					setOpcaoSelecionada(opcao);
-					close();
-					
+
+					for (int i=0; i<opcao.length(); i++) {
+						if (Character.isUpperCase(opcao.charAt(i))) {
+							com.envia(String.valueOf(opcao.charAt(i)));
+						}
+					}
+
 				}
 			});
 
@@ -77,13 +94,14 @@ public class Menu extends Stage {
 			pnl.getChildren().add(btnOpcao);
 			pnl.getChildren().add(new Label(opcao));
 			pnlMenu.getChildren().add(pnl);
+			FlowPane.setMargin(pnl, new Insets(10));
 			
 		}
 		
-		Scene scene = new Scene(pnlMenu, 730, 400);
+		Scene scene = new Scene(pnlMenu, 700, 480);
 		setTitle("Menu Principal");
 		setScene(scene);
-		initModality(Modality.WINDOW_MODAL);
+		initModality(Modality.APPLICATION_MODAL);
 		
     }
 
@@ -97,8 +115,7 @@ public class Menu extends Stage {
 			for (int i=0; i<opcao.length(); i++) {
 				if (Character.isUpperCase(opcao.charAt(i))) {
 					if (opcao.charAt(i) == code.toString().charAt(0)) {
-						opcaoSelecionada = opcao;	
-						close();
+						com.envia(String.valueOf(opcao.charAt(i)));
 						return;
 					}
 				}
@@ -106,13 +123,12 @@ public class Menu extends Stage {
 		}
 	}
 
-	public String getOpcaoSelecionada() {
-		return opcaoSelecionada;
+	public boolean isEncerrar() {
+		return encerrar;
 	}
 
-	public void setOpcaoSelecionada(String opcaoSelecionada) {
-		this.opcaoSelecionada = opcaoSelecionada;
+	public void setEncerrar(boolean encerrar) {
+		this.encerrar = encerrar;
 	}
-	
 
 }

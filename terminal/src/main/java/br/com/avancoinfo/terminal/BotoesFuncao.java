@@ -1,7 +1,5 @@
 package br.com.avancoinfo.terminal;
 
-import java.io.IOException;
-import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -12,7 +10,7 @@ import javafx.scene.layout.GridPane;
 
 public class BotoesFuncao {
 
-	public boolean processa(String linha, GridPane pnlBotoes, OutputStream saida) {
+	public boolean processa(String linha, GridPane pnlBotoes, Comunicacao com) {
 		
 		if (pnlBotoes.getUserData() != null) {
 			String atual = (String) pnlBotoes.getUserData();
@@ -62,72 +60,56 @@ public class BotoesFuncao {
 				@Override
 				public void handle(ActionEvent event) {
 
-					try {
-						switch (btn.getId()) {
+					switch (btn.getId()) {
 
-						case "F1":
-							saida.write("\u001b[M".getBytes());
-							saida.flush();
-							break;
+					case "F1":
+						com.envia("\u001b[M");
+						break;
 
-						case "F2":
-							saida.write("\u001b[N".getBytes());
-							saida.flush();
-							break;
+					case "F2":
+						com.envia("\u001b[N");
+						break;
 
-						case "F3":
-							saida.write("\u001b[O".getBytes());
-							saida.flush();
-							break;
+					case "F3":
+						com.envia("\u001b[O");
+						break;
 
-						case "F4":
-							saida.write("\u001b[P".getBytes());
-							saida.flush();
-							break;
+					case "F4":
+						com.envia("\u001b[P");
+						break;
 
-						case "F5":
-							saida.write("\u001b[Q".getBytes());
-							saida.flush();
-							break;
+					case "F5":
+						com.envia("\u001b[Q");
+						break;
 
-						case "F6":
-							saida.write("\u001b[R".getBytes());
-							saida.flush();
-							break;
+					case "F6":
+						com.envia("\u001b[R");
+						break;
 
-						case "F7":
-							saida.write("\u001b[S".getBytes());
-							saida.flush();
-							break;
+					case "F7":
+						com.envia("\u001b[S");
+						break;
 
-						case "F8":
-							saida.write("\u001b[T".getBytes());
-							saida.flush();
-							break;
+					case "F8":
+						com.envia("\u001b[T");
+						break;
 
-						case "F9":
-							saida.write("\u001b[U".getBytes());
-							saida.flush();
-							break;
+					case "F9":
+						com.envia("\u001b[U");
+						break;
 
-						case "F10":
-							saida.write("\u001b[V".getBytes());
-							saida.flush();
-							break;
+					case "F10":
+						com.envia("\u001b[V");
+						break;
 
-						case "F11":
-							saida.write("\u001b[W".getBytes());
-							saida.flush();
-							break;
+					case "F11":
+						com.envia("\u001b[W");
+						break;
 
-						case "F12":
-							saida.write("\u001b[X".getBytes());
-							saida.flush();
-							break;
+					case "F12":
+						com.envia("\u001b[X");
+						break;
 
-						}
-					} catch (IOException e) {
-						e.printStackTrace();
 					}
 
 				}

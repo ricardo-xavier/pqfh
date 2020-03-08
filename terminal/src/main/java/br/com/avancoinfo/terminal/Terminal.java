@@ -2,7 +2,6 @@ package br.com.avancoinfo.terminal;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.Date;
 import java.util.concurrent.BlockingQueue;
@@ -43,7 +42,7 @@ enum EstadoLogin {
 
 public class Terminal extends Stage {
 	
-	private static final int VERSAO = 16;
+	private static final int VERSAO = 17;
 	private static final int LINHAS = 25;
 	private static final int COLUNAS = 80;
 	private static final int MARGEM = 5;
@@ -99,6 +98,13 @@ public class Terminal extends Stage {
 	private GridPane pnlBotoes;
 	
 	private EstadoLogin estadoLogin;
+	
+	private Menu menu;
+	
+	private Comunicacao com;
+	private SelecaoFilial selecao;
+	
+	private static char MARCADOR = 65533;
 	
 	public Terminal(Configuracao cfg) {
 		
@@ -253,9 +259,13 @@ public class Terminal extends Stage {
 					
 					int c = s.charAt(i);
 					char ch = s.charAt(i);
-					if (c == 65533) {
-						ch = ' ';
-						c = ch;
+					if (c == MARCADOR) {
+						System.err.println("marcador " + col);
+						if ((menu != null) && (col < 30)) {
+							menu.close();
+							estadoLogin = EstadoLogin.OK;
+							menu = null;
+						}
 					}
 					
 					switch (estado) {
@@ -373,23 +383,20 @@ public class Terminal extends Stage {
 					String msg = new String(dados[12]).toLowerCase();
 					
 					if (msg.contains("senha:")) {
-						try {
-							teclado.getSaida().write((cfg.getUsuarioIntegral()).getBytes());
-							if (cfg.getUsuarioIntegral().length() < 4) {
-								teclado.getSaida().write("\n".getBytes());
-							}
-							teclado.getSaida().flush();
-							Thread.sleep(100);
-							teclado.getSaida().write((cfg.getSenhaIntegral()).getBytes());
-							if (cfg.getSenhaIntegral().length() < 5) {
-								teclado.getSaida().write("\n".getBytes());
-							}
-							teclado.getSaida().flush();
-							estadoLogin = EstadoLogin.AGUARDANDO_RESPOSTA;
-							
-						} catch (IOException | InterruptedException e) {
-							e.printStackTrace();
+						com.envia(cfg.getUsuarioIntegral());
+						if (cfg.getUsuarioIntegral().length() < 4) {
+							com.envia("\n");
 						}
+						try {
+							Thread.sleep(100);
+						} catch (InterruptedException e) {
+						}
+						com.envia((cfg.getSenhaIntegral()));
+						if (cfg.getSenhaIntegral().length() < 5) {
+							com.envia("\n");
+						}
+						estadoLogin = EstadoLogin.AGUARDANDO_RESPOSTA;
+						
 					}
 					return;
 				}
@@ -405,41 +412,78 @@ public class Terminal extends Stage {
 						erro("Erro no acesso ao sistema", "Usuário do integral não cadastrado");
 						return;						
 					}
-					
-					msg = new String(dados[5]);
-					if (msg.contains("P  r  i  n  c  i  p  a  l")) {
-						
-						Menu menu = new Menu();
-						menu.showAndWait();
-						System.err.println(menu.getOpcaoSelecionada());
-						
-						if (menu.getOpcaoSelecionada() == null) {
-							close();
-							return;
-						}
-						
-						for (int i=0; i<menu.getOpcaoSelecionada().length(); i++) {
-							if (Character.isUpperCase(menu.getOpcaoSelecionada().charAt(i))) {
-								try {
-									teclado.getSaida().write(menu.getOpcaoSelecionada().charAt(i));
-									teclado.getSaida().flush();
-									
-								} catch (IOException e) {
-									e.printStackTrace();
-								}
-							}
-						}
 
-						estadoLogin = EstadoLogin.OK;
-					}
+					verificaMenuPrincipal();
+					verificaFilial();
 					return;
 				}
+				
+				verificaMenuPrincipal();
+				verificaFilial();
 				
 				mostra();
 				
 			}
 		});
 		
+	}
+	
+	private boolean verificaMenuPrincipal() {
+		
+		String msg = new String(dados[5]);
+		if (msg.contains("P  r  i  n  c  i  p  a  l") && (menu == null)) {
+			System.err.println("ativar menu");
+
+			menu = new Menu(dados, com);
+			hide();
+			menu.showAndWait();
+			if ((menu != null) && menu.isEncerrar()) {
+				close();
+				return true;
+			}
+			show();
+				
+			return true;
+		}
+		return false;
+		
+	}
+
+	private boolean verificaFilial() {
+
+		String msg = new String(dados[16]);
+		if (msg.contains("<99> Consolidado")) {
+
+			if (selecao != null) {
+				return false;
+			}
+			
+			try {
+				Thread.sleep(100);
+			} catch (InterruptedException e1) {
+				e1.printStackTrace();
+			}
+			
+			System.err.println("selecao filial");
+			selecao = new SelecaoFilial(dados);
+			selecao.showAndWait();
+			String filial = selecao.getFilial();
+			
+			if (filial == null) {
+				com.envia("\u001b");	
+			} else {
+				com.envia(filial);
+				if (filial.length() < 2) {
+					com.envia("\n");
+				}
+			}
+
+			System.err.println("close");
+			return true;
+		}
+
+		selecao = null;
+		return false;
 	}
 
 	private void scroll() {
@@ -513,7 +557,7 @@ public class Terminal extends Stage {
 			if (((i == 22) || (i == 23)) && cfg.isBotoesFuncao()) {
 				String s = new String(dados[i]);
 				if (s.contains(":") && s.contains("F")) {
-					if (new BotoesFuncao().processa(s, pnlBotoes, teclado.getSaida())) {
+					if (new BotoesFuncao().processa(s, pnlBotoes, com)) {
 						contexto.setFill(converteCor(frente[i][0]));
 						int x = MARGEM;
 						int y = MARGEM + i * altLin;
@@ -536,7 +580,7 @@ public class Terminal extends Stage {
 					continue;
 				}
 				
-				String s = String.valueOf(dados[i][j]);
+				String s = dados[i][j] != MARCADOR ? String.valueOf(dados[i][j]) : " ";
 				contexto.strokeText(s, MARGEM + j*larCar, MARGEM + i*altLin);
 			}
 		}		
@@ -558,6 +602,10 @@ public class Terminal extends Stage {
 	}
 	
 	public void mostraCursor() {
+		
+		if (estadoLogin != EstadoLogin.OK) {
+			return;
+		}
 		
 		// não mostra o cursor enquando estiver recebendo dados
 		if (!fila.isEmpty()) {
@@ -814,8 +862,9 @@ public class Terminal extends Stage {
 		this.fila = fila;
 	}
 
-	public void setSaida(OutputStream saida) {
-		teclado.setSaida(saida);
+	public void setCom(Comunicacao com) {
+		this.com = com;
+		teclado.setCom(com);
 	}
 
 	public boolean isConectado() {

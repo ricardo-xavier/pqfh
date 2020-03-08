@@ -17,6 +17,7 @@ public class Debug {
 			}
 			terminal.getLog().println();
 
+			/*
 			terminal.getLog().println("Fundo:");
 			for (int y = 0; y < Terminal.getLinhas(); y++) {
 				terminal.getLog().printf("%02d ", y + 1);
@@ -36,6 +37,7 @@ public class Debug {
 				terminal.getLog().println();
 			}
 			terminal.getLog().println();
+			*/
 			terminal.getLog().flush();
 		}
 	}

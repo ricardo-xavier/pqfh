@@ -16,6 +16,7 @@ public class Comunicacao extends Thread {
 	private Terminal terminal;
 	private Configuracao cfg;
 	private Session sessao;
+	private OutputStream saida;
 
 	public Comunicacao(Terminal terminal, Configuracao cfg) {
 		this.terminal = terminal;
@@ -49,8 +50,8 @@ public class Comunicacao extends Thread {
 			sessao.connect();
 			ChannelShell canal = (ChannelShell) sessao.openChannel("shell");
 			InputStream entrada = canal.getInputStream();
-			OutputStream saida = canal.getOutputStream();
-			terminal.setSaida(saida);
+			saida = canal.getOutputStream();
+			terminal.setCom(this);
 			canal.connect();
 			terminal.setConectado(true, cfg.getServidor(), cfg.getPorta(), cfg.getUsuario());
 
@@ -166,6 +167,22 @@ public class Comunicacao extends Thread {
 		
 		terminal.disconecta();
 
+	}
+	
+	public void envia(String s) {
+		try {
+			if (terminal.getLog() != null) {
+				synchronized (terminal.getLog()) {
+					terminal.getLog().println("> " + s);
+					terminal.getLog().flush();
+				}
+			}
+			saida.write(s.getBytes());
+			saida.flush();
+			
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 	
 	public void close() {
