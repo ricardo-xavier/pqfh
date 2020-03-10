@@ -42,7 +42,7 @@ enum EstadoLogin {
 
 public class Terminal extends Stage {
 	
-	private static final int VERSAO = 17;
+	private static final int VERSAO = 18;
 	private static final int LINHAS = 25;
 	private static final int COLUNAS = 80;
 	private static final int MARGEM = 5;
@@ -100,6 +100,8 @@ public class Terminal extends Stage {
 	private EstadoLogin estadoLogin;
 	
 	private Menu menu;
+	private boolean montarMenu;
+	private boolean marcadorRecebido;
 	
 	private Comunicacao com;
 	private SelecaoFilial selecao;
@@ -231,6 +233,7 @@ public class Terminal extends Stage {
 				Buffer buf = null;
 				int tam = 0;
 				byte[] comandos = null;
+				marcadorRecebido = false;
 				
 				synchronized (fila) {
 
@@ -260,11 +263,33 @@ public class Terminal extends Stage {
 					int c = s.charAt(i);
 					char ch = s.charAt(i);
 					if (c == MARCADOR) {
-						System.err.println("marcador " + col);
-						if ((menu != null) && (col < 30)) {
-							menu.close();
-							estadoLogin = EstadoLogin.OK;
-							menu = null;
+						
+						if (log != null) {
+							synchronized (log) {
+								log.printf("marcador encontrado col=%d montar=%s menu=%s%n", col, montarMenu, menu != null);
+								log.flush();
+							}
+						}
+						marcadorRecebido = true;
+						
+						if (montarMenu) {
+							montarMenu = false;
+							menu = new Menu(dados, frente, com);
+							hide();
+							menu.showAndWait();
+							if ((menu != null) && menu.isEncerrar()) {
+								System.err.println("encerrar");
+								close();
+								return;
+							}
+							show();
+							
+						} else {
+							if ((menu != null) && ((col == 3) || (col == 4))) {
+								menu.close();
+								estadoLogin = EstadoLogin.OK;
+								menu = null;
+							}
 						}
 					}
 					
@@ -413,13 +438,17 @@ public class Terminal extends Stage {
 						return;						
 					}
 
-					verificaMenuPrincipal();
-					verificaFilial();
+					if (fila.isEmpty()) {
+						verificaMenuPrincipal();
+						verificaFilial();
+					}
 					return;
 				}
 				
-				verificaMenuPrincipal();
-				verificaFilial();
+				if (fila.isEmpty()) {
+					verificaMenuPrincipal();
+					verificaFilial();
+				}
 				
 				mostra();
 				
@@ -431,18 +460,30 @@ public class Terminal extends Stage {
 	private boolean verificaMenuPrincipal() {
 		
 		String msg = new String(dados[5]);
-		if (msg.contains("P  r  i  n  c  i  p  a  l") && (menu == null)) {
-			System.err.println("ativar menu");
-
-			menu = new Menu(dados, com);
-			hide();
-			menu.showAndWait();
-			if ((menu != null) && menu.isEncerrar()) {
-				close();
-				return true;
+		if (msg.contains("P  r  i  n  c  i  p  a  l") && (menu == null) && !montarMenu) {
+			
+			if (log != null) {
+				synchronized (log) {
+					log.println("menu principal encontrado " + marcadorRecebido);
+					log.flush();
+				}
 			}
-			show();
-				
+
+			if (marcadorRecebido) {
+				menu = new Menu(dados, frente, com);
+				hide();
+				menu.showAndWait();
+				if ((menu != null) && menu.isEncerrar()) {
+					System.err.println("encerrar");
+					close();
+					return false;
+				}
+				show();
+			} else {
+				// vai montar o menu quando receber o marcador
+				// evita que o menu fique incompleto
+				montarMenu = true;
+			}
 			return true;
 		}
 		return false;
@@ -464,7 +505,13 @@ public class Terminal extends Stage {
 				e1.printStackTrace();
 			}
 			
-			System.err.println("selecao filial");
+			if (log != null) {
+				synchronized (log) {
+					log.println("selecao de filial encontrada");
+					log.flush();
+				}
+			}
+
 			selecao = new SelecaoFilial(dados);
 			selecao.showAndWait();
 			String filial = selecao.getFilial();

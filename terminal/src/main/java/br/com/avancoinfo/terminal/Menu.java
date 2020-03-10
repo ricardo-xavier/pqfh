@@ -9,23 +9,27 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
-import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
+import javafx.scene.text.Text;
+import javafx.scene.text.TextAlignment;
+import javafx.scene.text.TextFlow;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 
 public class Menu extends Stage {
 
 	private static List<String> opcoes;
+	private static List<Character> teclas;
 	private Comunicacao com;
 	private boolean encerrar;
 	
-	public Menu(char[][] dados, Comunicacao com) {
+	public Menu(char[][] dados, char[][] frente, Comunicacao com) {
 		
 		encerrar = true;
 		this.com = com;
@@ -41,13 +45,30 @@ public class Menu extends Stage {
 		
 		if (opcoes == null) {
 			opcoes = new ArrayList<String>();
+			teclas = new ArrayList<Character>();
 			for (int i=7; i<=17; i++) {
 				String s = new String(dados[i], 35, 40).trim();
+				Character letra = ' ';
+				for (int j=35; j<75; j++) {
+					if (Character.isUpperCase(dados[i][j])) {
+						letra = dados[i][j];
+						break;
+					}
+				}
+				for (int j=35; j<75; j++) {
+					if (frente[i][j] == 'Y') {
+						letra = dados[i][j];
+						break;						
+					}
+				}
 				opcoes.add(s);
+				teclas.add(letra);
 			}
 		}
 		
-		for (String opcao : opcoes) {
+		for (int o=0; o<opcoes.size(); o++) {
+			String opcao = opcoes.get(o);
+			char tecla = teclas.get(o);
 
 			VBox pnl = new VBox(5);
 			pnl.setMinWidth(200);
@@ -72,13 +93,7 @@ public class Menu extends Stage {
 				
 				@Override
 				public void handle(ActionEvent event) {
-
-					for (int i=0; i<opcao.length(); i++) {
-						if (Character.isUpperCase(opcao.charAt(i))) {
-							com.envia(String.valueOf(opcao.charAt(i)));
-						}
-					}
-
+					com.envia(String.valueOf(tecla));
 				}
 			});
 
@@ -92,7 +107,30 @@ public class Menu extends Stage {
 			});
 			
 			pnl.getChildren().add(btnOpcao);
-			pnl.getChildren().add(new Label(opcao));
+			
+			TextFlow texto = new TextFlow();
+			texto.setTextAlignment(TextAlignment.CENTER);
+			int p = opcao.indexOf(tecla);
+			if (p == 0) {
+				Text destaque = new Text(String.valueOf(tecla));
+				destaque.setFill(Color.RED);
+				Text normal = new Text(opcao.substring(1).trim());
+				normal.setFill(Color.BLACK);
+				texto.getChildren().addAll(destaque, normal);
+				
+			} else {
+				Text inicio = new Text(opcao.substring(0, p));
+				inicio.setFill(Color.BLACK);				
+				Text destaque = new Text(String.valueOf(tecla));
+				destaque.setFill(Color.RED);
+				Text normal = new Text(opcao.substring(p+1).trim());
+				normal.setFill(Color.BLACK);
+				texto.getChildren().addAll(inicio, destaque, normal);
+				
+			}
+			
+			
+			pnl.getChildren().add(texto);
 			pnlMenu.getChildren().add(pnl);
 			FlowPane.setMargin(pnl, new Insets(10));
 			
@@ -111,14 +149,10 @@ public class Menu extends Stage {
 			close();
 		}
 		
-		for (String opcao : opcoes) {
-			for (int i=0; i<opcao.length(); i++) {
-				if (Character.isUpperCase(opcao.charAt(i))) {
-					if (opcao.charAt(i) == code.toString().charAt(0)) {
-						com.envia(String.valueOf(opcao.charAt(i)));
-						return;
-					}
-				}
+		for (int o=0; o<opcoes.size(); o++) {
+			char tecla = teclas.get(o);
+			if (tecla == code.toString().charAt(0)) {
+				com.envia(String.valueOf(tecla));
 			}
 		}
 	}
