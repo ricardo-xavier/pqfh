@@ -52,6 +52,7 @@ public class BotoesFuncao {
 		int lin = 0;
 		for (int i = teclas.size() - 1; i >= 0; i--) {
 			Button btn = new Button(teclas.get(i) + ":" + descricoes.get(i));
+			btn.getStyleClass().add("botao");
 			btn.setId(teclas.get(i));
 			btn.setPrefWidth(140);
 			btn.setFocusTraversable(false);

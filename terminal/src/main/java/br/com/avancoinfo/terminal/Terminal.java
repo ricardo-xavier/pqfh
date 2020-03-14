@@ -27,6 +27,7 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
@@ -43,7 +44,7 @@ enum EstadoLogin {
 
 public class Terminal extends Stage {
 	
-	private static final int VERSAO = 20;
+	private static final int VERSAO = 21;
 	private static final int LINHAS = 25;
 	private static final int COLUNAS = 80;
 	private static final int MARGEM = 5;
@@ -161,8 +162,64 @@ public class Terminal extends Stage {
 		statusBar.setId("statusbar");
 		tela.setBottom(statusBar);
 		
+		FlowPane pnlSocial = new FlowPane();
+		statusBar.setLeft(pnlSocial);
+		pnlSocial.setMaxWidth(150);
+
+		Image imageSite = new Image(getClass().getResourceAsStream("avanco4.png"), 32, 32, false, false);
+		ImageView ivSite = new ImageView(imageSite);
+		ivSite.getStyleClass().add("botao");
+		pnlSocial.getChildren().add(ivSite);
+		ivSite.setOnMouseClicked(new EventHandler<MouseEvent>() {
+
+			@Override
+			public void handle(MouseEvent event) {
+				String url = "https://avancoinfo.com.br/";
+				try {
+					new ProcessBuilder("x-www-browser", url).start();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		});
+
+		Image imageFace = new Image(getClass().getResourceAsStream("facebook.png"), 48, 48, false, false);
+		ImageView ivFace = new ImageView(imageFace);
+		ivFace.getStyleClass().add("botao");
+		pnlSocial.getChildren().add(ivFace);
+		ivFace.setOnMouseClicked(new EventHandler<MouseEvent>() {
+
+			@Override
+			public void handle(MouseEvent event) {
+				String url = "https://facebook.com/avancoinfo/";
+				try {
+					new ProcessBuilder("x-www-browser", url).start();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		});
+
+		Image imageLinkedin = new Image(getClass().getResourceAsStream("linkedin.png"), 32, 32, false, false);
+		ImageView ivLinkedin = new ImageView(imageLinkedin);
+		ivLinkedin.getStyleClass().add("botao");
+		pnlSocial.getChildren().add(ivLinkedin);
+		ivLinkedin.setOnMouseClicked(new EventHandler<MouseEvent>() {
+
+			@Override
+			public void handle(MouseEvent event) {
+				String url = "https://pt.linkedin.com/company/avan-o-inform-tica";
+				try {
+					new ProcessBuilder("x-www-browser", url).start();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		});
+		
 		Image imageOk = new Image(getClass().getResourceAsStream("config.png"));
 		Button btnConfig = new Button("", new ImageView(imageOk));
+		btnConfig.getStyleClass().add("botao");
 		btnConfig.setFocusTraversable(false);
 		statusBar.setRight(btnConfig);
 		btnConfig.setOnAction(new EventHandler<ActionEvent>() {
@@ -192,6 +249,7 @@ public class Terminal extends Stage {
 		Scene scene = new Scene(tela);
 		setScene(scene);
 		initModality(Modality.WINDOW_MODAL);
+		scene.getStylesheets().add(Terminal.class.getResource("avanco.css").toExternalForm());
 		
 		// inicializa o terminal
         dados = new char[LINHAS][COLUNAS];

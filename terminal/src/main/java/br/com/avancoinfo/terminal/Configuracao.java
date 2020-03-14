@@ -316,6 +316,7 @@ public class Configuracao extends Stage {
         JFXButton btnConfirma = new JFXButton("Confirma");
         btnConfirma.setCursor(javafx.scene.Cursor.HAND);
         btnConfirma.setOnAction((event) -> confirma());
+        btnConfirma.getStyleClass().add("botao");
         
         JFXButton btnCancela = new JFXButton("Cancela");
         btnCancela.setCursor(javafx.scene.Cursor.HAND);
@@ -323,6 +324,7 @@ public class Configuracao extends Stage {
         	cancelado = true; 
         	close(); 
         });
+        btnCancela.getStyleClass().add("botao");
 
         HBox.setMargin(btnConfirma, new Insets(10, 0, 10, 10));
         HBox.setMargin(btnCancela, new Insets(10, 0, 0, 10));

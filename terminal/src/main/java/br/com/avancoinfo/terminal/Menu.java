@@ -88,6 +88,7 @@ public class Menu extends Stage {
 			ImageView iv = new ImageView(imagem);
 			Button btnOpcao = new Button("", iv);
 			btnOpcao.setId(opcao);
+			btnOpcao.getStyleClass().add("botao");
 			
 			btnOpcao.setOnAction(new EventHandler<ActionEvent>() {
 				
@@ -140,6 +141,7 @@ public class Menu extends Stage {
 		setTitle("Menu Principal");
 		setScene(scene);
 		initModality(Modality.APPLICATION_MODAL);
+		scene.getStylesheets().add(Terminal.class.getResource("avanco.css").toExternalForm());
 		
     }
 
