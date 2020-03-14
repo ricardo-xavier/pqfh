@@ -73,7 +73,9 @@ public class Configuracao extends Stage {
 	private boolean pontoVirgula;
 	private JFXToggleButton chkPontoVirgula;
 	private boolean botoesFuncao;
-	private JFXToggleButton chkBotosFuncao;
+	private JFXToggleButton chkBotoesFuncao;
+	private boolean mouseMenus;
+	private JFXToggleButton chkMouseMenus;
 	
 	private boolean cancelado;
 	
@@ -302,11 +304,17 @@ public class Configuracao extends Stage {
         
         pnlAvancado.getChildren().add(chkPontoVirgula);
         
-		chkBotosFuncao = new JFXToggleButton();
-		chkBotosFuncao.setText("Criar botões para as teclas de função");
-		GridPane.setMargin(chkBotosFuncao, new Insets(10, 30, 0, 10));
+		chkBotoesFuncao = new JFXToggleButton();
+		chkBotoesFuncao.setText("Criar botões para as teclas de função");
+		GridPane.setMargin(chkBotoesFuncao, new Insets(10, 30, 0, 10));
         
-        pnlAvancado.getChildren().add(chkBotosFuncao);
+        pnlAvancado.getChildren().add(chkBotoesFuncao);
+        
+		chkMouseMenus = new JFXToggleButton();
+		chkMouseMenus.setText("Usar mouse nos menus");
+		GridPane.setMargin(chkMouseMenus, new Insets(10, 30, 0, 10));
+        
+        pnlAvancado.getChildren().add(chkMouseMenus);
 
         // botões
         
@@ -473,6 +481,9 @@ public class Configuracao extends Stage {
 						case "BOTOES_TECLAS_FUNCAO": 
 							setBotoesFuncao(valor.equalsIgnoreCase("S"));
 							break;
+						case "MOUSE_MENUS": 
+							setMouseMenus(valor.equalsIgnoreCase("S"));
+							break;
 							
 						}
 					}
@@ -501,7 +512,8 @@ public class Configuracao extends Stage {
 				spFonte.getValueFactory().setValue(tamFonte);
 				
 				chkPontoVirgula.setSelected(pontoVirgula);
-				chkBotosFuncao.setSelected(botoesFuncao);
+				chkBotoesFuncao.setSelected(botoesFuncao);
+				chkMouseMenus.setSelected(mouseMenus);
 				
 			} catch (Exception  e) {
 				e.printStackTrace();
@@ -539,7 +551,8 @@ public class Configuracao extends Stage {
 			Configuracao.setCyan(cpCyan.getValue());
 			
 			pontoVirgula = chkPontoVirgula.isSelected();
-			botoesFuncao = chkBotosFuncao.isSelected();
+			botoesFuncao = chkBotoesFuncao.isSelected();
+			mouseMenus = chkMouseMenus.isSelected();
 			
 			PrintStream cfg = new PrintStream("terminal.cfg");
 
@@ -586,6 +599,7 @@ public class Configuracao extends Stage {
 			cfg.println("[AVANCADO]");
 			cfg.printf("PONTO_VIRGULA=%c%n", pontoVirgula ? 'S' : 'N');
 			cfg.printf("BOTOES_TECLAS_FUNCAO=%c%n", botoesFuncao ? 'S' : 'N');
+			cfg.printf("MOUSE_MENUS=%c%n", mouseMenus ? 'S' : 'N');
 			
 			cfg.close();
 			
@@ -747,5 +761,21 @@ public class Configuracao extends Stage {
 
 	public void setBotoesFuncao(boolean botoesFuncao) {
 		this.botoesFuncao = botoesFuncao;
+	}
+
+	public boolean isMouseMenus() {
+		return mouseMenus;
+	}
+
+	public void setMouseMenus(boolean mouseMenus) {
+		this.mouseMenus = mouseMenus;
+	}
+
+	public JFXToggleButton getChkMouseMenus() {
+		return chkMouseMenus;
+	}
+
+	public void setChkMouseMenus(JFXToggleButton chkMouseMenus) {
+		this.chkMouseMenus = chkMouseMenus;
 	}
 }

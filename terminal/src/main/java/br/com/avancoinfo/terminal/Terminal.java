@@ -266,26 +266,27 @@ public class Terminal extends Stage {
 
         tela.setOnKeyPressed(teclado);
         
-        tela.setOnMouseMoved(new EventHandler<MouseEvent>() {
+        if (cfg.isMouseMenus()) {
+        	tela.setOnMouseMoved(new EventHandler<MouseEvent>() {
 
-			@Override
-			public void handle(MouseEvent event) {
-				Debug.gravaTela(terminal, 0);
-				MenuInterno.processa(terminal, tela, event);
-			}
-		});
+        		@Override
+        		public void handle(MouseEvent event) {
+        			MenuInterno.processa(terminal, tela, event);
+        		}
+        	});
         
-        tela.setOnMouseClicked(new EventHandler<MouseEvent>() {
+        	tela.setOnMouseClicked(new EventHandler<MouseEvent>() {
 
-			@Override
-			public void handle(MouseEvent event) {
-				if (MenuInterno.getLetraSelecionada() != '?') {
-					com.envia(MenuInterno.getLetraSelecionada() == '^' ? "\n" : String.valueOf(MenuInterno.getLetraSelecionada()));
-					MenuInterno.setLetraSelecionada('?');
-				}
-			}
+        		@Override
+        		public void handle(MouseEvent event) {
+        			if (MenuInterno.getLetraSelecionada() != '?') {
+        				com.envia(MenuInterno.getLetraSelecionada() == '^' ? "\n" : String.valueOf(MenuInterno.getLetraSelecionada()));
+        				MenuInterno.setLetraSelecionada('?');
+        			}
+        		}
         	
-        });
+        	});
+        }
         canvas.requestFocus();
         
         setOnCloseRequest(new EventHandler<WindowEvent>() {
@@ -343,6 +344,7 @@ public class Terminal extends Stage {
 					
 					int c = s.charAt(i);
 					char ch = s.charAt(i);
+					
 					if (c == MARCADOR) {
 						
 						if (log != null) {
