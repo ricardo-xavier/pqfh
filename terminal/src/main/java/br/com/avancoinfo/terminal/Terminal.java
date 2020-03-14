@@ -25,6 +25,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.paint.Color;
@@ -42,7 +43,7 @@ enum EstadoLogin {
 
 public class Terminal extends Stage {
 	
-	private static final int VERSAO = 18;
+	private static final int VERSAO = 20;
 	private static final int LINHAS = 25;
 	private static final int COLUNAS = 80;
 	private static final int MARGEM = 5;
@@ -102,6 +103,7 @@ public class Terminal extends Stage {
 	private Menu menu;
 	private boolean montarMenu;
 	private boolean marcadorRecebido;
+	private boolean enviarSenha;
 	
 	private Comunicacao com;
 	private SelecaoFilial selecao;
@@ -205,6 +207,27 @@ public class Terminal extends Stage {
         canvas.setFocusTraversable(true);
 
         tela.setOnKeyPressed(teclado);
+        
+        tela.setOnMouseMoved(new EventHandler<MouseEvent>() {
+
+			@Override
+			public void handle(MouseEvent event) {
+				Debug.gravaTela(terminal, 0);
+				MenuInterno.processa(terminal, tela, event);
+			}
+		});
+        
+        tela.setOnMouseClicked(new EventHandler<MouseEvent>() {
+
+			@Override
+			public void handle(MouseEvent event) {
+				if (MenuInterno.getLetraSelecionada() != '?') {
+					com.envia(MenuInterno.getLetraSelecionada() == '^' ? "\n" : String.valueOf(MenuInterno.getLetraSelecionada()));
+					MenuInterno.setLetraSelecionada('?');
+				}
+			}
+        	
+        });
         canvas.requestFocus();
         
         setOnCloseRequest(new EventHandler<WindowEvent>() {
@@ -289,6 +312,7 @@ public class Terminal extends Stage {
 								menu.close();
 								estadoLogin = EstadoLogin.OK;
 								menu = null;
+								alteraRegiao(-1, -1);
 							}
 						}
 					}
@@ -439,6 +463,7 @@ public class Terminal extends Stage {
 					}
 
 					if (fila.isEmpty()) {
+						verificaAviso();
 						verificaMenuPrincipal();
 						verificaFilial();
 					}
@@ -454,6 +479,29 @@ public class Terminal extends Stage {
 				
 			}
 		});
+		
+	}
+
+	private void verificaAviso() {
+		
+		String msg = new String(dados[23]);
+		if (msg.contains("DIGITE A SENHA DO USUARIO PARA CONTINUAR") && !enviarSenha) {
+			
+			enviarSenha = true;
+			
+			if (log != null) {
+				synchronized (log) {
+					log.println("aviso encontrado");
+					log.flush();
+				}
+			}
+			
+			com.envia((cfg.getSenhaIntegral()));
+			if (cfg.getSenhaIntegral().length() < 5) {
+				com.envia("\n");
+			}
+			
+		}
 		
 	}
 	
@@ -631,6 +679,28 @@ public class Terminal extends Stage {
 				contexto.strokeText(s, MARGEM + j*larCar, MARGEM + i*altLin);
 			}
 		}		
+		
+	}
+	
+	public void mostraHover(int y, int x1, int x2) {
+		
+		contexto.setFill(Color.DARKBLUE);
+		int _x = MARGEM + x1 * larCar;
+		int _y = MARGEM + y * altLin;
+		int lar = x2 - x1 + 1;
+		contexto.fillRect(_x, _y, lar * larCar, altLin);				
+		
+		// mostra a frente
+		char ultimaCor = '?';
+		for (int j=x1; j<=x2; j++) {
+			char cor = (atributos[y][j] & Escape.A_REVERSE) == Escape.A_REVERSE ? fundo[y][j] : frente[y][j];
+			if (cor != ultimaCor) {
+				contexto.setStroke(converteCor(cor));
+				ultimaCor = cor;
+			}
+			String s = dados[y][j] != MARCADOR ? String.valueOf(dados[y][j]) : " ";
+			contexto.strokeText(s, MARGEM + j*larCar, MARGEM + y*altLin);
+		}
 		
 	}
 	
