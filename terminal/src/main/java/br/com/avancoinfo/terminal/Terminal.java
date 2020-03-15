@@ -97,8 +97,6 @@ public class Terminal extends Stage {
 	private int linCursor = -1;
 	private int colCursor;
 	
-	private GridPane pnlBotoes;
-	
 	private EstadoLogin estadoLogin;
 	
 	private Menu menu;
@@ -110,6 +108,10 @@ public class Terminal extends Stage {
 	private SelecaoFilial selecao;
 	
 	private static char MARCADOR = 65533;
+
+	private GridPane pnlBotoes;
+	private FlowPane pnlSocial;
+	private FlowPane pnlNavegacao;
 	
 	public Terminal(Configuracao cfg) {
 		
@@ -149,10 +151,16 @@ public class Terminal extends Stage {
 		contexto.setTextBaseline(VPos.TOP);  
 		contexto.setFont(fonte);
 		
-		// cria um painel com o canvas
+		// cria o painel principal
 		BorderPane tela = new BorderPane();
 		tela.setPadding(new Insets(0));
 		tela.setCenter(canvas);
+		
+		// barra de navegação
+		pnlNavegacao = new FlowPane();
+		tela.setTop(pnlNavegacao);
+		pnlNavegacao.setId("pnlNavegacao");
+		pnlNavegacao.setVisible(false);
 	
 		// barra de status
 		BorderPane statusBar = new BorderPane();
@@ -162,9 +170,10 @@ public class Terminal extends Stage {
 		statusBar.setId("statusbar");
 		tela.setBottom(statusBar);
 		
-		FlowPane pnlSocial = new FlowPane();
+		pnlSocial = new FlowPane();
 		statusBar.setLeft(pnlSocial);
 		pnlSocial.setMaxWidth(150);
+		pnlSocial.setVisible(false);
 
 		Image imageSite = new Image(getClass().getResourceAsStream("avanco4.png"), 32, 32, false, false);
 		ImageView ivSite = new ImageView(imageSite);
@@ -357,7 +366,7 @@ public class Terminal extends Stage {
 						
 						if (montarMenu) {
 							montarMenu = false;
-							menu = new Menu(dados, frente, com);
+							menu = new Menu(dados, frente, com, pnlNavegacao);
 							hide();
 							menu.showAndWait();
 							if ((menu != null) && menu.isEncerrar()) {
@@ -578,7 +587,7 @@ public class Terminal extends Stage {
 			}
 
 			if (marcadorRecebido) {
-				menu = new Menu(dados, frente, com);
+				menu = new Menu(dados, frente, com, pnlNavegacao);
 				hide();
 				menu.showAndWait();
 				if ((menu != null) && menu.isEncerrar()) {
@@ -665,8 +674,12 @@ public class Terminal extends Stage {
 	public void mostra() {
 		
 		if (estadoLogin != EstadoLogin.OK) {
+			pnlNavegacao.setVisible(false);
+			pnlSocial.setVisible(false);
 			return;
 		}
+		pnlNavegacao.setVisible(true);
+		pnlSocial.setVisible(true);
 
 		// pinta o fundo
 		for (int i=r.y; i<r.y+r.height; i++) {
@@ -742,7 +755,12 @@ public class Terminal extends Stage {
 		
 	}
 	
-	public void mostraHover(int y, int x1, int x2) {
+	public void mostraHover(int y, int x1, int x2, String texto) {
+
+		String s = new String(dados[y], x1, x2-x1+1);
+		if (!s.equals(texto)) {
+			return;
+		}
 		
 		contexto.setFill(Color.DARKBLUE);
 		int _x = MARGEM + x1 * larCar;
@@ -758,7 +776,7 @@ public class Terminal extends Stage {
 				contexto.setStroke(converteCor(cor));
 				ultimaCor = cor;
 			}
-			String s = dados[y][j] != MARCADOR ? String.valueOf(dados[y][j]) : " ";
+			s = dados[y][j] != MARCADOR ? String.valueOf(dados[y][j]) : " ";
 			contexto.strokeText(s, MARGEM + j*larCar, MARGEM + y*altLin);
 		}
 		
@@ -1115,6 +1133,18 @@ public class Terminal extends Stage {
 
 	public int getAltLin() {
 		return altLin;
+	}
+
+	public FlowPane getPnlNavegacao() {
+		return pnlNavegacao;
+	}
+
+	public void setPnlNavegacao(FlowPane pnlNavegacao) {
+		this.pnlNavegacao = pnlNavegacao;
+	}
+
+	public static char getMARCADOR() {
+		return MARCADOR;
 	}
 
 }
