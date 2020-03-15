@@ -9,6 +9,7 @@ public class MenuInterno {
 	private static int x1;
 	private static int x2;
 	private static char letraSelecionada = '?';
+	private static String texto;
 
 	public static void processa(Terminal terminal, BorderPane tela, MouseEvent event) {
 		
@@ -88,7 +89,8 @@ public class MenuInterno {
 										
 										// o mouse está em uma opção de um menu interno
 										tela.setCursor(javafx.scene.Cursor.HAND);
-										terminal.mostraHover(y, x1+1, x2-1);
+										texto = new String(terminal.getDados()[y], x1+1, x2-x1-1);
+										terminal.mostraHover(y, x1+1, x2-1, texto);
 										MenuInterno.y = y;
 										MenuInterno.x1 = x1;
 										MenuInterno.x2 = x2;
@@ -147,6 +149,14 @@ public class MenuInterno {
 
 	public static void setLetraSelecionada(char letraSelecionada) {
 		MenuInterno.letraSelecionada = letraSelecionada;
+	}
+
+	public static String getTexto() {
+		return texto;
+	}
+
+	public static void setTexto(String texto) {
+		MenuInterno.texto = texto;
 	}
 
 }

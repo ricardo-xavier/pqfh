@@ -22,6 +22,27 @@ import javafx.scene.text.TextFlow;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 
+/*
+ * Menu Principal
+ * 
+ * abertura
+ * ========
+ * procura "P  r  i  n  c  i  p  a  l" na linha 6 (se ainda não estiver montado)
+ * 
+ * se encontrar
+ *     se o marcador foi recebido no mesmo bloco, monta o menu
+ *     senão seta montarMenu
+ *     
+ * se o marcador for recebido com montarMenu, então monta o menu
+ * 
+ * fechamento
+ * ==========
+ * ao selecionar uma opção, a tecla é enviada
+ * 
+ * se receber um marcado na coluna 3 ou 4 e o menu estiver aberto, então fecha o menu
+ * 
+ */
+
 public class Menu extends Stage {
 
 	private static List<String> opcoes;
