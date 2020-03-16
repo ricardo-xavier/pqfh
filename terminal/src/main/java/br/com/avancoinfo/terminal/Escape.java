@@ -87,7 +87,6 @@ public class Escape {
 			if (lin >= n) {
 				lin -= n;
 			} else {
-				System.err.println("up " + prms + " " + lin);
 				lin = 0;
 			}
 			terminal.setLin(lin);
@@ -99,9 +98,6 @@ public class Escape {
 		if (terminal.getLin() < (Terminal.getLinhas() - 1)) {
 			int n = prms.equals("") ? 1 : Integer.parseInt(prms);
 			terminal.setLin(terminal.getLin() + n);
-			if (terminal.getLin() >= Terminal.getLinhas()) {
-				System.err.println("down " + prms + " " + terminal.getLin());
-			}
 			terminal.alteraRegiao(-1, terminal.getLin());
 		}
 	}
@@ -112,7 +108,6 @@ public class Escape {
 		if (col >= n) {
 			col -= n;
 		} else {
-			System.err.println("backward " + prms + " " + col);
 			col = 0;
 		}
 		terminal.setCol(col);
@@ -122,9 +117,6 @@ public class Escape {
 	private void cursorForward(String prms) {
 		int n = prms.equals("") ? 1 : Integer.parseInt(prms);
 		terminal.setCol(terminal.getCol() + n);
-		if (terminal.getCol() >= Terminal.getColunas()) {
-			System.err.println("forward " + prms + " " + terminal.getCol());
-		}			
 		terminal.alteraRegiao(terminal.getCol(), -1);
 	}
 

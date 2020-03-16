@@ -76,6 +76,8 @@ public class Configuracao extends Stage {
 	private JFXToggleButton chkBotoesFuncao;
 	private boolean mouseMenus;
 	private JFXToggleButton chkMouseMenus;
+	private boolean barraNavegacao;
+	private JFXToggleButton chkBarraNavegacao;
 	
 	private boolean cancelado;
 	
@@ -315,6 +317,12 @@ public class Configuracao extends Stage {
 		GridPane.setMargin(chkMouseMenus, new Insets(10, 30, 0, 10));
         
         pnlAvancado.getChildren().add(chkMouseMenus);
+        
+		chkBarraNavegacao = new JFXToggleButton();
+		chkBarraNavegacao.setText("Barra de Navegação");
+		GridPane.setMargin(chkBarraNavegacao, new Insets(10, 30, 0, 10));
+        
+        pnlAvancado.getChildren().add(chkBarraNavegacao);
 
         // botões
         
@@ -484,6 +492,9 @@ public class Configuracao extends Stage {
 						case "MOUSE_MENUS": 
 							setMouseMenus(valor.equalsIgnoreCase("S"));
 							break;
+						case "BARRA_NAVEGACAO": 
+							setBarraNavegacao(valor.equalsIgnoreCase("S"));
+							break;
 							
 						}
 					}
@@ -514,6 +525,7 @@ public class Configuracao extends Stage {
 				chkPontoVirgula.setSelected(pontoVirgula);
 				chkBotoesFuncao.setSelected(botoesFuncao);
 				chkMouseMenus.setSelected(mouseMenus);
+				chkBarraNavegacao.setSelected(barraNavegacao);
 				
 			} catch (Exception  e) {
 				e.printStackTrace();
@@ -553,6 +565,7 @@ public class Configuracao extends Stage {
 			pontoVirgula = chkPontoVirgula.isSelected();
 			botoesFuncao = chkBotoesFuncao.isSelected();
 			mouseMenus = chkMouseMenus.isSelected();
+			barraNavegacao = chkBarraNavegacao.isSelected();
 			
 			PrintStream cfg = new PrintStream("terminal.cfg");
 
@@ -600,6 +613,7 @@ public class Configuracao extends Stage {
 			cfg.printf("PONTO_VIRGULA=%c%n", pontoVirgula ? 'S' : 'N');
 			cfg.printf("BOTOES_TECLAS_FUNCAO=%c%n", botoesFuncao ? 'S' : 'N');
 			cfg.printf("MOUSE_MENUS=%c%n", mouseMenus ? 'S' : 'N');
+			cfg.printf("BARRA_NAVEGACAO=%c%n", barraNavegacao ? 'S' : 'N');
 			
 			cfg.close();
 			
@@ -777,5 +791,21 @@ public class Configuracao extends Stage {
 
 	public void setChkMouseMenus(JFXToggleButton chkMouseMenus) {
 		this.chkMouseMenus = chkMouseMenus;
+	}
+
+	public boolean isBarraNavegacao() {
+		return barraNavegacao;
+	}
+
+	public void setBarraNavegacao(boolean barraNavegacao) {
+		this.barraNavegacao = barraNavegacao;
+	}
+
+	public JFXToggleButton getChkBarraNavegacao() {
+		return chkBarraNavegacao;
+	}
+
+	public void setChkBarraNavegacao(JFXToggleButton chkBarraNavegacao) {
+		this.chkBarraNavegacao = chkBarraNavegacao;
 	}
 }

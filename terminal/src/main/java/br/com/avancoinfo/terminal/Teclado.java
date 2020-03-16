@@ -1,6 +1,7 @@
 package br.com.avancoinfo.terminal;
 
 import javafx.event.EventHandler;
+import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 
 public class Teclado implements EventHandler<KeyEvent> {
@@ -8,6 +9,8 @@ public class Teclado implements EventHandler<KeyEvent> {
 	private Comunicacao com;
 	private Terminal terminal;
 	private Configuracao cfg;
+	private KeyCode ultimaTecla;
+	
 
 	public Teclado(Terminal terminal, Configuracao cfg) {
 		this.terminal = terminal;
@@ -23,6 +26,8 @@ public class Teclado implements EventHandler<KeyEvent> {
 				terminal.getLog().flush();
 			}
 		}
+		
+		setUltimaTecla(event.getCode());
 			
 		switch (event.getCode()) {
 
@@ -162,6 +167,14 @@ public class Teclado implements EventHandler<KeyEvent> {
 
 	public void setCom(Comunicacao com) {
 		this.com = com;
+	}
+
+	public KeyCode getUltimaTecla() {
+		return ultimaTecla;
+	}
+
+	public void setUltimaTecla(KeyCode ultimaTecla) {
+		this.ultimaTecla = ultimaTecla;
 	}
 
 }

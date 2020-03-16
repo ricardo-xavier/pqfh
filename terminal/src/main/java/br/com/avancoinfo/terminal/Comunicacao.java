@@ -165,7 +165,7 @@ public class Comunicacao extends Thread {
 		
 		System.err.println("exit comunicacao");
 		
-		terminal.disconecta();
+		terminal.desconecta();
 
 	}
 	

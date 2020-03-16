@@ -25,6 +25,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.FlowPane;
@@ -44,7 +45,7 @@ enum EstadoLogin {
 
 public class Terminal extends Stage {
 	
-	private static final int VERSAO = 21;
+	private static final int VERSAO = 22;
 	private static final int LINHAS = 25;
 	private static final int COLUNAS = 80;
 	private static final int MARGEM = 5;
@@ -102,6 +103,8 @@ public class Terminal extends Stage {
 	private Menu menu;
 	private boolean montarMenu;
 	private boolean marcadorRecebido;
+	private int linMarcador = -1;
+	private int colMarcador = -1;
 	private boolean enviarSenha;
 	
 	private Comunicacao com;
@@ -157,10 +160,12 @@ public class Terminal extends Stage {
 		tela.setCenter(canvas);
 		
 		// barra de navegação
-		pnlNavegacao = new FlowPane();
-		tela.setTop(pnlNavegacao);
-		pnlNavegacao.setId("pnlNavegacao");
-		pnlNavegacao.setVisible(false);
+		if (cfg.isBarraNavegacao()) {
+			pnlNavegacao = new FlowPane();
+			tela.setTop(pnlNavegacao);
+			pnlNavegacao.setId("pnlNavegacao");
+			pnlNavegacao.setVisible(false);
+		}
 	
 		// barra de status
 		BorderPane statusBar = new BorderPane();
@@ -291,6 +296,9 @@ public class Terminal extends Stage {
         			if (MenuInterno.getLetraSelecionada() != '?') {
         				com.envia(MenuInterno.getLetraSelecionada() == '^' ? "\n" : String.valueOf(MenuInterno.getLetraSelecionada()));
         				MenuInterno.setLetraSelecionada('?');
+        				if (pnlNavegacao != null) {
+        					BarraNavegacao.adiciona(pnlNavegacao, MenuInterno.getTexto());
+        				}
         			}
         		}
         	
@@ -348,6 +356,9 @@ public class Terminal extends Stage {
 				
 				String s = new String(comandos, 0, tam);
 				tam = s.length();
+
+				int linMarcadorTemp = -1;
+				int colMarcadorTemp = -1;
 				
 				for (int i=0; i<tam; i++) {
 					
@@ -370,7 +381,6 @@ public class Terminal extends Stage {
 							hide();
 							menu.showAndWait();
 							if ((menu != null) && menu.isEncerrar()) {
-								System.err.println("encerrar");
 								close();
 								return;
 							}
@@ -378,11 +388,23 @@ public class Terminal extends Stage {
 							
 						} else {
 							if ((menu != null) && ((col == 3) || (col == 4))) {
+								
+								if (MenuInterno.dentroMenu(lin, col, terminal)) {
+									linMarcador = lin;
+									colMarcador = col;
+								}
+								
 								menu.close();
 								estadoLogin = EstadoLogin.OK;
 								menu = null;
 								alteraRegiao(-1, -1);
 							}
+							
+							if ((estadoLogin == EstadoLogin.OK) && (menu == null) && (col > 4)) {
+								linMarcadorTemp = lin;
+								colMarcadorTemp = col;
+							}
+							
 						}
 					}
 					
@@ -497,6 +519,21 @@ public class Terminal extends Stage {
 					Debug.gravaTela(terminal, tam);
 				}
 
+				if (linMarcadorTemp != -1) {
+					if (MenuInterno.dentroMenu(linMarcadorTemp, colMarcadorTemp, terminal)) {
+						linMarcador = lin;
+						colMarcador = col;
+					}
+					
+					if (pnlNavegacao != null) {
+						if (teclado.getUltimaTecla() == KeyCode.ESCAPE) {
+							// verifica se tem que retirar um menu da barra de navegação
+							BarraNavegacao.removeEsc(pnlNavegacao, terminal);
+						}
+					}
+					
+				}
+
 				if (estadoLogin == EstadoLogin.AGUARDANDO_PROMPT) {
 					String msg = new String(dados[12]).toLowerCase();
 					
@@ -591,7 +628,6 @@ public class Terminal extends Stage {
 				hide();
 				menu.showAndWait();
 				if ((menu != null) && menu.isEncerrar()) {
-					System.err.println("encerrar");
 					close();
 					return false;
 				}
@@ -642,7 +678,6 @@ public class Terminal extends Stage {
 				}
 			}
 
-			System.err.println("close");
 			return true;
 		}
 
@@ -673,12 +708,21 @@ public class Terminal extends Stage {
 	
 	public void mostra() {
 		
+		if ((linMarcador != -1) && (dados[linMarcador][colMarcador] != MARCADOR)) {
+			linMarcador = -1;
+		}
+		MenuInterno.revalida(terminal);
+		
 		if (estadoLogin != EstadoLogin.OK) {
-			pnlNavegacao.setVisible(false);
+			if (pnlNavegacao != null) {
+				pnlNavegacao.setVisible(false);
+			}
 			pnlSocial.setVisible(false);
 			return;
 		}
-		pnlNavegacao.setVisible(true);
+		if (pnlNavegacao != null) {
+			pnlNavegacao.setVisible(true);
+		}
 		pnlSocial.setVisible(true);
 
 		// pinta o fundo
@@ -757,6 +801,10 @@ public class Terminal extends Stage {
 	
 	public void mostraHover(int y, int x1, int x2, String texto) {
 
+		if (!cfg.isMouseMenus()) {
+			return;
+		}
+		
 		String s = new String(dados[y], x1, x2-x1+1);
 		if (!s.equals(texto)) {
 			return;
@@ -950,15 +998,12 @@ public class Terminal extends Stage {
 		});
 	}
 	
-	public void disconecta() {
+	public void desconecta() {
 		Platform.runLater(new Runnable() {
 			
 			@Override
 			public void run() {
-				
-				System.err.println("disconect terminal");
 				close();
-				
 			}
 		});
 		

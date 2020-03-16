@@ -57,12 +57,16 @@ public class Menu extends Stage {
 		this.com = com;
 		this.pnlNavegacao = pnlNavegacao;
 		FlowPane pnlMenu = new FlowPane();
+
+		if (pnlNavegacao != null) {
+			Button btnPrincipal = new Button("Menu Principal >>");
+			btnPrincipal.setId("Menu Principal");
+			btnPrincipal.getStyleClass().add("botao");
+			FlowPane.setMargin(btnPrincipal, new Insets(4));
 		
-		Button btnPrincipal = new Button("Menu Principal >>");
-		btnPrincipal.getStyleClass().add("botao");
-		FlowPane.setMargin(btnPrincipal, new Insets(4));
-		pnlNavegacao.getChildren().clear();
-		pnlNavegacao.getChildren().add(btnPrincipal);
+			pnlNavegacao.getChildren().clear();
+			pnlNavegacao.getChildren().add(btnPrincipal);
+		}
 		
 		pnlMenu.setOnKeyPressed(new EventHandler<KeyEvent>() {
 
@@ -124,10 +128,13 @@ public class Menu extends Stage {
 				@Override
 				public void handle(ActionEvent event) {
 					com.envia(String.valueOf(tecla));
-					Button btnOpcao = new Button(opcao);
-					btnOpcao.getStyleClass().add("botao");
-					FlowPane.setMargin(btnOpcao, new Insets(4));
-					pnlNavegacao.getChildren().add(btnOpcao);
+					if (pnlNavegacao != null) {
+						Button btnOpcao = new Button(opcao);
+						btnOpcao.setId(opcao.trim());
+						btnOpcao.getStyleClass().add("botao");
+						FlowPane.setMargin(btnOpcao, new Insets(4, 4, 4, 0));
+						pnlNavegacao.getChildren().add(btnOpcao);
+					}
 				}
 			});
 
@@ -188,10 +195,12 @@ public class Menu extends Stage {
 			char tecla = teclas.get(o);
 			if (tecla == code.toString().charAt(0)) {
 				com.envia(String.valueOf(tecla));
-				Button btnOpcao = new Button(opcoes.get(o));
-				btnOpcao.getStyleClass().add("botao");
-				FlowPane.setMargin(btnOpcao, new Insets(4));
-				pnlNavegacao.getChildren().add(btnOpcao);
+				if (pnlNavegacao != null) {
+					Button btnOpcao = new Button(opcoes.get(o));
+					btnOpcao.getStyleClass().add("botao");
+					FlowPane.setMargin(btnOpcao, new Insets(4));
+					pnlNavegacao.getChildren().add(btnOpcao);
+				}
 			}
 		}
 	}
