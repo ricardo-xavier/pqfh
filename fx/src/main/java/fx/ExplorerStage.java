@@ -9,6 +9,7 @@ import com.jfoenix.controls.JFXTreeTableView;
 import com.jfoenix.controls.RecursiveTreeItem;
 import com.jfoenix.controls.datamodels.treetable.RecursiveTreeObject;
 
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
@@ -165,7 +166,7 @@ public class ExplorerStage  extends Stage {
 		
 		treeView.requestFocus();
 		if (files.size() > 0) {
-			treeView.getSelectionModel().select(0);
+			Platform.runLater(() ->	treeView.getSelectionModel().select(0));
 		}
 		
 	}

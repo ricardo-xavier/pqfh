@@ -1,0 +1,8 @@
+#pnlNavegacao {
+	-fx-background-color: #4D7A97;
+}
+
+.botao:hover {
+    -fx-cursor: hand;
+}
+
