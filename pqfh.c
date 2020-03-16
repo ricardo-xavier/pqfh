@@ -366,10 +366,12 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
         mode = fcd->mode;
     }        
 
+#ifndef ISAM
     if ((mode == 'M') || (mode == 'F'))  {
         memfh_cbl(mode, op, fcd, filename);
         return;
     }
+#endif
 
     if ((mode == 'W') && (op == OP_OPEN_IO)) {
         fcd->isam = 0;
@@ -1044,6 +1046,15 @@ bool is_weak(char *table) {
     return false;
 }
 #endif
+
+/*
+void pqfh_split(char *filename) {
+    char *p;
+    p = strchr(filename, ' ');
+    if (p != NULL) *p = 0;
+    pqfh_split_file(filename);
+}
+*/
 
 // 1.9.0  - 30/06 - weak
 // 1.9.1  - 06/07 - verificar se a tabela esta aberta em todas as operacoes

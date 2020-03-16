@@ -1,3 +1,4 @@
+# gcc -D_GNU_SOURCE split.c -o split
 CC = gcc -m32 -I/usr/include/postgresql -Wall -Werror -DPQFH -I/usr/java/jdk1.8.0_144/include -I/usr/java/jdk1.8.0_144/include/linux -I/u/cobol/include -DIGNORELOCK
 COB = /u/cobol/bin/cob -m ixfile=pqfh
 COB = /u/cobol/bin/cob

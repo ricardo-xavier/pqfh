@@ -239,4 +239,5 @@ void put_cache(table_t *table);
 
 void memfh_cbl(char mode, unsigned short op, fcd_t *fcd, char *filename);
 
+void pqfh_split_file(char *filename);
 #endif
