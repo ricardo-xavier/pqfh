@@ -3,6 +3,9 @@
 }
 
 .botao:hover {
-    -fx-cursor: hand;
+	-fx-cursor: hand;
 }
 
+#pnlNavegacaoBkp {
+	-fx-background-image: url("fundo.jpg");
+}

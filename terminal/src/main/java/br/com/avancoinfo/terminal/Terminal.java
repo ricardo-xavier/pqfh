@@ -15,6 +15,7 @@ import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.geometry.VPos;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
@@ -45,7 +46,7 @@ enum EstadoLogin {
 
 public class Terminal extends Stage {
 	
-	private static final int VERSAO = 22;
+	private static final int VERSAO = 23;
 	private static final int LINHAS = 25;
 	private static final int COLUNAS = 80;
 	private static final int MARGEM = 5;
@@ -177,10 +178,11 @@ public class Terminal extends Stage {
 		
 		pnlSocial = new FlowPane();
 		statusBar.setLeft(pnlSocial);
-		pnlSocial.setMaxWidth(150);
+		pnlSocial.setMaxWidth(100);
 		pnlSocial.setVisible(false);
+		pnlSocial.setAlignment(Pos.CENTER);
 
-		Image imageSite = new Image(getClass().getResourceAsStream("avanco4.png"), 32, 32, false, false);
+		Image imageSite = new Image(getClass().getResourceAsStream("a.png"));//, 32, 32, false, false);
 		ImageView ivSite = new ImageView(imageSite);
 		ivSite.getStyleClass().add("botao");
 		pnlSocial.getChildren().add(ivSite);
@@ -197,7 +199,7 @@ public class Terminal extends Stage {
 			}
 		});
 
-		Image imageFace = new Image(getClass().getResourceAsStream("facebook.png"), 48, 48, false, false);
+		Image imageFace = new Image(getClass().getResourceAsStream("face.png"));//, 48, 48, false, false);
 		ImageView ivFace = new ImageView(imageFace);
 		ivFace.getStyleClass().add("botao");
 		pnlSocial.getChildren().add(ivFace);
@@ -214,7 +216,7 @@ public class Terminal extends Stage {
 			}
 		});
 
-		Image imageLinkedin = new Image(getClass().getResourceAsStream("linkedin.png"), 32, 32, false, false);
+		Image imageLinkedin = new Image(getClass().getResourceAsStream("in.png"));//, 32, 32, false, false);
 		ImageView ivLinkedin = new ImageView(imageLinkedin);
 		ivLinkedin.getStyleClass().add("botao");
 		pnlSocial.getChildren().add(ivLinkedin);
@@ -230,6 +232,10 @@ public class Terminal extends Stage {
 				}
 			}
 		});
+		
+		FlowPane.setMargin(ivSite, new Insets(4));
+		FlowPane.setMargin(ivFace, new Insets(4));
+		FlowPane.setMargin(ivLinkedin, new Insets(4));
 		
 		Image imageOk = new Image(getClass().getResourceAsStream("config.png"));
 		Button btnConfig = new Button("", new ImageView(imageOk));
@@ -359,6 +365,7 @@ public class Terminal extends Stage {
 
 				int linMarcadorTemp = -1;
 				int colMarcadorTemp = -1;
+				boolean fecharMenu = false;
 				
 				for (int i=0; i<tam; i++) {
 					
@@ -394,10 +401,7 @@ public class Terminal extends Stage {
 									colMarcador = col;
 								}
 								
-								menu.close();
-								estadoLogin = EstadoLogin.OK;
-								menu = null;
-								alteraRegiao(-1, -1);
+								fecharMenu = true;
 							}
 							
 							if ((estadoLogin == EstadoLogin.OK) && (menu == null) && (col > 4)) {
@@ -518,6 +522,22 @@ public class Terminal extends Stage {
 				if (log != null) {
 					Debug.gravaTela(terminal, tam);
 				}
+				
+
+				if (fecharMenu) {
+					if (log != null) {
+						synchronized (log) {
+							log.printf("fechando menu...");
+							log.flush();
+						}
+					}
+				
+					menu.close();
+					estadoLogin = EstadoLogin.OK;
+					menu = null;
+					alteraRegiao(-1, -1);
+				}
+				
 
 				if (linMarcadorTemp != -1) {
 					if (MenuInterno.dentroMenu(linMarcadorTemp, colMarcadorTemp, terminal)) {
@@ -809,7 +829,6 @@ public class Terminal extends Stage {
 		if (!s.equals(texto)) {
 			return;
 		}
-		
 		contexto.setFill(Color.DARKBLUE);
 		int _x = MARGEM + x1 * larCar;
 		int _y = MARGEM + y * altLin;
