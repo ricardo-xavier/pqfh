@@ -15,7 +15,7 @@
 // insert into tabela_api values('sp05a51', 'planoGerencial');
 //
 
-#define VERSAO "v3.5.5 07/01/2020"
+#define VERSAO "v3.6.0 16/03/2020"
 
 int dbg=-1;
 int dbg_upd=-1;
@@ -163,6 +163,13 @@ char get_mode() {
         lock_manual = false;
     }
 #endif
+    if (mode == 'L') {
+        mode = 'W';
+        if (dbg == 0) {
+            putenv("PQFH_DBG=3");
+            get_debug();
+        }
+    }
     return mode;
 }
 
@@ -899,6 +906,10 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
             break;
 
 #ifndef ISAM
+        case OP_DELETE_FILE:
+            op_delete_file(conn, fcd);
+            break;
+
         case OP_DELETE:
             op_delete(conn, fcd);
             if (mode == 'W') {    
@@ -1147,4 +1158,5 @@ void pqfh_split(char *filename) {
 //                  open i-o       seta isam = S
 //                  open input     estava resetando o isam e retornando 41
 //                  close          estava abortando no op_close porque nao estava tratando como isam
+// 3.6.0  - 16/03 - delete file e mode L
  

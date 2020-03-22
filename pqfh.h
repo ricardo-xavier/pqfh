@@ -157,6 +157,7 @@ typedef struct {
 #define OP_READ_RANDOM   0xfaf6
 #define OP_READ_LOCK     0xfada
 #define OP_DELETE        0xfaf7
+#define OP_DELETE_FILE   0xfaf8
 #define OP_UNLOCK        0xfa0e
 
 #define ST_OK                "00"
@@ -221,6 +222,7 @@ void op_read_random(PGconn *conn, fcd_t *fcd, bool with_lock);
 bool op_rewrite(PGconn *conn, fcd_t *fcd);
 bool op_write(PGconn *conn, fcd_t *fcd);
 void op_delete(PGconn *conn, fcd_t *fcd);
+void op_delete_file(PGconn *conn, fcd_t *fcd);
 void create_table(PGconn *conn, table_t *tab, fcd_t *fcd, unsigned short opcode);
 void copy_table(PGconn *conn, char *source, char *dest);
 void load_table(PGconn *conn);
