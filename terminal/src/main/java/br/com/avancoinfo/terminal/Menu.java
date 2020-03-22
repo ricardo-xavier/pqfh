@@ -64,14 +64,15 @@ public class Menu extends Stage {
 			btnPrincipal.getStyleClass().add("botao");
 			FlowPane.setMargin(btnPrincipal, new Insets(4));
 		
-			pnlNavegacao.getChildren().clear();
-			pnlNavegacao.getChildren().add(btnPrincipal);
+			BarraNavegacao.limpa(pnlNavegacao);
+			BarraNavegacao.adiciona(pnlNavegacao, btnPrincipal);
 		}
 		
 		pnlMenu.setOnKeyPressed(new EventHandler<KeyEvent>() {
 
 			@Override
 			public void handle(KeyEvent event) {
+				Teclado.setUltimaTecla(null);
 				seleciona(event.getCode());
 			}
 		});
@@ -127,6 +128,7 @@ public class Menu extends Stage {
 				
 				@Override
 				public void handle(ActionEvent event) {
+					Teclado.setUltimaTecla(null);
 					com.envia(String.valueOf(tecla));
 					if (pnlNavegacao != null) {
 						Button btnOpcao = new Button(opcao);
@@ -142,6 +144,7 @@ public class Menu extends Stage {
 
 				@Override
 				public void handle(KeyEvent event) {
+					Teclado.setUltimaTecla(null);
 					seleciona(event.getCode());
 					event.consume();
 				}
@@ -170,7 +173,6 @@ public class Menu extends Stage {
 				
 			}
 			
-			
 			pnl.getChildren().add(texto);
 			pnlMenu.getChildren().add(pnl);
 			FlowPane.setMargin(pnl, new Insets(10));
@@ -197,9 +199,10 @@ public class Menu extends Stage {
 				com.envia(String.valueOf(tecla));
 				if (pnlNavegacao != null) {
 					Button btnOpcao = new Button(opcoes.get(o));
+					btnOpcao.setId(opcoes.get(o).trim());
 					btnOpcao.getStyleClass().add("botao");
 					FlowPane.setMargin(btnOpcao, new Insets(4));
-					pnlNavegacao.getChildren().add(btnOpcao);
+					BarraNavegacao.adiciona(pnlNavegacao, btnOpcao);
 				}
 			}
 		}

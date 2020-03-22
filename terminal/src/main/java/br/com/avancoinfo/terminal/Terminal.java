@@ -1,9 +1,8 @@
 package br.com.avancoinfo.terminal;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.PrintStream;
-import java.util.Date;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -26,7 +25,6 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.FlowPane;
@@ -46,7 +44,7 @@ enum EstadoLogin {
 
 public class Terminal extends Stage {
 	
-	private static final int VERSAO = 23;
+	private static final int VERSAO = 24;
 	private static final int LINHAS = 25;
 	private static final int COLUNAS = 80;
 	private static final int MARGEM = 5;
@@ -76,8 +74,6 @@ public class Terminal extends Stage {
     
     private Rectangle r = new Rectangle();
     
-    private PrintStream log;
-    
     private Terminal terminal;
     private Teclado teclado;
     private Escape escape;
@@ -106,6 +102,7 @@ public class Terminal extends Stage {
 	private boolean marcadorRecebido;
 	private int linMarcador = -1;
 	private int colMarcador = -1;
+	private List<Ponto> marcadores = new ArrayList<Ponto>();
 	private boolean enviarSenha;
 	
 	private Comunicacao com;
@@ -121,20 +118,8 @@ public class Terminal extends Stage {
 		
 		this.cfg = cfg;
 		terminal = this;
-		if (System.getenv("TERMINAL_DBG") != null) {
-			try {
-				log = new PrintStream("terminal.log");
-				synchronized (log) {
-					log.println("terminal v" + VERSAO);
-					log.println(new Date());
-					log.println();
-					log.flush();
-				}
-			
-			} catch (FileNotFoundException e) {
-				e.printStackTrace();
-			}
-		}
+		
+		Debug.open(VERSAO);
 		
 		fila = new LinkedBlockingQueue<>();
 		fonte = new Font(FONTE, cfg.getTamFonte());
@@ -291,7 +276,7 @@ public class Terminal extends Stage {
 
         		@Override
         		public void handle(MouseEvent event) {
-        			MenuInterno.processa(terminal, tela, event);
+        			MenuInterno.verificaMouse(terminal, tela, event);
         		}
         	});
         
@@ -299,6 +284,7 @@ public class Terminal extends Stage {
 
         		@Override
         		public void handle(MouseEvent event) {
+        			Teclado.setUltimaTecla(null);
         			if (MenuInterno.getLetraSelecionada() != '?') {
         				com.envia(MenuInterno.getLetraSelecionada() == '^' ? "\n" : String.valueOf(MenuInterno.getLetraSelecionada()));
         				MenuInterno.setLetraSelecionada('?');
@@ -346,13 +332,10 @@ public class Terminal extends Stage {
 				
 					tam = buf.getTam();
 					comandos = buf.getDados();
-				
-					if (log != null) {
-						synchronized (log) {
-							log.printf("%s -FILA %d %d %s%n", Thread.currentThread().getName(), fila.size(), tam, new String(comandos, 0, tam));
-							log.flush();
-						}
-					}
+
+					Debug.grava(String.format("%s -FILA %d %d %s%n", 
+							Thread.currentThread().getName(), fila.size(), tam, 
+							new String(comandos, 0, tam)));
 				}
 				
 				r.x = col;
@@ -373,32 +356,64 @@ public class Terminal extends Stage {
 					char ch = s.charAt(i);
 					
 					if (c == MARCADOR) {
-						
-						if (log != null) {
-							synchronized (log) {
-								log.printf("marcador encontrado col=%d montar=%s menu=%s%n", col, montarMenu, menu != null);
-								log.flush();
+
+						Debug.grava(String.format("marcador encontrado lin=%d col=%d montar=%s menu=%s%n", lin, col, montarMenu, menu != null));
+						Button btn = null;
+								
+						if ((pnlNavegacao != null) && (pnlNavegacao.getChildren().size() > 0)) {
+							
+							int u = pnlNavegacao.getChildren().size() - 1;
+							if (col == 34) {
+								// menu principal
+								u = 0;
+							} else {
+							
+								for (int j=0; j<pnlNavegacao.getChildren().size(); j++) {
+									Button b = (Button) pnlNavegacao.getChildren().get(j);
+									if (b.getUserData() != null) {
+										Ponto p = (Ponto) b.getUserData();
+										if (p.getX() == col) {
+											u = j;
+											break;
+										}
+									}
+								}
+							}
+
+							btn = (Button) pnlNavegacao.getChildren().get(u);
+							Ponto p = null;
+							if (btn.getUserData() != null) {
+								p = (Ponto) btn.getUserData();
+							}
+							if ((p == null) || (col == p.getX())) {
+								String id = new String(dados[lin]).substring(col+1);
+								int t = id.indexOf('3');
+								if (t > 0) {
+									id = id.substring(0, t).trim();
+								}
+								BarraNavegacao.atualiza(pnlNavegacao, btn, lin, col, id);
 							}
 						}
+						
 						marcadorRecebido = true;
 						
-						if (montarMenu) {
-							montarMenu = false;
-							menu = new Menu(dados, frente, com, pnlNavegacao);
-							hide();
-							menu.showAndWait();
-							if ((menu != null) && menu.isEncerrar()) {
-								close();
-								return;
-							}
-							show();
+						if (!montarMenu) {
 							
-						} else {
 							if ((menu != null) && ((col == 3) || (col == 4))) {
 								
 								if (MenuInterno.dentroMenu(lin, col, terminal)) {
 									linMarcador = lin;
 									colMarcador = col;
+									boolean existe = false;
+									for (Ponto p : marcadores) {
+										if ((p.getY() == lin) && p.getX() == col) {
+											existe = true;
+											break;
+										}
+									}
+									if (!existe) {
+										marcadores.add(new Ponto(lin, col, null));
+									}
 								}
 								
 								fecharMenu = true;
@@ -455,6 +470,11 @@ public class Terminal extends Stage {
 						default:
 					
 							dados[lin][col] = ch;
+if (ch == MARCADOR) {
+	if ((lin == 4) && (col > 20)) {
+		System.err.println("debug marcador " + lin + " " + col);
+	}
+}
 							atributos[lin][col] = atributo;
 							frente[lin][col] = corFrente;
 							fundo[lin][col] = corFundo;
@@ -519,41 +539,44 @@ public class Terminal extends Stage {
 						
 				}
 				
-				if (log != null) {
-					Debug.gravaTela(terminal, tam);
-				}
+				Debug.gravaTela(terminal, tam);
 				
+				if (montarMenu) {
+					montarMenu = false;
+					menu = new Menu(dados, frente, com, pnlNavegacao);
+					hide();
+					menu.showAndWait();
+					if ((menu != null) && menu.isEncerrar()) {
+						close();
+						return;
+					}
+					show();
+				}
 
 				if (fecharMenu) {
-					if (log != null) {
-						synchronized (log) {
-							log.printf("fechando menu...");
-							log.flush();
-						}
-					}
-				
 					menu.close();
 					estadoLogin = EstadoLogin.OK;
 					menu = null;
 					alteraRegiao(-1, -1);
 				}
-				
 
 				if (linMarcadorTemp != -1) {
 					if (MenuInterno.dentroMenu(linMarcadorTemp, colMarcadorTemp, terminal)) {
-						linMarcador = lin;
-						colMarcador = col;
-					}
-					
-					if (pnlNavegacao != null) {
-						if (teclado.getUltimaTecla() == KeyCode.ESCAPE) {
-							// verifica se tem que retirar um menu da barra de navegação
-							BarraNavegacao.removeEsc(pnlNavegacao, terminal);
+						linMarcador = linMarcadorTemp;
+						colMarcador = colMarcadorTemp;
+						boolean existe = false;
+						for (Ponto p : marcadores) {
+							if ((p.getY() == linMarcadorTemp) && p.getX() == colMarcadorTemp) {
+								existe = true;
+								break;
+							}
 						}
+						if (!existe) {
+							marcadores.add(new Ponto(linMarcadorTemp, colMarcadorTemp, null));
+						}						
 					}
-					
 				}
-
+				
 				if (estadoLogin == EstadoLogin.AGUARDANDO_PROMPT) {
 					String msg = new String(dados[12]).toLowerCase();
 					
@@ -614,14 +637,6 @@ public class Terminal extends Stage {
 		if (msg.contains("DIGITE A SENHA DO USUARIO PARA CONTINUAR") && !enviarSenha) {
 			
 			enviarSenha = true;
-			
-			if (log != null) {
-				synchronized (log) {
-					log.println("aviso encontrado");
-					log.flush();
-				}
-			}
-			
 			com.envia((cfg.getSenhaIntegral()));
 			if (cfg.getSenhaIntegral().length() < 5) {
 				com.envia("\n");
@@ -636,13 +651,6 @@ public class Terminal extends Stage {
 		String msg = new String(dados[5]);
 		if (msg.contains("P  r  i  n  c  i  p  a  l") && (menu == null) && !montarMenu) {
 			
-			if (log != null) {
-				synchronized (log) {
-					log.println("menu principal encontrado " + marcadorRecebido);
-					log.flush();
-				}
-			}
-
 			if (marcadorRecebido) {
 				menu = new Menu(dados, frente, com, pnlNavegacao);
 				hide();
@@ -678,13 +686,6 @@ public class Terminal extends Stage {
 				e1.printStackTrace();
 			}
 			
-			if (log != null) {
-				synchronized (log) {
-					log.println("selecao de filial encontrada");
-					log.flush();
-				}
-			}
-
 			selecao = new SelecaoFilial(dados);
 			selecao.showAndWait();
 			String filial = selecao.getFilial();
@@ -732,6 +733,7 @@ public class Terminal extends Stage {
 			linMarcador = -1;
 		}
 		MenuInterno.revalida(terminal);
+		MenuInterno.verificaRemocao(terminal);
 		
 		if (estadoLogin != EstadoLogin.OK) {
 			if (pnlNavegacao != null) {
@@ -829,20 +831,15 @@ public class Terminal extends Stage {
 		if (!s.equals(texto)) {
 			return;
 		}
-		contexto.setFill(Color.DARKBLUE);
+		contexto.setFill(converteCor('Y'));
 		int _x = MARGEM + x1 * larCar;
 		int _y = MARGEM + y * altLin;
 		int lar = x2 - x1 + 1;
 		contexto.fillRect(_x, _y, lar * larCar, altLin);				
 		
 		// mostra a frente
-		char ultimaCor = '?';
+		contexto.setStroke(converteCor('b'));
 		for (int j=x1; j<=x2; j++) {
-			char cor = (atributos[y][j] & Escape.A_REVERSE) == Escape.A_REVERSE ? fundo[y][j] : frente[y][j];
-			if (cor != ultimaCor) {
-				contexto.setStroke(converteCor(cor));
-				ultimaCor = cor;
-			}
 			s = dados[y][j] != MARCADOR ? String.valueOf(dados[y][j]) : " ";
 			contexto.strokeText(s, MARGEM + j*larCar, MARGEM + y*altLin);
 		}
@@ -1069,10 +1066,6 @@ public class Terminal extends Stage {
 		
 	}
 	
-	public PrintStream getLog() {
-		return log;
-	}
-
 	public int getLin() {
 		return lin;
 	}
@@ -1209,6 +1202,30 @@ public class Terminal extends Stage {
 
 	public static char getMARCADOR() {
 		return MARCADOR;
+	}
+
+	public int getLinMarcador() {
+		return linMarcador;
+	}
+
+	public void setLinMarcador(int linMarcador) {
+		this.linMarcador = linMarcador;
+	}
+
+	public int getColMarcador() {
+		return colMarcador;
+	}
+
+	public void setColMarcador(int colMarcador) {
+		this.colMarcador = colMarcador;
+	}
+
+	public List<Ponto> getMarcadores() {
+		return marcadores;
+	}
+
+	public void setMarcadores(List<Ponto> marcadores) {
+		this.marcadores = marcadores;
 	}
 
 }

@@ -33,14 +33,10 @@ public class Comunicacao extends Thread {
 		try {
 			
 			// conecta
-			if (terminal.getLog() != null) {
-				synchronized (terminal.getLog()) {
-					terminal.getLog().println("servidor: " + cfg.getServidor());
-					terminal.getLog().println("porta: " + cfg.getPorta());
-					terminal.getLog().println();
-					terminal.getLog().flush();					
-				}
-			}
+			
+			Debug.grava("servidor: " + cfg.getServidor() + "\n");
+			Debug.grava("porta: " + cfg.getPorta() + "\n");
+			
 			JSch jsch = new JSch();
 			sessao = jsch.getSession(cfg.getUsuario(), cfg.getServidor(), cfg.getPorta());
 			Properties config = new Properties();
@@ -67,12 +63,7 @@ public class Comunicacao extends Thread {
 				}
 				
 				int n = entrada.read(buf, pos, TAMBUF - pos);
-				if (terminal.getLog() != null) {
-					synchronized (terminal.getLog()) {
-						terminal.getLog().printf("%s %d:%d%n", Thread.currentThread().getName(), pos, n);
-						terminal.getLog().flush();						
-					}
-				}				
+				Debug.grava(String.format("%s READ %d:%d%n", Thread.currentThread().getName(), pos, n));
 				if (n < 0) {
 					break;
 				}
@@ -93,12 +84,7 @@ public class Comunicacao extends Thread {
 					}
 					
 					n = entrada.read(buf, pos, TAMBUF - pos);
-					if (terminal.getLog() != null) {
-						synchronized (terminal.getLog()) {
-							terminal.getLog().printf("%s %d:%d%n", Thread.currentThread().getName(), pos, n);
-							terminal.getLog().flush();							
-						}
-					}					
+					Debug.grava(String.format("%s READ %d:%d%n", Thread.currentThread().getName(), pos, n));
 					pos += n;
 					if (pos == TAMBUF) {
 						break;
@@ -113,14 +99,7 @@ public class Comunicacao extends Thread {
 				}
 					
 				synchronized (terminal.getFila()) {
-
-					if (terminal.getLog() != null) {
-						synchronized (terminal.getLog()) {
-							terminal.getLog().printf("%s +FILA %d %s%n", Thread.currentThread().getName(), terminal.getFila().size(), pos, new String(buf, 0, pos));
-							terminal.getLog().flush();
-						}
-					}
-					
+					Debug.grava(String.format("%s +FILA %d %s%n", Thread.currentThread().getName(), terminal.getFila().size(), pos, new String(buf, 0, pos)));
 					terminal.getFila().add(new Buffer(pos, buf));
 				}
 				terminal.atualiza();
@@ -129,13 +108,7 @@ public class Comunicacao extends Thread {
 				if (enviarComando && (ch == '$')) {
 					
 					enviarComando = false;
-					
-					if (terminal.getLog() != null) {
-						synchronized (terminal.getLog()) {
-							terminal.getLog().println("> " + cfg.getComando());
-							terminal.getLog().flush();
-						}
-					}
+					Debug.grava("> " + cfg.getComando() + "\n");
 					
 					try {
 						saida.write((cfg.getComando() + "\r\n").getBytes());
@@ -152,14 +125,7 @@ public class Comunicacao extends Thread {
 
 		} catch (JSchException | IOException e) {
 			e.printStackTrace();
-
-			if (terminal.getLog() != null) {
-				synchronized (terminal.getLog()) {
-					e.printStackTrace(terminal.getLog());
-					terminal.getLog().flush();
-				}
-			}
-			
+			Debug.printStackTrace(e);
 			terminal.reconecta(e.getMessage());
 		}
 		
@@ -171,12 +137,7 @@ public class Comunicacao extends Thread {
 	
 	public void envia(String s) {
 		try {
-			if (terminal.getLog() != null) {
-				synchronized (terminal.getLog()) {
-					terminal.getLog().println("> " + s);
-					terminal.getLog().flush();
-				}
-			}
+			Debug.grava("> " + s + "\n");
 			saida.write(s.getBytes());
 			saida.flush();
 			

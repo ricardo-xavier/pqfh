@@ -70,12 +70,7 @@ public class Escape {
 			break;
 
 		default:
-			if (terminal.getLog() != null) {
-				synchronized (terminal.getLog()) {
-					terminal.getLog().println("ESCAPE COMANDO PENDENTE " + cmd);
-					terminal.getLog().flush();
-				}
-			}
+			Debug.grava("ESCAPE COMANDO PENDENTE " + cmd + "\n");
 
 		}
 	}
@@ -306,12 +301,7 @@ public class Escape {
 				break;
 
 			default:
-				if (terminal.getLog() != null) {
-					synchronized (terminal.getLog()) {
-						terminal.getLog().println("PENDENTE ATRIBUTO:" + atr);
-						terminal.getLog().flush();
-					}
-				}
+				Debug.grava("PENDENTE ATRIBUTO:" + atr + "\n");
 			}
 		}
 

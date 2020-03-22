@@ -9,8 +9,7 @@ public class Teclado implements EventHandler<KeyEvent> {
 	private Comunicacao com;
 	private Terminal terminal;
 	private Configuracao cfg;
-	private KeyCode ultimaTecla;
-	
+	private static KeyCode ultimaTecla;
 
 	public Teclado(Terminal terminal, Configuracao cfg) {
 		this.terminal = terminal;
@@ -20,11 +19,10 @@ public class Teclado implements EventHandler<KeyEvent> {
 	@Override
 	public void handle(KeyEvent event) {
 
-		if (terminal.getLog() != null) {
-			synchronized (terminal.getLog()) {
-				terminal.getLog().println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> " + event.toString());
-				terminal.getLog().flush();
-			}
+		Debug.grava("TECLA " + event.toString() + "\n");
+		
+		if (MenuInterno.posicionadoMenu(terminal)) {
+			MenuInterno.verificaTecla(event.getCode(), terminal);
 		}
 		
 		setUltimaTecla(event.getCode());
@@ -169,12 +167,12 @@ public class Teclado implements EventHandler<KeyEvent> {
 		this.com = com;
 	}
 
-	public KeyCode getUltimaTecla() {
+	public static KeyCode getUltimaTecla() {
 		return ultimaTecla;
 	}
 
-	public void setUltimaTecla(KeyCode ultimaTecla) {
-		this.ultimaTecla = ultimaTecla;
+	public static void setUltimaTecla(KeyCode ultimaTecla) {
+		Teclado.ultimaTecla = ultimaTecla;
 	}
 
 }

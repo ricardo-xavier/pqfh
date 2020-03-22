@@ -1,5 +1,12 @@
 package br.com.avancoinfo.terminal;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javafx.scene.control.Button;
+import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 
@@ -12,29 +19,16 @@ public class MenuInterno {
 	private static int x2;
 	private static char letraSelecionada = '?';
 	private static String texto;
-
-	public static void revalida(Terminal terminal) {
-		
-		char[][] dados = terminal.getDados();
-		int[][] atributos = terminal.getAtributos();
-		
-		if (y1 == -1) {
-			return;
-		}
-		
-		if (((atributos[y1][x1] & Escape.A_ACS) != Escape.A_ACS)
-			|| ((atributos[y1][x2] & Escape.A_ACS) != Escape.A_ACS)
-			|| ((atributos[y2][x1] & Escape.A_ACS) != Escape.A_ACS)
-			|| ((atributos[y2][x2] & Escape.A_ACS) != Escape.A_ACS)
-			|| (dados[y1][x1] != 'Z')
-			|| (dados[y1][x2] != '?')
-			|| (dados[y2][x1] != '@')
-			|| (dados[y2][x2] != 'Y')) {
-				setY1(-1);
-		}
-		
-	}
+	private static Map<String, List<String>> menus = new HashMap<String, List<String>>();
 	
+	/**
+	 * Verifica se uma coordenada está dentro de um menu
+	 * 
+	 * @param y
+	 * @param x
+	 * @param terminal
+	 * @return
+	 */
 	public static boolean dentroMenu(int y, int x, Terminal terminal) {
 		
 		char[][] dados = terminal.getDados();
@@ -164,10 +158,37 @@ public class MenuInterno {
 		MenuInterno.setY2(y2);
 		MenuInterno.setX1(x1);
 		MenuInterno.setX2(x2);
+		
+		// carrega o mapa de menus
+		String s = new String(dados[y1+1], x1+1, x2-x1-1).replace((char) marcador, ' ').trim();
+		String chave = String.format("%d:%d:%d:%d:%s", x1, y1, x2, y2, s);
+		
+		if (menus.get(chave) == null) {
+			List<String> opcoes = new ArrayList<String>();
+			opcoes.add(s);
+			for (int i=y1+2; i<y2; i++) {
+				s = new String(dados[i], x1+1, x2-x1-1).replace((char) marcador, ' ').trim();
+				opcoes.add(s);
+			}
+			menus.put(chave, opcoes);
+			Debug.grava("+MENU " + chave + "\n");
+			for (String o : opcoes) {
+				Debug.grava("  " + o + "\n");
+			}
+		}
+		
 		return true;
 	}
 
-	public static void processa(Terminal terminal, BorderPane tela, MouseEvent event) {
+	/**
+	 * Verifica se o mouse está em uma opção de menu
+	 * Se tiver mostra a opção em destaque
+	 * 
+	 * @param terminal
+	 * @param tela
+	 * @param event
+	 */
+	public static void verificaMouse(Terminal terminal, BorderPane tela, MouseEvent event) {
 		
 		tela.setCursor(javafx.scene.Cursor.DEFAULT);
 		
@@ -211,12 +232,6 @@ public class MenuInterno {
 			setLetraSelecionada('?');
 		}
 		
-		/*
-		if (!dentroMenu(y, x, terminal)) {
-			return;
-		}
-		*/
-
 		char[][] dados = terminal.getDados();
 		char[][] frente = terminal.getFrente();
 		int marcador = Terminal.getMARCADOR();
@@ -250,6 +265,96 @@ public class MenuInterno {
 									
 	}
 
+	/**
+	 * Verifica se ainda tem um menu na posição marcada
+	 * Se não for revalidado, o menu não será mais considerado na verificação da posição do mouse
+	 * 
+	 * @param terminal
+	 */
+	public static void revalida(Terminal terminal) {
+		
+		char[][] dados = terminal.getDados();
+		int[][] atributos = terminal.getAtributos();
+		
+		if (y1 == -1) {
+			return;
+		}
+		
+		if (((atributos[y1][x1] & Escape.A_ACS) != Escape.A_ACS)
+			|| ((atributos[y1][x2] & Escape.A_ACS) != Escape.A_ACS)
+			|| ((atributos[y2][x1] & Escape.A_ACS) != Escape.A_ACS)
+			|| ((atributos[y2][x2] & Escape.A_ACS) != Escape.A_ACS)
+			|| (dados[y1][x1] != 'Z')
+			|| (dados[y1][x2] != '?')
+			|| (dados[y2][x1] != '@')
+			|| (dados[y2][x2] != 'Y')) {
+				setY1(-1);
+		}
+		
+	}
+
+	/**
+	 * Verifica se o cursor esta posicionado em um menu
+	 * O cursor pode ficar no fim da linha do menu em cima da borda, ou no fim da tela 23,79
+	 * 
+	 * @param terminal
+	 * @return
+	 */
+	public static boolean posicionadoMenu(Terminal terminal) {
+
+		int lin = terminal.getLin();
+		int col = terminal.getCol();
+		char ch = terminal.getDados()[lin][col];
+		int atr = terminal.getAtributos()[lin][col];
+		
+		boolean menu = false;
+		if ((lin == (Terminal.getLinhas() - 2)) && (col == (Terminal.getColunas() - 1))) {
+			menu = true;
+		} else if ((ch == '3') && ((atr & Escape.A_ACS) == Escape.A_ACS)) {
+			menu = true;
+		}
+		
+		return menu;
+		
+	}
+	
+	/**
+	 * Verifica se o marcador do painel de navegação ainda existe
+	 * Se não existir, o botão será removido da navegação
+	 * 
+	 * @param terminal
+	 */
+	public static void verificaRemocao(Terminal terminal) {
+		
+		int n = terminal.getPnlNavegacao().getChildren().size();
+		if (n == 0) {
+			return;
+		}
+		
+		// só remover se estiver posicionado em um menu 
+		if (!posicionadoMenu(terminal)) {
+			return;
+		}
+		
+		Button btn = (Button) terminal.getPnlNavegacao().getChildren().get(n-1);
+		if (btn.getUserData() != null) {
+			Ponto p = (Ponto) btn.getUserData();
+			char ch = terminal.getDados()[p.getY()][p.getX()];
+			if (ch != Terminal.getMARCADOR()) {
+				BarraNavegacao.remove(terminal.getPnlNavegacao(), n-1);
+				verificaRemocao(terminal);
+			}
+		} else {
+			
+			// saida de uma tela não menu
+			// a última tecla é ESC e o último menu está com ponto nulo
+			if (Teclado.getUltimaTecla() == KeyCode.ESCAPE) {
+				BarraNavegacao.remove(terminal.getPnlNavegacao(), n-1);
+			}
+			
+		}
+	}
+	
 	public static char getLetraSelecionada() {
 		return letraSelecionada;
 	}
@@ -300,6 +405,110 @@ public class MenuInterno {
 
 	public static String getTexto() {
 		return texto;
+	}
+
+	/**
+	 * Verifica se uma tecla pressionada vai selecionar uma opção do último menu aberto
+	 * 
+	 * @param code
+	 */
+	public static void verificaTecla(KeyCode code, Terminal terminal) {
+
+		int colMax = -1;
+		String chaveSelecionada = null;
+		
+		String codeS = code.toString();
+		char c = '?';
+		if (codeS.length() == 1) {
+			c = codeS.charAt(0);
+		}
+		if ((code != KeyCode.ENTER) && !Character.isAlphabetic(c)) {
+			return;
+		}
+
+		// seleciona o menu mais a direita que esteja visivel
+		for (String chave : menus.keySet()) {
+			String[] partes = chave.split(":");
+			int x1 = Integer.parseInt(partes[0]);
+			int y1 = Integer.parseInt(partes[1]);
+			int x2 = Integer.parseInt(partes[2]);
+			int y2 = Integer.parseInt(partes[3]);
+			if (((terminal.getAtributos()[y1][x1] & Escape.A_ACS) == Escape.A_ACS)
+					&& ((terminal.getAtributos()[y1][x2] & Escape.A_ACS) == Escape.A_ACS)
+					&& ((terminal.getAtributos()[y2][x1] & Escape.A_ACS) == Escape.A_ACS)
+					&& ((terminal.getAtributos()[y2][x2] & Escape.A_ACS) == Escape.A_ACS)) {
+				if (x1 > colMax) {
+					colMax = x1;
+					chaveSelecionada = chave;
+				}
+			}
+		}
+
+		if (chaveSelecionada == null) {
+			return;
+		}
+
+		String[] partes = chaveSelecionada.split(":");
+		int x1 = Integer.parseInt(partes[0]);
+		int y1 = Integer.parseInt(partes[1]);
+		int x2 = Integer.parseInt(partes[2]);
+		int y2 = Integer.parseInt(partes[3]);
+
+		String semDestaque = null;
+		
+		for (int y=y1+1; y<y2; y++) {
+			
+			String s = new String(terminal.getDados()[y]).substring(x1+1, x2).trim();
+
+			int p = s.indexOf(Terminal.getMARCADOR());
+			if (p >= 0) {
+				s = s.substring(p+1).trim();
+				if (code == KeyCode.ENTER) {
+    				if (terminal.getPnlNavegacao() != null) {
+    					BarraNavegacao.adiciona(terminal.getPnlNavegacao(), s);
+    				}
+					return;
+				}
+			}
+
+			// procura letra destacada
+			boolean temDestaque = false;
+			for (int x=x1+1; x<x2; x++) {
+				char cor = terminal.getFrente()[y][x];
+				if (cor == 'Y')  {
+					temDestaque = true;
+					char ch = terminal.getDados()[y][x];
+					if (ch == code.toString().charAt(0)) {
+	    				if (terminal.getPnlNavegacao() != null) {
+	    					BarraNavegacao.adiciona(terminal.getPnlNavegacao(), s);
+	    				}
+	    				return;
+					}
+				}
+			}
+			if (!temDestaque) {
+				semDestaque = s;
+			}
+
+			// procura letra destacada
+			for (int x=x1+1; x<x2; x++) {
+				char ch = terminal.getDados()[y][x];
+				if (Character.isUpperCase(ch) && (ch == code.toString().toUpperCase().charAt(0))) {
+    				if (terminal.getPnlNavegacao() != null) {
+    					BarraNavegacao.adiciona(terminal.getPnlNavegacao(), s);
+    				}
+    				break;
+				}
+			}
+
+		}
+		
+		if (semDestaque != null) {
+			if (terminal.getPnlNavegacao() != null) {
+				BarraNavegacao.adiciona(terminal.getPnlNavegacao(), semDestaque);
+			}			
+		}
+
 	}
 	
 }

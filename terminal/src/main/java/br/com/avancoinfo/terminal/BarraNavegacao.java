@@ -25,36 +25,52 @@ public class BarraNavegacao {
 			btnOpcao.setId(texto);
 			btnOpcao.getStyleClass().add("botao");
 			FlowPane.setMargin(btnOpcao, new Insets(4, 4, 4, 0));
+			Debug.grava("NAVEGACAO adiciona " + texto + "\n");
 			pnlNavegacao.getChildren().add(btnOpcao);
-			
 		}
-	
 	}
 
-	public static void removeEsc(FlowPane pnlNavegacao, Terminal terminal) {
+	public static void adiciona(FlowPane pnlNavegacao, Button btn) {
+		Debug.grava("NAVEGACAO adiciona " + btn.getId() + "\n");
+		pnlNavegacao.getChildren().add(btn);
+	}
+	
+	public static void limpa(FlowPane pnlNavegacao) {
+		Debug.grava("NAVEGACAO limpa\n");
+		pnlNavegacao.getChildren().clear();
+	}
+
+	public static void remove(FlowPane pnlNavegacao, int i) {
+		Debug.grava("NAVEGACAO remove " + i + " " + pnlNavegacao.getChildren().get(i).getId() + "\n");
 		
-		Node ultimo = pnlNavegacao.getChildren().get(pnlNavegacao.getChildren().size()-1);
+		pnlNavegacao.getChildren().remove(i);
 		
-		if (MenuInterno.getY1() == -1) {
+		if (i == 0) {
 			return;
 		}
 		
-		char[][] dados = terminal.getDados();
-		for (int y=MenuInterno.getY1()+1; y<MenuInterno.getY2(); y++) {
-			String texto = new String(dados[y], MenuInterno.getX1()+1, MenuInterno.getX2()-MenuInterno.getX1()-1).trim();
-			int pos = texto.indexOf(Terminal.getMARCADOR());
-			if (pos >= 0) {
-				texto = texto.substring(pos+1);
+		Node ultimo = pnlNavegacao.getChildren().get(pnlNavegacao.getChildren().size()-1);
+		Button btn = (Button) ultimo;
+		btn.setText(btn.getText().replace(" >>", ""));
+	}
+
+	public static void atualiza(FlowPane pnlNavegacao, Button btn, int lin, int col, String id) {
+		
+		// não atualiza se tiver um com a mesma posição
+		for (Node node : pnlNavegacao.getChildren()) {
+			Button b = (Button) node;
+			if (b.getUserData() == null) {
+				continue;
 			}
-			texto = texto.trim();
-			if (ultimo.getId().equals(texto)) {
-				pnlNavegacao.getChildren().remove(ultimo);
-				ultimo = pnlNavegacao.getChildren().get(pnlNavegacao.getChildren().size()-1);
-				Button btn = (Button) ultimo;
-				btn.setText(btn.getText().replace(" >>", ""));
-				break;
+			Ponto p = (Ponto) b.getUserData();
+			if ((p.getY() == lin) && (p.getX() == col)) {
+				return;
 			}
 		}
+		
+		Debug.grava(String.format("NAVEGACAO atualiza %s %d,%d %s%n", btn.getId(), lin, col, id));
+		Ponto ponto = new Ponto(lin, col, id);
+		btn.setUserData(ponto);
 	}
 
 }
