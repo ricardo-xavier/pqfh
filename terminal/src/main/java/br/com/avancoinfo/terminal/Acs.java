@@ -13,15 +13,15 @@ public class Acs {
 	public static final int PROCESSADO = 0x40;
 	private static final boolean ACS_DEBUG = false;
 	
-	private Terminal terminal;
 	private GraphicsContext contexto;
 
-	public Acs(Terminal terminal, GraphicsContext contexto) {
-		this.terminal = terminal;
+	public Acs(GraphicsContext contexto) {
 		this.contexto = contexto;
 	}
 
 	public void processa(int y, int x) {
+		
+		Terminal terminal = TerminalAvanco.getTerminal();
 		
 		char[][] dados = terminal.getDados();
 		int[][] atributos = terminal.getAtributos();
@@ -74,6 +74,8 @@ public class Acs {
 	
 	private void cse(int y, int x) {
 		
+		Terminal terminal = TerminalAvanco.getTerminal();
+		
 		int x1 = Terminal.getMargem() + x * terminal.getLarCar() + terminal.getLarCar() / 2;
 		int y1 = Terminal.getMargem() + y * terminal.getAltLin() + terminal.getAltLin() / 2;
 		
@@ -90,6 +92,8 @@ public class Acs {
 	}
 	
 	private void csd(int y, int x) {
+		
+		Terminal terminal = TerminalAvanco.getTerminal();
 		
 		int x1 = Terminal.getMargem() + x * terminal.getLarCar();
 		int y1 = Terminal.getMargem() + y * terminal.getAltLin() + terminal.getAltLin() / 2;
@@ -108,6 +112,8 @@ public class Acs {
 	
 	private void cie(int y, int x) {
 		
+		Terminal terminal = TerminalAvanco.getTerminal();
+		
 		int x1 = Terminal.getMargem() + x * terminal.getLarCar() + terminal.getLarCar() / 2;
 		int y1 = Terminal.getMargem() + y * terminal.getAltLin();
 		
@@ -125,6 +131,8 @@ public class Acs {
 	
 	private void cid(int y, int x) {
 		
+		Terminal terminal = TerminalAvanco.getTerminal();
+		
 		int x2 = Terminal.getMargem() + x * terminal.getLarCar() + terminal.getLarCar() / 2;
 		int y1 = Terminal.getMargem() + y * terminal.getAltLin();
 		
@@ -141,6 +149,8 @@ public class Acs {
 	}
 	
 	private void tEsq(int y, int x) {
+		
+		Terminal terminal = TerminalAvanco.getTerminal();
 		
 		int x1 = Terminal.getMargem() + x * terminal.getLarCar() + terminal.getLarCar() / 2;
 		int y1 = Terminal.getMargem() + y * terminal.getAltLin();
@@ -161,6 +171,8 @@ public class Acs {
 	
 	private void tDir(int y, int x) {
 		
+		Terminal terminal = TerminalAvanco.getTerminal();
+		
 		int x2 = Terminal.getMargem() + x * terminal.getLarCar() + terminal.getLarCar() / 2;
 		int y1 = Terminal.getMargem() + y * terminal.getAltLin();
 		
@@ -179,6 +191,8 @@ public class Acs {
 	}
 	
 	private void horizontal(int y, int x) {
+		
+		Terminal terminal = TerminalAvanco.getTerminal();
 		
 		char[][] dados = terminal.getDados();
 		int[][] atributos = terminal.getAtributos();
@@ -205,6 +219,8 @@ public class Acs {
 	}
 	
 	private void vertical(int y, int x) {
+		
+		Terminal terminal = TerminalAvanco.getTerminal();
 		
 		char[][] dados = terminal.getDados();
 		int[][] atributos = terminal.getAtributos();

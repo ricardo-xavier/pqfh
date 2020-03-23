@@ -8,6 +8,8 @@ public class TerminalAvanco extends Application {
 	private static Comunicacao com;
 	private static String servidor = null;
 	private static int porta = 22;
+	private static Terminal terminal;
+	private static Configuracao cfg;
 	
 	public static void main(String[] args) {
 		
@@ -24,9 +26,8 @@ public class TerminalAvanco extends Application {
 	@Override
 	public void start(Stage primaryStage) throws Exception {
 		
-		Configuracao cfg = new Configuracao();
+		cfg = new Configuracao();
 		cfg.carrega();
-		
 		
 		if (servidor != null) {
 			if (cfg.getServidor() == null) {
@@ -41,10 +42,10 @@ public class TerminalAvanco extends Application {
 			}
 		}
 		
-		Terminal terminal = new Terminal(cfg);
+		terminal = new Terminal();
 		terminal.show();
 		
-		com = new Comunicacao(terminal, cfg);
+		com = new Comunicacao();
 		com.setName("COMUNICACAO");
 		com.start();
 		
@@ -60,7 +61,12 @@ public class TerminalAvanco extends Application {
 		return com;
 	}
 
-	public static void setCom(Comunicacao com) {
-		TerminalAvanco.com = com;
+	public static Terminal getTerminal() {
+		return terminal;
 	}
+
+	public static Configuracao getCfg() {
+		return cfg;
+	}
+
 }

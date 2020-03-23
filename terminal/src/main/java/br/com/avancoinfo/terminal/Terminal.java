@@ -74,11 +74,9 @@ public class Terminal extends Stage {
     
     private Rectangle r = new Rectangle();
     
-    private Terminal terminal;
     private Teclado teclado;
     private Escape escape;
     private Acs acs;
-    private Configuracao cfg;
     
     private boolean conectado;
     
@@ -105,7 +103,6 @@ public class Terminal extends Stage {
 	private List<Ponto> marcadores = new ArrayList<Ponto>();
 	private boolean enviarSenha;
 	
-	private Comunicacao com;
 	private SelecaoFilial selecao;
 	
 	private static char MARCADOR = 65533;
@@ -114,12 +111,10 @@ public class Terminal extends Stage {
 	private FlowPane pnlSocial;
 	private FlowPane pnlNavegacao;
 	
-	public Terminal(Configuracao cfg) {
-		
-		this.cfg = cfg;
-		terminal = this;
+	public Terminal() {
 		
 		Debug.open(VERSAO);
+		Configuracao cfg = TerminalAvanco.getCfg();
 		
 		fila = new LinkedBlockingQueue<>();
 		fonte = new Font(FONTE, cfg.getTamFonte());
@@ -262,11 +257,11 @@ public class Terminal extends Stage {
         frente = new char[LINHAS][COLUNAS];
         fundo = new char[LINHAS][COLUNAS];
 
-        escape = new Escape(terminal);
+        escape = new Escape();
         escape.clear("2");
-        acs = new Acs(terminal, contexto);
+        acs = new Acs(contexto);
         
-        teclado = new Teclado(terminal, cfg);
+        teclado = new Teclado(cfg);
         canvas.setFocusTraversable(true);
 
         tela.setOnKeyPressed(teclado);
@@ -276,7 +271,7 @@ public class Terminal extends Stage {
 
         		@Override
         		public void handle(MouseEvent event) {
-        			MenuInterno.verificaMouse(terminal, tela, event);
+        			MenuInterno.verificaMouse(tela, event);
         		}
         	});
         
@@ -286,7 +281,7 @@ public class Terminal extends Stage {
         		public void handle(MouseEvent event) {
         			Teclado.setUltimaTecla(null);
         			if (MenuInterno.getLetraSelecionada() != '?') {
-        				com.envia(MenuInterno.getLetraSelecionada() == '^' ? "\n" : String.valueOf(MenuInterno.getLetraSelecionada()));
+        				TerminalAvanco.getCom().envia(MenuInterno.getLetraSelecionada() == '^' ? "\n" : String.valueOf(MenuInterno.getLetraSelecionada()));
         				MenuInterno.setLetraSelecionada('?');
         				if (pnlNavegacao != null) {
         					BarraNavegacao.adiciona(pnlNavegacao, MenuInterno.getTexto());
@@ -401,7 +396,7 @@ public class Terminal extends Stage {
 							
 							if ((menu != null) && ((col == 3) || (col == 4))) {
 								
-								if (MenuInterno.dentroMenu(lin, col, terminal)) {
+								if (MenuInterno.dentroMenu(lin, col)) {
 									linMarcador = lin;
 									colMarcador = col;
 									boolean existe = false;
@@ -539,11 +534,11 @@ if (ch == MARCADOR) {
 						
 				}
 				
-				Debug.gravaTela(terminal, tam);
+				Debug.gravaTela(tam);
 				
 				if (montarMenu) {
 					montarMenu = false;
-					menu = new Menu(dados, frente, com, pnlNavegacao);
+					menu = new Menu(dados, frente, pnlNavegacao);
 					hide();
 					menu.showAndWait();
 					if ((menu != null) && menu.isEncerrar()) {
@@ -561,7 +556,7 @@ if (ch == MARCADOR) {
 				}
 
 				if (linMarcadorTemp != -1) {
-					if (MenuInterno.dentroMenu(linMarcadorTemp, colMarcadorTemp, terminal)) {
+					if (MenuInterno.dentroMenu(linMarcadorTemp, colMarcadorTemp)) {
 						linMarcador = linMarcadorTemp;
 						colMarcador = colMarcadorTemp;
 						boolean existe = false;
@@ -581,6 +576,10 @@ if (ch == MARCADOR) {
 					String msg = new String(dados[12]).toLowerCase();
 					
 					if (msg.contains("senha:")) {
+						
+						Comunicacao com = TerminalAvanco.getCom();
+						Configuracao cfg = TerminalAvanco.getCfg();
+						
 						com.envia(cfg.getUsuarioIntegral());
 						if (cfg.getUsuarioIntegral().length() < 4) {
 							com.envia("\n");
@@ -637,6 +636,10 @@ if (ch == MARCADOR) {
 		if (msg.contains("DIGITE A SENHA DO USUARIO PARA CONTINUAR") && !enviarSenha) {
 			
 			enviarSenha = true;
+			
+			Comunicacao com = TerminalAvanco.getCom();
+			Configuracao cfg = TerminalAvanco.getCfg();
+			
 			com.envia((cfg.getSenhaIntegral()));
 			if (cfg.getSenhaIntegral().length() < 5) {
 				com.envia("\n");
@@ -652,7 +655,7 @@ if (ch == MARCADOR) {
 		if (msg.contains("P  r  i  n  c  i  p  a  l") && (menu == null) && !montarMenu) {
 			
 			if (marcadorRecebido) {
-				menu = new Menu(dados, frente, com, pnlNavegacao);
+				menu = new Menu(dados, frente, pnlNavegacao);
 				hide();
 				menu.showAndWait();
 				if ((menu != null) && menu.isEncerrar()) {
@@ -690,6 +693,7 @@ if (ch == MARCADOR) {
 			selecao.showAndWait();
 			String filial = selecao.getFilial();
 			
+			Comunicacao com = TerminalAvanco.getCom();
 			if (filial == null) {
 				com.envia("\u001b");	
 			} else {
@@ -708,6 +712,8 @@ if (ch == MARCADOR) {
 
 	private void scroll() {
 
+		Terminal terminal = TerminalAvanco.getTerminal();
+		
 		for (int i=0; i<(Terminal.getLinhas() - 1); i++) {
 			for (int j = terminal.getCol(); j < Terminal.getColunas(); j++) {
 				dados[i][j] = dados[i+1][j];
@@ -732,8 +738,8 @@ if (ch == MARCADOR) {
 		if ((linMarcador != -1) && (dados[linMarcador][colMarcador] != MARCADOR)) {
 			linMarcador = -1;
 		}
-		MenuInterno.revalida(terminal);
-		MenuInterno.verificaRemocao(terminal);
+		MenuInterno.revalida();
+		MenuInterno.verificaRemocao();
 		
 		if (estadoLogin != EstadoLogin.OK) {
 			if (pnlNavegacao != null) {
@@ -788,10 +794,12 @@ if (ch == MARCADOR) {
 				break;
 			}
 			
+			Configuracao cfg = TerminalAvanco.getCfg();
+			
 			if (((i == 22) || (i == 23)) && cfg.isBotoesFuncao()) {
 				String s = new String(dados[i]);
 				if (s.contains(":") && s.contains("F")) {
-					if (new BotoesFuncao().processa(s, pnlBotoes, com)) {
+					if (new BotoesFuncao().processa(s, pnlBotoes)) {
 						contexto.setFill(converteCor(frente[i][0]));
 						int x = MARGEM;
 						int y = MARGEM + i * altLin;
@@ -823,6 +831,8 @@ if (ch == MARCADOR) {
 	
 	public void mostraHover(int y, int x1, int x2, String texto) {
 
+		Configuracao cfg = TerminalAvanco.getCfg();
+		
 		if (!cfg.isMouseMenus()) {
 			return;
 		}
@@ -974,16 +984,16 @@ if (ch == MARCADOR) {
 				alert.setContentText(msg);
 				alert.showAndWait();		
 				
+				Configuracao cfg = TerminalAvanco.getCfg();
 				cfg.showAndWait();
 				if (cfg.isCancelado()) {
 					close();
 					return;
 				}
 				
-				Comunicacao com = new Comunicacao(terminal, cfg);
+				Comunicacao com = new Comunicacao();
 				com.setName("COMUNICACAO");
 				com.start();				
-				TerminalAvanco.setCom(com);
 				
 			}
 		});
@@ -1001,6 +1011,7 @@ if (ch == MARCADOR) {
 				alert.setContentText(msg);
 				alert.showAndWait();		
 				
+				Configuracao cfg = TerminalAvanco.getCfg();
 				cfg.showAndWait();
 				
 				alert = new Alert(AlertType.INFORMATION);
@@ -1114,11 +1125,6 @@ if (ch == MARCADOR) {
 		this.fila = fila;
 	}
 
-	public void setCom(Comunicacao com) {
-		this.com = com;
-		teclado.setCom(com);
-	}
-
 	public boolean isConectado() {
 		return conectado;
 	}
@@ -1229,3 +1235,5 @@ if (ch == MARCADOR) {
 	}
 
 }
+
+// 24 - correções na barra de navegação

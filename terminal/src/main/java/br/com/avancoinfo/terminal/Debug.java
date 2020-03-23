@@ -10,11 +10,13 @@ public class Debug {
 	private static final boolean DEBUG_CORES = false;
 	private static final boolean DEBUG_ATRS = false;
 
-	public static void gravaTela(Terminal terminal, int n) {
+	public static void gravaTela(int n) {
 		
 		if (log == null) {
 			return;
 		}
+		
+		Terminal terminal = TerminalAvanco.getTerminal();
 
 		synchronized (log) {
 

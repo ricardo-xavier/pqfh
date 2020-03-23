@@ -47,14 +47,12 @@ public class Menu extends Stage {
 
 	private static List<String> opcoes;
 	private static List<Character> teclas;
-	private Comunicacao com;
 	private boolean encerrar;
 	private FlowPane pnlNavegacao;
 	
-	public Menu(char[][] dados, char[][] frente, Comunicacao com, FlowPane pnlNavegacao) {
+	public Menu(char[][] dados, char[][] frente, FlowPane pnlNavegacao) {
 		
 		encerrar = true;
-		this.com = com;
 		this.pnlNavegacao = pnlNavegacao;
 		FlowPane pnlMenu = new FlowPane();
 
@@ -129,7 +127,7 @@ public class Menu extends Stage {
 				@Override
 				public void handle(ActionEvent event) {
 					Teclado.setUltimaTecla(null);
-					com.envia(String.valueOf(tecla));
+					TerminalAvanco.getCom().envia(String.valueOf(tecla));
 					if (pnlNavegacao != null) {
 						Button btnOpcao = new Button(opcao);
 						btnOpcao.setId(opcao.trim());
@@ -196,7 +194,7 @@ public class Menu extends Stage {
 		for (int o=0; o<opcoes.size(); o++) {
 			char tecla = teclas.get(o);
 			if (tecla == code.toString().charAt(0)) {
-				com.envia(String.valueOf(tecla));
+				TerminalAvanco.getCom().envia(String.valueOf(tecla));
 				if (pnlNavegacao != null) {
 					Button btnOpcao = new Button(opcoes.get(o));
 					btnOpcao.setId(opcoes.get(o).trim());

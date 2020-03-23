@@ -9,12 +9,6 @@ public class Escape {
 	public static final int A_BLINK = 0x10;
 	public static final int A_INVISIBLE = 0x20;
 
-	private Terminal terminal;
-
-	public Escape(Terminal terminal) {
-		this.terminal = terminal;
-	}
-
 	public void processaSeq(char[] seq, int iseq) {
 
 		String cmd = new String(seq, 0, iseq);
@@ -76,6 +70,9 @@ public class Escape {
 	}
 
 	private void cursorUp(String prms) {
+		
+		Terminal terminal = TerminalAvanco.getTerminal();
+		
 		if (terminal.getLin() > 0) {
 			int n = prms.equals("") ? 1 : Integer.parseInt(prms);
 			int lin = terminal.getLin();
@@ -90,6 +87,9 @@ public class Escape {
 	}
 
 	private void cursorDown(String prms) {
+		
+		Terminal terminal = TerminalAvanco.getTerminal();
+		
 		if (terminal.getLin() < (Terminal.getLinhas() - 1)) {
 			int n = prms.equals("") ? 1 : Integer.parseInt(prms);
 			terminal.setLin(terminal.getLin() + n);
@@ -98,6 +98,9 @@ public class Escape {
 	}
 
 	private void cursorBackward(String prms) {
+		
+		Terminal terminal = TerminalAvanco.getTerminal();
+		
 		int n = prms.equals("") ? 1 : Integer.parseInt(prms);
 		int col = terminal.getCol();
 		if (col >= n) {
@@ -110,6 +113,9 @@ public class Escape {
 	}
 
 	private void cursorForward(String prms) {
+		
+		Terminal terminal = TerminalAvanco.getTerminal();
+		
 		int n = prms.equals("") ? 1 : Integer.parseInt(prms);
 		terminal.setCol(terminal.getCol() + n);
 		terminal.alteraRegiao(terminal.getCol(), -1);
@@ -117,6 +123,7 @@ public class Escape {
 
 	public void clear(String prms) {
 
+		Terminal terminal = TerminalAvanco.getTerminal();
 		char[][] dados = terminal.getDados();
 		int[][] atributos = terminal.getAtributos();
 		char[][] frente = terminal.getFrente();
@@ -155,6 +162,9 @@ public class Escape {
 	}
 
 	private void home(String prms) {
+		
+		Terminal terminal = TerminalAvanco.getTerminal();
+		
 		if (prms.contains(";")) {
 			String[] coordenadas = prms.split(";");
 			terminal.setLin(Integer.parseInt(coordenadas[0]) - 1);
@@ -168,6 +178,7 @@ public class Escape {
 
 	public void el() {
 
+		Terminal terminal = TerminalAvanco.getTerminal();
 		char[][] dados = terminal.getDados();
 		int[][] atributos = terminal.getAtributos();
 		char[][] frente = terminal.getFrente();
@@ -185,6 +196,8 @@ public class Escape {
 
 	private void setaAtributos(String seq) {
 
+		Terminal terminal = TerminalAvanco.getTerminal();
+		
 		String[] atrs = seq.replace("[", "").replace("m", "").split(";");
 		int atributo = terminal.getAtributo();
 

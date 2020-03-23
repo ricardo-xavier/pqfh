@@ -13,15 +13,8 @@ import com.jcraft.jsch.Session;
 public class Comunicacao extends Thread {
 
 	private static final int TAMBUF = 8192;
-	private Terminal terminal;
-	private Configuracao cfg;
 	private Session sessao;
 	private OutputStream saida;
-
-	public Comunicacao(Terminal terminal, Configuracao cfg) {
-		this.terminal = terminal;
-		this.cfg = cfg;
-	}
 
 	@Override
 	public void run() {
@@ -29,11 +22,13 @@ public class Comunicacao extends Thread {
 		byte[] buf = new byte[TAMBUF];
 		int pos = 0;
 		boolean enviarComando = true;
+		Terminal terminal = TerminalAvanco.getTerminal();
 
 		try {
 			
 			// conecta
 			
+			Configuracao cfg = TerminalAvanco.getCfg();
 			Debug.grava("servidor: " + cfg.getServidor() + "\n");
 			Debug.grava("porta: " + cfg.getPorta() + "\n");
 			
@@ -47,7 +42,6 @@ public class Comunicacao extends Thread {
 			ChannelShell canal = (ChannelShell) sessao.openChannel("shell");
 			InputStream entrada = canal.getInputStream();
 			saida = canal.getOutputStream();
-			terminal.setCom(this);
 			canal.connect();
 			terminal.setConectado(true, cfg.getServidor(), cfg.getPorta(), cfg.getUsuario());
 
@@ -99,7 +93,8 @@ public class Comunicacao extends Thread {
 				}
 					
 				synchronized (terminal.getFila()) {
-					Debug.grava(String.format("%s +FILA %d %s%n", Thread.currentThread().getName(), terminal.getFila().size(), pos, new String(buf, 0, pos)));
+					Debug.grava(String.format("%s +FILA %d %s%n", Thread.currentThread().getName(), 
+							terminal.getFila().size(), pos, new String(buf, 0, pos)));
 					terminal.getFila().add(new Buffer(pos, buf));
 				}
 				terminal.atualiza();
@@ -148,7 +143,7 @@ public class Comunicacao extends Thread {
 	
 	public void close() {
 		sessao.disconnect();
-		terminal.setConectado(false, null, 0, null);
+		TerminalAvanco.getTerminal().setConectado(false, null, 0, null);
 	}
 
 }

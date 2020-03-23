@@ -6,23 +6,22 @@ import javafx.scene.input.KeyEvent;
 
 public class Teclado implements EventHandler<KeyEvent> {
 
-	private Comunicacao com;
-	private Terminal terminal;
 	private Configuracao cfg;
 	private static KeyCode ultimaTecla;
-
-	public Teclado(Terminal terminal, Configuracao cfg) {
-		this.terminal = terminal;
+	
+	public Teclado(Configuracao cfg) {
 		this.cfg = cfg;
 	}
 
 	@Override
 	public void handle(KeyEvent event) {
+		
+		Comunicacao com = TerminalAvanco.getCom();
 
 		Debug.grava("TECLA " + event.toString() + "\n");
 		
-		if (MenuInterno.posicionadoMenu(terminal)) {
-			MenuInterno.verificaTecla(event.getCode(), terminal);
+		if (MenuInterno.posicionadoMenu()) {
+			MenuInterno.verificaTecla(event.getCode());
 		}
 		
 		setUltimaTecla(event.getCode());
@@ -143,6 +142,9 @@ public class Teclado implements EventHandler<KeyEvent> {
 	}
 
 	private boolean decimalPoint() {
+		
+		Terminal terminal = TerminalAvanco.getTerminal();
+		
 		if (terminal.getCol() == 0) {
 			return false;
 		}
@@ -159,14 +161,6 @@ public class Teclado implements EventHandler<KeyEvent> {
 		return false;
 	}
 	
-	public Comunicacao getCom() {
-		return com;
-	}
-
-	public void setCom(Comunicacao com) {
-		this.com = com;
-	}
-
 	public static KeyCode getUltimaTecla() {
 		return ultimaTecla;
 	}

@@ -10,7 +10,7 @@ import javafx.scene.layout.GridPane;
 
 public class BotoesFuncao {
 
-	public boolean processa(String linha, GridPane pnlBotoes, Comunicacao com) {
+	public boolean processa(String linha, GridPane pnlBotoes) {
 		
 		if (pnlBotoes.getUserData() != null) {
 			String atual = (String) pnlBotoes.getUserData();
@@ -60,6 +60,8 @@ public class BotoesFuncao {
 
 				@Override
 				public void handle(ActionEvent event) {
+					
+					Comunicacao com = TerminalAvanco.getCom();
 
 					switch (btn.getId()) {
 

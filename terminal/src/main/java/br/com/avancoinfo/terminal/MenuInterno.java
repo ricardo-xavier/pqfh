@@ -26,11 +26,11 @@ public class MenuInterno {
 	 * 
 	 * @param y
 	 * @param x
-	 * @param terminal
 	 * @return
 	 */
-	public static boolean dentroMenu(int y, int x, Terminal terminal) {
+	public static boolean dentroMenu(int y, int x) {
 		
+		Terminal terminal = TerminalAvanco.getTerminal();
 		char[][] dados = terminal.getDados();
 		int[][] atributos = terminal.getAtributos();
 		char[][] frente = terminal.getFrente();
@@ -188,7 +188,7 @@ public class MenuInterno {
 	 * @param tela
 	 * @param event
 	 */
-	public static void verificaMouse(Terminal terminal, BorderPane tela, MouseEvent event) {
+	public static void verificaMouse(BorderPane tela, MouseEvent event) {
 		
 		tela.setCursor(javafx.scene.Cursor.DEFAULT);
 		
@@ -196,6 +196,7 @@ public class MenuInterno {
 			return;
 		}
 		
+		Terminal terminal = TerminalAvanco.getTerminal();
 		int y0 = (int) Terminal.getMargem();
 		if (terminal.getPnlNavegacao() != null) {
 			y0 += terminal.getPnlNavegacao().getHeight();
@@ -269,10 +270,10 @@ public class MenuInterno {
 	 * Verifica se ainda tem um menu na posição marcada
 	 * Se não for revalidado, o menu não será mais considerado na verificação da posição do mouse
 	 * 
-	 * @param terminal
 	 */
-	public static void revalida(Terminal terminal) {
+	public static void revalida() {
 		
+		Terminal terminal = TerminalAvanco.getTerminal();
 		char[][] dados = terminal.getDados();
 		int[][] atributos = terminal.getAtributos();
 		
@@ -297,11 +298,11 @@ public class MenuInterno {
 	 * Verifica se o cursor esta posicionado em um menu
 	 * O cursor pode ficar no fim da linha do menu em cima da borda, ou no fim da tela 23,79
 	 * 
-	 * @param terminal
 	 * @return
 	 */
-	public static boolean posicionadoMenu(Terminal terminal) {
+	public static boolean posicionadoMenu() {
 
+		Terminal terminal = TerminalAvanco.getTerminal();
 		int lin = terminal.getLin();
 		int col = terminal.getCol();
 		char ch = terminal.getDados()[lin][col];
@@ -322,17 +323,17 @@ public class MenuInterno {
 	 * Verifica se o marcador do painel de navegação ainda existe
 	 * Se não existir, o botão será removido da navegação
 	 * 
-	 * @param terminal
 	 */
-	public static void verificaRemocao(Terminal terminal) {
+	public static void verificaRemocao() {
 		
+		Terminal terminal = TerminalAvanco.getTerminal();
 		int n = terminal.getPnlNavegacao().getChildren().size();
 		if (n == 0) {
 			return;
 		}
 		
 		// só remover se estiver posicionado em um menu 
-		if (!posicionadoMenu(terminal)) {
+		if (!posicionadoMenu()) {
 			return;
 		}
 		
@@ -342,7 +343,7 @@ public class MenuInterno {
 			char ch = terminal.getDados()[p.getY()][p.getX()];
 			if (ch != Terminal.getMARCADOR()) {
 				BarraNavegacao.remove(terminal.getPnlNavegacao(), n-1);
-				verificaRemocao(terminal);
+				verificaRemocao();
 			}
 		} else {
 			
@@ -412,10 +413,11 @@ public class MenuInterno {
 	 * 
 	 * @param code
 	 */
-	public static void verificaTecla(KeyCode code, Terminal terminal) {
+	public static void verificaTecla(KeyCode code) {
 
 		int colMax = -1;
 		String chaveSelecionada = null;
+		Terminal terminal = TerminalAvanco.getTerminal();
 		
 		String codeS = code.toString();
 		char c = '?';
