@@ -1,9 +1,47 @@
 package br.com.avancoinfo.terminal;
 
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.layout.FlowPane;
+
+class Evento implements EventHandler<ActionEvent> {
+
+	private FlowPane pnlNavegacao;
+	
+	public Evento(FlowPane pnlNavegacao) {
+		this.pnlNavegacao = pnlNavegacao;
+	}
+
+	@Override
+	public void handle(ActionEvent event) {
+
+		if (MenuInterno.posicionadoMenu()) {
+			
+			Button btnOpcao = (Button) event.getSource();
+			
+			for (int i=0; i<pnlNavegacao.getChildren().size(); i++) {
+				if (pnlNavegacao.getChildren().get(i) == btnOpcao) {
+					int n = pnlNavegacao.getChildren().size() - i - 1;
+					System.err.println(btnOpcao.getId() + " " + i + " " + pnlNavegacao.getChildren().size());
+					while (n-- > 0) {
+						TerminalAvanco.getCom().envia("\u001b");
+						try {
+							Thread.sleep(10);
+						} catch (InterruptedException e) {
+							e.printStackTrace();
+						}
+					}
+				}
+			}
+			
+		}
+		
+	}
+	
+}
 
 public class BarraNavegacao {
 
@@ -27,11 +65,14 @@ public class BarraNavegacao {
 			FlowPane.setMargin(btnOpcao, new Insets(4, 4, 4, 0));
 			Debug.grava("NAVEGACAO adiciona " + texto + "\n");
 			pnlNavegacao.getChildren().add(btnOpcao);
+			
+			btnOpcao.setOnAction(new Evento(pnlNavegacao));
 		}
 	}
 
 	public static void adiciona(FlowPane pnlNavegacao, Button btn) {
 		Debug.grava("NAVEGACAO adiciona " + btn.getId() + "\n");
+		btn.setOnAction(new Evento(pnlNavegacao));
 		pnlNavegacao.getChildren().add(btn);
 	}
 	

@@ -43,6 +43,7 @@ public class TerminalAvanco extends Application {
 		}
 		
 		terminal = new Terminal();
+		terminal.inicializa();
 		terminal.show();
 		
 		com = new Comunicacao();

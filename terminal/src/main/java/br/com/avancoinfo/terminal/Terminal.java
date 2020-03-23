@@ -111,7 +111,7 @@ public class Terminal extends Stage {
 	private FlowPane pnlSocial;
 	private FlowPane pnlNavegacao;
 	
-	public Terminal() {
+	public void inicializa() {
 		
 		Debug.open(VERSAO);
 		Configuracao cfg = TerminalAvanco.getCfg();

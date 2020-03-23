@@ -133,7 +133,7 @@ public class Menu extends Stage {
 						btnOpcao.setId(opcao.trim());
 						btnOpcao.getStyleClass().add("botao");
 						FlowPane.setMargin(btnOpcao, new Insets(4, 4, 4, 0));
-						pnlNavegacao.getChildren().add(btnOpcao);
+						BarraNavegacao.adiciona(pnlNavegacao, btnOpcao);
 					}
 				}
 			});
