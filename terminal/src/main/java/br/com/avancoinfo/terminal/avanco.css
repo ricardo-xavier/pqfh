@@ -2,6 +2,14 @@
 	-fx-background-color: #4D7A97;
 }
 
+.pnlTitulo {
+	-fx-background-color: #4D7A97;
+}
+
+.lblTitulo {
+	-fx-text-fill: white;
+}
+
 .botao:hover {
 	-fx-cursor: hand;
 }

@@ -14,7 +14,6 @@ import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
-import javafx.geometry.Pos;
 import javafx.geometry.VPos;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
@@ -29,6 +28,7 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.stage.Modality;
@@ -36,15 +36,9 @@ import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 
 
-enum EstadoLogin {
-	OK,
-	AGUARDANDO_PROMPT,
-	AGUARDANDO_RESPOSTA
-}
-
 public class Terminal extends Stage {
 	
-	private static final int VERSAO = 24;
+	private static final int VERSAO = 25;
 	private static final int LINHAS = 25;
 	private static final int COLUNAS = 80;
 	private static final int MARGEM = 5;
@@ -58,6 +52,8 @@ public class Terminal extends Stage {
 	private GraphicsContext contexto;
 	private int larCar;
 	private int altLin;
+	private int larTela;
+	private int altTela;
 	private Font fonte;
 	
     private char[][] dados;
@@ -108,7 +104,7 @@ public class Terminal extends Stage {
 	private static char MARCADOR = 65533;
 
 	private GridPane pnlBotoes;
-	private FlowPane pnlSocial;
+	private VBox pnlSocial;
 	private FlowPane pnlNavegacao;
 	
 	public void inicializa() {
@@ -124,8 +120,8 @@ public class Terminal extends Stage {
 		FontMetrics fm = Toolkit.getToolkit().getFontLoader().getFontMetrics(fonte);
 		altLin = (int) fm.getLineHeight();
 		larCar = (int) fm.computeStringWidth("W");
-		int altTela = altLin * LINHAS + MARGEM * 2;
-		int larTela = larCar * COLUNAS + MARGEM * 2;
+		altTela = altLin * LINHAS + MARGEM * 2;
+		larTela = larCar * COLUNAS + MARGEM * 2;
 		
 		// cria um canvas do tamanho da tela
 		canvas = new Canvas(larTela, altTela);
@@ -156,66 +152,9 @@ public class Terminal extends Stage {
 		statusBar.setId("statusbar");
 		tela.setBottom(statusBar);
 		
-		pnlSocial = new FlowPane();
+		pnlSocial = new VBox();
+		Social.monta(pnlSocial);
 		statusBar.setLeft(pnlSocial);
-		pnlSocial.setMaxWidth(100);
-		pnlSocial.setVisible(false);
-		pnlSocial.setAlignment(Pos.CENTER);
-
-		Image imageSite = new Image(getClass().getResourceAsStream("a.png"));//, 32, 32, false, false);
-		ImageView ivSite = new ImageView(imageSite);
-		ivSite.getStyleClass().add("botao");
-		pnlSocial.getChildren().add(ivSite);
-		ivSite.setOnMouseClicked(new EventHandler<MouseEvent>() {
-
-			@Override
-			public void handle(MouseEvent event) {
-				String url = "https://avancoinfo.com.br/";
-				try {
-					new ProcessBuilder("x-www-browser", url).start();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
-		});
-
-		Image imageFace = new Image(getClass().getResourceAsStream("face.png"));//, 48, 48, false, false);
-		ImageView ivFace = new ImageView(imageFace);
-		ivFace.getStyleClass().add("botao");
-		pnlSocial.getChildren().add(ivFace);
-		ivFace.setOnMouseClicked(new EventHandler<MouseEvent>() {
-
-			@Override
-			public void handle(MouseEvent event) {
-				String url = "https://facebook.com/avancoinfo/";
-				try {
-					new ProcessBuilder("x-www-browser", url).start();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
-		});
-
-		Image imageLinkedin = new Image(getClass().getResourceAsStream("in.png"));//, 32, 32, false, false);
-		ImageView ivLinkedin = new ImageView(imageLinkedin);
-		ivLinkedin.getStyleClass().add("botao");
-		pnlSocial.getChildren().add(ivLinkedin);
-		ivLinkedin.setOnMouseClicked(new EventHandler<MouseEvent>() {
-
-			@Override
-			public void handle(MouseEvent event) {
-				String url = "https://pt.linkedin.com/company/avan-o-inform-tica";
-				try {
-					new ProcessBuilder("x-www-browser", url).start();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
-		});
-		
-		FlowPane.setMargin(ivSite, new Insets(4));
-		FlowPane.setMargin(ivFace, new Insets(4));
-		FlowPane.setMargin(ivLinkedin, new Insets(4));
 		
 		Image imageOk = new Image(getClass().getResourceAsStream("config.png"));
 		Button btnConfig = new Button("", new ImageView(imageOk));
@@ -1234,6 +1173,39 @@ if (ch == MARCADOR) {
 		this.marcadores = marcadores;
 	}
 
+	public int getLarTela() {
+		return larTela;
+	}
+
+	public void setLarTela(int larTela) {
+		this.larTela = larTela;
+	}
+
+	public int getAltTela() {
+		return altTela;
+	}
+
+	public void setAltTela(int altTela) {
+		this.altTela = altTela;
+	}
+
+	public Menu getMenu() {
+		return menu;
+	}
+
+	public void setMenu(Menu menu) {
+		this.menu = menu;
+	}
+
+	public EstadoLogin getEstadoLogin() {
+		return estadoLogin;
+	}
+
+	public void setEstadoLogin(EstadoLogin estadoLogin) {
+		this.estadoLogin = estadoLogin;
+	}
+
 }
 
 // 24 - correções na barra de navegação
+// 25 - titulo e botões de funçao no menu principal

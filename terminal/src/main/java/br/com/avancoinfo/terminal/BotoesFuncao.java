@@ -115,6 +115,13 @@ public class BotoesFuncao {
 
 					}
 
+					Terminal terminal = TerminalAvanco.getTerminal();
+					if (terminal != null) {
+						terminal.getMenu().close();
+						terminal.setMenu(null);
+						terminal.setEstadoLogin(EstadoLogin.OK);
+						terminal.alteraRegiao(-1, -1);
+					}
 				}
 			});
 			pnlBotoes.add(btn, 0, ++lin);
