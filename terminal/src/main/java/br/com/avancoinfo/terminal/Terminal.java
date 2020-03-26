@@ -14,6 +14,7 @@ import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.geometry.VPos;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
@@ -156,11 +157,14 @@ public class Terminal extends Stage {
 		Social.monta(pnlSocial);
 		statusBar.setLeft(pnlSocial);
 		
-		Image imageOk = new Image(getClass().getResourceAsStream("config.png"));
-		Button btnConfig = new Button("", new ImageView(imageOk));
+		FlowPane pnlConfigShare = new FlowPane();
+		pnlConfigShare.setAlignment(Pos.CENTER_RIGHT);
+		
+		Image imageConfig = new Image(getClass().getResourceAsStream("config.png"));
+		Button btnConfig = new Button("", new ImageView(imageConfig));
 		btnConfig.getStyleClass().add("botao");
 		btnConfig.setFocusTraversable(false);
-		statusBar.setRight(btnConfig);
+		pnlConfigShare.getChildren().add(btnConfig);
 		btnConfig.setOnAction(new EventHandler<ActionEvent>() {
 			
 			@Override
@@ -171,6 +175,28 @@ public class Terminal extends Stage {
 				mostra();
 			}
 		});
+		
+		Image imageShare = new Image(getClass().getResourceAsStream("share.png"), 36, 36, false, false);
+		Button btnShare = new Button("", new ImageView(imageShare));
+		btnShare.getStyleClass().add("botao");
+		btnShare.setFocusTraversable(false);
+		pnlConfigShare.getChildren().add(btnShare);
+		btnShare.setOnAction(new EventHandler<ActionEvent>() {
+			
+			@Override
+			public void handle(ActionEvent event) {
+
+				Alert alert = new Alert(AlertType.INFORMATION);
+				alert.setTitle("Aguarde");
+				alert.setHeaderText("Em desenvolvimento");
+				alert.setContentText("Em breve, vocẽ poderá compartilhar seu terminal");
+				alert.showAndWait();		
+
+			}
+		});
+		
+		statusBar.setRight(pnlConfigShare);
+		
 
 		lblStatus = new Label("Conectando ...");
 		statusBar.setCenter(lblStatus);
@@ -677,7 +703,7 @@ if (ch == MARCADOR) {
 		if ((linMarcador != -1) && (dados[linMarcador][colMarcador] != MARCADOR)) {
 			linMarcador = -1;
 		}
-		MenuInterno.revalida();
+		MenuInterno.revalida(lin, col);
 		MenuInterno.verificaRemocao();
 		
 		if (estadoLogin != EstadoLogin.OK) {

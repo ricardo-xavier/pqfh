@@ -271,7 +271,7 @@ public class MenuInterno {
 	 * Se não for revalidado, o menu não será mais considerado na verificação da posição do mouse
 	 * 
 	 */
-	public static void revalida() {
+	public static void revalida(int y, int x) {
 		
 		Terminal terminal = TerminalAvanco.getTerminal();
 		char[][] dados = terminal.getDados();
@@ -290,6 +290,117 @@ public class MenuInterno {
 			|| (dados[y2][x1] != '@')
 			|| (dados[y2][x2] != 'Y')) {
 				setY1(-1);
+				for (int m=terminal.getMarcadores().size()-1; m>=0; m--) {
+					Ponto ponto = terminal.getMarcadores().get(m);
+					if (dados[ponto.getY()][ponto.getX()] == Terminal.getMARCADOR()) {
+						for (String chave : menus.keySet()) {
+							String[] partes = chave.split(":");
+							int x1 = Integer.parseInt(partes[0]);
+							int y1 = Integer.parseInt(partes[1]);
+							int x2 = Integer.parseInt(partes[2]);
+							int y2 = Integer.parseInt(partes[3]);
+							if ((ponto.getY() >= y1) && (ponto.getY() <= y2)
+									&& (ponto.getX() >= x1) && (ponto.getX() <= x2)) {
+								
+								if (((atributos[y1][x1] & Escape.A_ACS) == Escape.A_ACS)
+									&& ((atributos[y1][x2] & Escape.A_ACS) == Escape.A_ACS)
+									&& ((atributos[y2][x1] & Escape.A_ACS) == Escape.A_ACS)
+									&& ((atributos[y2][x2] & Escape.A_ACS) == Escape.A_ACS)
+									&& (dados[y1][x1] == 'Z')
+									&& (dados[y1][x2] == '?')
+									&& (dados[y2][x1] == '@')
+									&& (dados[y2][x2] == 'Y')) {
+									
+									boolean acs = true;
+									for (int i=y1; i<=y2; i++) {
+										if (((atributos[i][x1] & Escape.A_ACS) != Escape.A_ACS)
+											|| ((atributos[i][x2] & Escape.A_ACS) != Escape.A_ACS)) {
+											acs = false;
+											break;
+										}
+									}
+									if (!acs) {
+										break;
+									}
+									
+									for (int j=x1; j<=x2; j++) {
+										if (((atributos[y1][j] & Escape.A_ACS) != Escape.A_ACS)
+												|| ((atributos[y2][j] & Escape.A_ACS) != Escape.A_ACS)) {
+											acs = false;
+											break;
+										}
+									}
+									if (!acs) {
+										break;
+									}
+										
+									MenuInterno.setY(ponto.getY());
+									MenuInterno.setY1(y1);
+									MenuInterno.setY2(y2);
+									MenuInterno.setX1(x1);
+									MenuInterno.setX2(x2);
+
+									int i = ponto.getY();
+//									System.err.println("recupera " + i + " " + x1);
+									for (int j=x1+1; j<x2; j++) {
+										terminal.getFrente()[i][j] = 'W';
+										terminal.getFundo()[i][j] = 'b';
+										terminal.getAtributos()[i][j] |= Escape.A_REVERSE;
+									}
+									terminal.alteraRegiao(x1, i);
+									terminal.alteraRegiao(x2, i);
+									break;
+								}
+										
+							}
+						}
+						break;
+					}
+				}
+		} else {
+			
+			for (int m=0; m<terminal.getMarcadores().size(); m++) {
+				Ponto ponto = terminal.getMarcadores().get(m);
+				if ((ponto.getY() > y1) && (ponto.getY() < y2)
+						&& (ponto.getX() > x1) && (ponto.getX() < x2)) {
+					
+					boolean acs = true;
+					for (int i=y1; i<=y2; i++) {
+						if (((atributos[i][x1] & Escape.A_ACS) != Escape.A_ACS)
+							|| ((atributos[i][x2] & Escape.A_ACS) != Escape.A_ACS)) {
+							acs = false;
+							break;
+						}
+					}
+					if (!acs) {
+						continue;
+					}
+					
+					for (int j=x1; j<=x2; j++) {
+						if (((atributos[y1][j] & Escape.A_ACS) != Escape.A_ACS)
+								|| ((atributos[y2][j] & Escape.A_ACS) != Escape.A_ACS)) {
+							acs = false;
+							break;
+						}
+					}
+					if (!acs) {
+						continue;
+					}
+					
+					int i = ponto.getY();
+//					System.err.println("recupera " + i + " " + x1);
+					for (int j=x1+1; j<x2; j++) {
+						terminal.getFrente()[i][j] = 'W';
+						terminal.getFundo()[i][j] = 'b';
+						terminal.getAtributos()[i][j] |= Escape.A_REVERSE;
+					}
+					terminal.alteraRegiao(x1, i);
+					terminal.alteraRegiao(x2, i);
+					break;
+					
+				}
+			}			
+			
 		}
 		
 	}
