@@ -10,7 +10,7 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 
-public class MenuInterno {
+public class MenuInterno2 {
 	
 	private static int y = -1;
 	private static int y1 = -1;
@@ -153,11 +153,11 @@ public class MenuInterno {
 			
 		}
 		
-		MenuInterno.setY(y);
-		MenuInterno.setY1(y1);
-		MenuInterno.setY2(y2);
-		MenuInterno.setX1(x1);
-		MenuInterno.setX2(x2);
+		MenuInterno2.setY(y);
+		MenuInterno2.setY1(y1);
+		MenuInterno2.setY2(y2);
+		MenuInterno2.setX1(x1);
+		MenuInterno2.setX2(x2);
 		
 		// carrega o mapa de menus
 		String s = new String(dados[y1+1], x1+1, x2-x1-1).replace((char) marcador, ' ').trim();
@@ -192,7 +192,7 @@ public class MenuInterno {
 		
 		tela.setCursor(javafx.scene.Cursor.DEFAULT);
 		
-		if (MenuInterno.y1 == -1) {
+		if (MenuInterno2.y1 == -1) {
 			return;
 		}
 		
@@ -204,14 +204,14 @@ public class MenuInterno {
 		int y = ((int) event.getY() - y0) / terminal.getAltLin();
 		int x = ((int) event.getX() - Terminal.getMargem()) / terminal.getLarCar();
 
-		if ((y <= MenuInterno.y1) || (y >= MenuInterno.y2) || (x <= MenuInterno.x1) || (x >= MenuInterno.x2)) {
+		if ((y <= MenuInterno2.y1) || (y >= MenuInterno2.y2) || (x <= MenuInterno2.x1) || (x >= MenuInterno2.x2)) {
 
 			// desmarca a posição anterior
-			if (MenuInterno.y != -1) {
-				terminal.alteraRegiao(MenuInterno.x1, MenuInterno.y);
-				terminal.alteraRegiao(MenuInterno.x2, MenuInterno.y);
+			if (MenuInterno2.y != -1) {
+				terminal.alteraRegiao(MenuInterno2.x1, MenuInterno2.y);
+				terminal.alteraRegiao(MenuInterno2.x2, MenuInterno2.y);
 				terminal.mostra();
-				MenuInterno.setY(-1);
+				MenuInterno2.setY(-1);
 				setLetraSelecionada('?');
 			}
 			
@@ -219,17 +219,17 @@ public class MenuInterno {
 		}
 
 		// o mouse moveu, mas ainda está na mesma opção do menu
-		if ((y == MenuInterno.y) && (x >= MenuInterno.x1) && (x <= MenuInterno.x2)) {
+		if ((y == MenuInterno2.y) && (x >= MenuInterno2.x1) && (x <= MenuInterno2.x2)) {
 			tela.setCursor(javafx.scene.Cursor.HAND);
 			return;
 		}
 		
 		// desmarca a posição anterior
-		if (MenuInterno.y != -1) {
-			terminal.alteraRegiao(MenuInterno.x1, MenuInterno.y);
-			terminal.alteraRegiao(MenuInterno.x2, MenuInterno.y);
+		if (MenuInterno2.y != -1) {
+			terminal.alteraRegiao(MenuInterno2.x1, MenuInterno2.y);
+			terminal.alteraRegiao(MenuInterno2.x2, MenuInterno2.y);
 			terminal.mostra();
-			MenuInterno.setY(-1);
+			MenuInterno2.setY(-1);
 			setLetraSelecionada('?');
 		}
 		
@@ -289,65 +289,140 @@ public class MenuInterno {
 			|| (dados[y1][x2] != '?')
 			|| (dados[y2][x1] != '@')
 			|| (dados[y2][x2] != 'Y')) {
-		
-			setY1(-1);
+				setY1(-1);
 
-			for (int m=terminal.getMarcadores().size()-1; m>=0; m--) {
-				Ponto ponto = terminal.getMarcadores().get(m);
-				if (dados[ponto.getY()][ponto.getX()] == Terminal.getMARCADOR()) {
-					for (String chave : menus.keySet()) {
-						String[] partes = chave.split(":");
-						int x1 = Integer.parseInt(partes[0]);
-						int y1 = Integer.parseInt(partes[1]);
-						int x2 = Integer.parseInt(partes[2]);
-						int y2 = Integer.parseInt(partes[3]);
-						if ((ponto.getY() >= y1) && (ponto.getY() <= y2)
-								&& (ponto.getX() >= x1) && (ponto.getX() <= x2)) {
-							
-							if (((atributos[y1][x1] & Escape.A_ACS) == Escape.A_ACS)
-								&& ((atributos[y1][x2] & Escape.A_ACS) == Escape.A_ACS)
-								&& ((atributos[y2][x1] & Escape.A_ACS) == Escape.A_ACS)
-								&& ((atributos[y2][x2] & Escape.A_ACS) == Escape.A_ACS)
-								&& (dados[y1][x1] == 'Z')
-								&& (dados[y1][x2] == '?')
-								&& (dados[y2][x1] == '@')
-								&& (dados[y2][x2] == 'Y')) {
+				for (int m=terminal.getMarcadores().size()-1; m>=0; m--) {
+					Ponto ponto = terminal.getMarcadores().get(m);
+					if (dados[ponto.getY()][ponto.getX()] == Terminal.getMARCADOR()) {
+						for (String chave : menus.keySet()) {
+							String[] partes = chave.split(":");
+							int x1 = Integer.parseInt(partes[0]);
+							int y1 = Integer.parseInt(partes[1]);
+							int x2 = Integer.parseInt(partes[2]);
+							int y2 = Integer.parseInt(partes[3]);
+							if ((ponto.getY() >= y1) && (ponto.getY() <= y2)
+									&& (ponto.getX() >= x1) && (ponto.getX() <= x2)) {
 								
-								boolean acs = true;
-								for (int i=y1; i<=y2; i++) {
-									if (((atributos[i][x1] & Escape.A_ACS) != Escape.A_ACS)
-										|| ((atributos[i][x2] & Escape.A_ACS) != Escape.A_ACS)) {
-										acs = false;
-										break;
-									}
-								}
-								if (!acs) {
-									break;
-								}
-								
-								for (int j=x1; j<=x2; j++) {
-									if (((atributos[y1][j] & Escape.A_ACS) != Escape.A_ACS)
-											|| ((atributos[y2][j] & Escape.A_ACS) != Escape.A_ACS)) {
-										acs = false;
-										break;
-									}
-								}
-								if (!acs) {
-									break;
-								}
+								if (((atributos[y1][x1] & Escape.A_ACS) == Escape.A_ACS)
+									&& ((atributos[y1][x2] & Escape.A_ACS) == Escape.A_ACS)
+									&& ((atributos[y2][x1] & Escape.A_ACS) == Escape.A_ACS)
+									&& ((atributos[y2][x2] & Escape.A_ACS) == Escape.A_ACS)
+									&& (dados[y1][x1] == 'Z')
+									&& (dados[y1][x2] == '?')
+									&& (dados[y2][x1] == '@')
+									&& (dados[y2][x2] == 'Y')) {
 									
-								MenuInterno.setY(ponto.getY());
-								MenuInterno.setY1(y1);
-								MenuInterno.setY2(y2);
-								MenuInterno.setX1(x1);
-								MenuInterno.setX2(x2);
+									boolean acs = true;
+									for (int i=y1; i<=y2; i++) {
+										if (((atributos[i][x1] & Escape.A_ACS) != Escape.A_ACS)
+											|| ((atributos[i][x2] & Escape.A_ACS) != Escape.A_ACS)) {
+											acs = false;
+											break;
+										}
+									}
+									if (!acs) {
+										break;
+									}
+									
+									for (int j=x1; j<=x2; j++) {
+										if (((atributos[y1][j] & Escape.A_ACS) != Escape.A_ACS)
+												|| ((atributos[y2][j] & Escape.A_ACS) != Escape.A_ACS)) {
+											acs = false;
+											break;
+										}
+									}
+									if (!acs) {
+										break;
+									}
+										
+									MenuInterno2.setY(ponto.getY());
+									MenuInterno2.setY1(y1);
+									MenuInterno2.setY2(y2);
+									MenuInterno2.setX1(x1);
+									MenuInterno2.setX2(x2);
+
+									int i = ponto.getY();
+									int j = ponto.getX();
+									if ((terminal.getAtributos()[i][j] & Escape.A_REVERSE) != Escape.A_REVERSE) {
+										System.err.println("recupera " + i + " " + x1);
+										if (i < (y2 - 1)) {
+											TerminalAvanco.getCom().envia("\u001b[B");
+											TerminalAvanco.getCom().envia("\u001b[A");
+										} else {
+											TerminalAvanco.getCom().envia("\u001b[A");
+											TerminalAvanco.getCom().envia("\u001b[B");											
+										}
+//										for (j=x1+1; j<x2; j++) {
+//											terminal.getFrente()[i][j] = 'W';
+//											terminal.getFundo()[i][j] = 'b';
+//											terminal.getAtributos()[i][j] |= Escape.A_REVERSE;
+//										}
+										terminal.alteraRegiao(x1, i);
+										terminal.alteraRegiao(x2, i);
+									}
+									break;
+								}
+										
 							}
 						}
+						break;
+					}
+				}
+		} else {
+			
+			for (int m=0; m<terminal.getMarcadores().size(); m++) {
+				Ponto ponto = terminal.getMarcadores().get(m);
+				if ((ponto.getY() > y1) && (ponto.getY() < y2)
+						&& (ponto.getX() > x1) && (ponto.getX() < x2)) {
+					
+					boolean acs = true;
+					for (int i=y1; i<=y2; i++) {
+						if (((atributos[i][x1] & Escape.A_ACS) != Escape.A_ACS)
+							|| ((atributos[i][x2] & Escape.A_ACS) != Escape.A_ACS)) {
+							acs = false;
+							break;
+						}
+					}
+					if (!acs) {
+						continue;
+					}
+					
+					for (int j=x1; j<=x2; j++) {
+						if (((atributos[y1][j] & Escape.A_ACS) != Escape.A_ACS)
+								|| ((atributos[y2][j] & Escape.A_ACS) != Escape.A_ACS)) {
+							acs = false;
+							break;
+						}
+					}
+					if (!acs) {
+						continue;
+					}
+					
+					int i = ponto.getY();
+					int j = ponto.getX();
+					if ((terminal.getAtributos()[i][j] & Escape.A_REVERSE) != Escape.A_REVERSE) {
+						System.err.println("recupera " + i + " " + x1);
+						if (i < (y2 - 1)) {
+							TerminalAvanco.getCom().envia("\u001b[B");
+							TerminalAvanco.getCom().envia("\u001b[A");
+						} else {
+							TerminalAvanco.getCom().envia("\u001b[A");
+							TerminalAvanco.getCom().envia("\u001b[B");							
+						}
+//						for (j=x1+1; j<x2; j++) {
+//							terminal.getFrente()[i][j] = 'W';
+//							terminal.getFundo()[i][j] = 'b';
+//							terminal.getAtributos()[i][j] |= Escape.A_REVERSE;
+//						}
+						terminal.alteraRegiao(x1, i);
+						terminal.alteraRegiao(x2, i);
 					}
 					break;
+					
 				}
-			}
-		}			
+			}			
+		}
+		
 	}
 
 	/**
@@ -417,7 +492,7 @@ public class MenuInterno {
 	}
 
 	public static void setLetraSelecionada(char letraSelecionada) {
-		MenuInterno.letraSelecionada = letraSelecionada;
+		MenuInterno2.letraSelecionada = letraSelecionada;
 	}
 
 	public static int getY() {
@@ -425,7 +500,7 @@ public class MenuInterno {
 	}
 
 	public static void setY(int y) {
-		MenuInterno.y = y;
+		MenuInterno2.y = y;
 	}
 
 	public static int getY1() {
@@ -433,7 +508,7 @@ public class MenuInterno {
 	}
 
 	public static void setY1(int y1) {
-		MenuInterno.y1 = y1;
+		MenuInterno2.y1 = y1;
 	}
 
 	public static int getY2() {
@@ -441,7 +516,7 @@ public class MenuInterno {
 	}
 
 	public static void setY2(int y2) {
-		MenuInterno.y2 = y2;
+		MenuInterno2.y2 = y2;
 	}
 
 	public static int getX1() {
@@ -449,7 +524,7 @@ public class MenuInterno {
 	}
 
 	public static void setX1(int x1) {
-		MenuInterno.x1 = x1;
+		MenuInterno2.x1 = x1;
 	}
 
 	public static int getX2() {
@@ -457,7 +532,7 @@ public class MenuInterno {
 	}
 
 	public static void setX2(int x2) {
-		MenuInterno.x2 = x2;
+		MenuInterno2.x2 = x2;
 	}
 
 	public static String getTexto() {
