@@ -10,12 +10,18 @@ public class TerminalAvanco extends Application {
 	private static int porta = 22;
 	private static Terminal terminal;
 	private static Configuracao cfg;
+	private static boolean suporte;
 	
 	public static void main(String[] args) {
 		
-		if (args.length > 1) {
-			servidor = args[0];
-			porta = Integer.parseInt(args[1]);
+		if (args.length > 0) {
+			if (args[0].equals("-s")) {
+				suporte = true;
+				
+			} else {
+				servidor = args[0];
+				porta = Integer.parseInt(args[1]);
+			}
 		}
 		launch(args);
 		if (com != null) {
@@ -28,6 +34,11 @@ public class TerminalAvanco extends Application {
 		
 		cfg = new Configuracao();
 		cfg.carrega();
+		
+		if (suporte) {
+			Suporte sup = new Suporte();
+			sup.showAndWait();
+		}
 		
 		if (servidor != null) {
 			if (cfg.getServidor() == null) {
@@ -68,6 +79,14 @@ public class TerminalAvanco extends Application {
 
 	public static Configuracao getCfg() {
 		return cfg;
+	}
+
+	public static boolean isSuporte() {
+		return suporte;
+	}
+
+	public static void setSuporte(boolean suporte) {
+		TerminalAvanco.suporte = suporte;
 	}
 
 }

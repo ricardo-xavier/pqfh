@@ -186,11 +186,12 @@ public class Terminal extends Stage {
 			@Override
 			public void handle(ActionEvent event) {
 
-				Alert alert = new Alert(AlertType.INFORMATION);
-				alert.setTitle("Aguarde");
-				alert.setHeaderText("Em desenvolvimento");
-				alert.setContentText("Em breve, vocẽ poderá compartilhar seu terminal");
-				alert.showAndWait();		
+				Compartilhamento.compartilha();
+//				Alert alert = new Alert(AlertType.INFORMATION);
+//				alert.setTitle("Aguarde");
+//				alert.setHeaderText("Em desenvolvimento");
+//				alert.setContentText("Em breve, vocẽ poderá compartilhar seu terminal");
+//				alert.showAndWait();		
 
 			}
 		});

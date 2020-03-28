@@ -14,6 +14,10 @@
 	-fx-cursor: hand;
 }
 
+.social:hover {
+	-fx-cursor: hand;
+}
+
 #pnlNavegacaoBkp {
 	-fx-background-image: url("fundo.jpg");
 }

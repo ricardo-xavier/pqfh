@@ -5,6 +5,8 @@ import java.io.IOException;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.control.Button;
+import javafx.scene.control.Tooltip;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseEvent;
@@ -32,9 +34,12 @@ public class Social {
 
 		Image imageSite = new Image(Social.class.getResourceAsStream("a.png"));
 		ImageView ivSite = new ImageView(imageSite);
-		ivSite.getStyleClass().add("botao");
-		pnlSocial1.getChildren().add(ivSite);
-		ivSite.setOnMouseClicked(new EventHandler<MouseEvent>() {
+		Button btSite = new Button("", ivSite);
+		btSite.setTooltip(new Tooltip("Avanço Informática"));
+		btSite.setPadding(new Insets(0));
+		btSite.getStyleClass().add("social");
+		pnlSocial1.getChildren().add(btSite);
+		btSite.setOnMouseClicked(new EventHandler<MouseEvent>() {
 
 			@Override
 			public void handle(MouseEvent event) {
@@ -49,9 +54,12 @@ public class Social {
 
 		Image imageFace = new Image(Social.class.getResourceAsStream("face.png"));
 		ImageView ivFace = new ImageView(imageFace);
-		ivFace.getStyleClass().add("botao");
-		pnlSocial1.getChildren().add(ivFace);
-		ivFace.setOnMouseClicked(new EventHandler<MouseEvent>() {
+		Button btFace = new Button("", ivFace);
+		btFace.setTooltip(new Tooltip("Facebook"));
+		btFace.setPadding(new Insets(0));		
+		btFace.getStyleClass().add("social");
+		pnlSocial1.getChildren().add(btFace);
+		btFace.setOnMouseClicked(new EventHandler<MouseEvent>() {
 
 			@Override
 			public void handle(MouseEvent event) {
@@ -66,9 +74,12 @@ public class Social {
 
 		Image imageLinkedin = new Image(Social.class.getResourceAsStream("in.png"));
 		ImageView ivLinkedin = new ImageView(imageLinkedin);
-		ivLinkedin.getStyleClass().add("botao");
-		pnlSocial1.getChildren().add(ivLinkedin);
-		ivLinkedin.setOnMouseClicked(new EventHandler<MouseEvent>() {
+		Button btLinkedin = new Button("", ivLinkedin);
+		btLinkedin.setTooltip(new Tooltip("Linkedin"));
+		btLinkedin.setPadding(new Insets(0));				
+		btLinkedin.getStyleClass().add("social");
+		pnlSocial1.getChildren().add(btLinkedin);
+		btLinkedin.setOnMouseClicked(new EventHandler<MouseEvent>() {
 
 			@Override
 			public void handle(MouseEvent event) {
@@ -83,9 +94,12 @@ public class Social {
 		
 		Image imageConhecimento = new Image(Social.class.getResourceAsStream("conhecimento.png"), 20, 20, false, false);
 		ImageView ivConhecimento = new ImageView(imageConhecimento);
-		ivConhecimento.getStyleClass().add("botao");
-		pnlSocial2.getChildren().add(ivConhecimento);
-		ivConhecimento.setOnMouseClicked(new EventHandler<MouseEvent>() {
+		Button btConhecimento = new Button("", ivConhecimento);
+		btConhecimento.setTooltip(new Tooltip("Base de Conhecimento"));
+		btConhecimento.setPadding(new Insets(0));				
+		btConhecimento.getStyleClass().add("social");
+		pnlSocial2.getChildren().add(btConhecimento);
+		btConhecimento.setOnMouseClicked(new EventHandler<MouseEvent>() {
 
 			@Override
 			public void handle(MouseEvent event) {
@@ -100,9 +114,12 @@ public class Social {
 		
 		Image imageNovoAvanco = new Image(Social.class.getResourceAsStream("novoavanco.png"), 20, 20, false, false);
 		ImageView ivNovoAvanco = new ImageView(imageNovoAvanco);
-		ivNovoAvanco.getStyleClass().add("botao");
-		pnlSocial2.getChildren().add(ivNovoAvanco);
-		ivNovoAvanco.setOnMouseClicked(new EventHandler<MouseEvent>() {
+		Button btNovoAvanco = new Button("", ivNovoAvanco);
+		btNovoAvanco.setTooltip(new Tooltip("Novo Avanço"));
+		btNovoAvanco.setPadding(new Insets(0));						
+		btNovoAvanco.getStyleClass().add("social");
+		pnlSocial2.getChildren().add(btNovoAvanco);
+		btNovoAvanco.setOnMouseClicked(new EventHandler<MouseEvent>() {
 
 			@Override
 			public void handle(MouseEvent event) {
@@ -117,9 +134,12 @@ public class Social {
 		
 		Image imageInfoVarejo = new Image(Social.class.getResourceAsStream("infovarejo.png"), 20, 20, false, false);
 		ImageView ivInfoVarejo = new ImageView(imageInfoVarejo);
-		ivInfoVarejo.getStyleClass().add("botao");
-		pnlSocial2.getChildren().add(ivInfoVarejo);
-		ivInfoVarejo.setOnMouseClicked(new EventHandler<MouseEvent>() {
+		Button btInfoVarejo = new Button("", ivInfoVarejo);
+		btInfoVarejo.setTooltip(new Tooltip("Info Varejo"));
+		btInfoVarejo.setPadding(new Insets(0));								
+		btInfoVarejo.getStyleClass().add("social");
+		pnlSocial2.getChildren().add(btInfoVarejo);
+		btInfoVarejo.setOnMouseClicked(new EventHandler<MouseEvent>() {
 
 			@Override
 			public void handle(MouseEvent event) {
@@ -132,12 +152,12 @@ public class Social {
 			}
 		});
 		
-		FlowPane.setMargin(ivSite, new Insets(2, 4, 2, 4));
-		FlowPane.setMargin(ivFace, new Insets(2, 4, 2, 4));
-		FlowPane.setMargin(ivLinkedin, new Insets(2, 4, 2, 4));
-		FlowPane.setMargin(ivConhecimento, new Insets(0, 4, 2, 4));
-		FlowPane.setMargin(ivNovoAvanco, new Insets(0, 4, 2, 4));
-		FlowPane.setMargin(ivInfoVarejo, new Insets(0, 4, 2, 4));
+		FlowPane.setMargin(btSite, new Insets(2, 4, 2, 4));
+		FlowPane.setMargin(btFace, new Insets(2, 4, 2, 4));
+		FlowPane.setMargin(btLinkedin, new Insets(2, 4, 2, 4));
+		FlowPane.setMargin(btConhecimento, new Insets(0, 4, 2, 4));
+		FlowPane.setMargin(btNovoAvanco, new Insets(0, 4, 2, 4));
+		FlowPane.setMargin(btInfoVarejo, new Insets(0, 4, 2, 4));
 		
 	}
 

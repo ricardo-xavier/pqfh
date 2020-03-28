@@ -39,6 +39,8 @@ public class Configuracao extends Stage {
 	private JFXTextField edtComando;
 	private JFXTextField edtUsuarioIntegral;
 	private JFXPasswordField edtSenhaIntegral;
+	private JFXTextField edtServidorCompartilhamento;
+	private JFXTextField edtPortaCompartilhamento;
 	
 	private Spinner<Integer> spFonte;
 
@@ -67,6 +69,8 @@ public class Configuracao extends Stage {
 	private String comando = "TERM=ansi cobrun integral";
 	private String usuarioIntegral;
 	private String senhaIntegral;
+	private String servidorCompartilhamento;
+	private int portaCompartilhamento;	
 	
 	private int tamFonte = 20;
 
@@ -113,7 +117,7 @@ public class Configuracao extends Stage {
         pnlConfiguracao.getTabs().add(tab2);
         pnlConfiguracao.getTabs().add(tab3);
 
-        pnlConfiguracao.setPrefSize(500, 500);
+        pnlConfiguracao.setPrefSize(500, 600);
 
         // conexão
 		
@@ -165,10 +169,25 @@ public class Configuracao extends Stage {
         edtSenhaIntegral.setText(senhaIntegral);
         edtSenhaIntegral.setMaxWidth(60);
         VBox.setMargin(edtSenhaIntegral, new Insets(0, 10, 4, 10));
+		
+        Label lblServidorCompartilhamento = new Label("Servidor Compartilhamento");
+        VBox.setMargin(lblServidorCompartilhamento, new Insets(10, 10, 0, 10));
+        
+        edtServidorCompartilhamento = new JFXTextField(servidorCompartilhamento);
+        VBox.setMargin(edtServidorCompartilhamento, new Insets(0, 10, 4, 10));
+
+        Label lblPortaCompartilhamento = new Label("Porta Compartilhamento");
+        VBox.setMargin(lblPortaCompartilhamento, new Insets(10, 10, 0, 10));
+        
+        edtPortaCompartilhamento = new JFXTextField(String.valueOf(portaCompartilhamento));
+        edtPortaCompartilhamento.setMaxWidth(50);
+        VBox.setMargin(edtPortaCompartilhamento, new Insets(0, 10, 4, 10));
         
         pnlConexao.getChildren().addAll(lblServidor, edtServidor, lblPorta, edtPorta, lblUsuario, edtUsuario,
         		lblSenha, edtSenha, lblComando, edtComando, lblUsuarioIntegral, edtUsuarioIntegral,
-        		lblSenhaIntegral, edtSenhaIntegral);
+        		lblSenhaIntegral, edtSenhaIntegral,
+        		lblServidorCompartilhamento, edtServidorCompartilhamento,
+        		lblPortaCompartilhamento, edtPortaCompartilhamento);
 
         // aparência
 		
@@ -449,6 +468,18 @@ public class Configuracao extends Stage {
 							senhaIntegral = cript.descriptografa(valor); 
 							break;
 							
+						case "SERVIDOR_COMPARTILHAMENTO": 
+							servidorCompartilhamento = valor; 
+							break;
+						
+						case "PORTA_COMPARTILHAMENTO":
+							try {
+								portaCompartilhamento = Integer.parseInt(valor);
+							} catch (NumberFormatException e) {
+								
+							}
+							break;
+							
 						}						
 						break;
 					
@@ -510,6 +541,8 @@ public class Configuracao extends Stage {
 				edtComando.setText(comando);
 				edtUsuarioIntegral.setText(usuarioIntegral);
 				edtSenhaIntegral.setText(senhaIntegral);
+				edtServidorCompartilhamento.setText(servidorCompartilhamento);
+				edtPortaCompartilhamento.setText(String.valueOf(portaCompartilhamento));
 				
 				cpBranco.setValue(getWhite());
 				cpPreto.setValue(getBlack());
@@ -550,6 +583,12 @@ public class Configuracao extends Stage {
 			comando = edtComando.getText();
 			usuarioIntegral = edtUsuarioIntegral.getText();
 			senhaIntegral = edtSenhaIntegral.getText();
+			servidorCompartilhamento = edtServidorCompartilhamento.getText();
+			try {
+				portaCompartilhamento = Integer.parseInt(edtPortaCompartilhamento.getText());
+			} catch (NumberFormatException e) {
+				portaCompartilhamento = 0;
+			}
 			
 			tamFonte = spFonte.getValue();
 			
@@ -593,6 +632,12 @@ public class Configuracao extends Stage {
 				Criptografia crip = new Criptografia();
 				cfg.printf("SENHA_INTEGRAL=%s%n", crip.criptografa(senhaIntegral));
 			}
+			if (servidor != null) {
+				cfg.printf("SERVIDOR_COMPARTILHAMENTO=%s%n", servidorCompartilhamento);
+			}
+			if (portaCompartilhamento != 0) {
+				cfg.printf("PORTA_COMPARTILHAMENTO=%d%n", portaCompartilhamento);
+			}			
 			
 			cfg.println("[CORES]");
 			cfg.printf("PRETO=#%02x%02x%02x%n", (int) (getBlack().getRed() * 255), (int) (getBlack().getGreen() * 255), (int) (getBlack().getBlue() * 255));
@@ -807,5 +852,21 @@ public class Configuracao extends Stage {
 
 	public void setChkBarraNavegacao(JFXToggleButton chkBarraNavegacao) {
 		this.chkBarraNavegacao = chkBarraNavegacao;
+	}
+
+	public String getServidorCompartilhamento() {
+		return servidorCompartilhamento;
+	}
+
+	public void setServidorCompartilhamento(String servidorCompartilhamento) {
+		this.servidorCompartilhamento = servidorCompartilhamento;
+	}
+
+	public int getPortaCompartilhamento() {
+		return portaCompartilhamento;
+	}
+
+	public void setPortaCompartilhamento(int portaCompartilhamento) {
+		this.portaCompartilhamento = portaCompartilhamento;
 	}
 }
