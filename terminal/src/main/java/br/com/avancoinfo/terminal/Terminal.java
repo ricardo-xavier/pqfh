@@ -177,6 +177,7 @@ public class Terminal extends Stage {
 		});
 		
 		Image imageShare = new Image(getClass().getResourceAsStream("share.png"), 36, 36, false, false);
+		Image imageStopShare = new Image(getClass().getResourceAsStream("stopshare.png"), 36, 36, false, false);
 		Button btnShare = new Button("", new ImageView(imageShare));
 		btnShare.getStyleClass().add("botao");
 		btnShare.setFocusTraversable(false);
@@ -186,12 +187,9 @@ public class Terminal extends Stage {
 			@Override
 			public void handle(ActionEvent event) {
 
-				Compartilhamento.compartilha();
-//				Alert alert = new Alert(AlertType.INFORMATION);
-//				alert.setTitle("Aguarde");
-//				alert.setHeaderText("Em desenvolvimento");
-//				alert.setContentText("Em breve, vocẽ poderá compartilhar seu terminal");
-//				alert.showAndWait();		
+				if (Compartilhamento.compartilha()) {
+					btnShare.setGraphic(new ImageView(imageStopShare));
+				}
 
 			}
 		});
@@ -431,11 +429,6 @@ public class Terminal extends Stage {
 						default:
 					
 							dados[lin][col] = ch;
-if (ch == MARCADOR) {
-	if ((lin == 4) && (col > 20)) {
-		System.err.println("debug marcador " + lin + " " + col);
-	}
-}
 							atributos[lin][col] = atributo;
 							frente[lin][col] = corFrente;
 							fundo[lin][col] = corFundo;
@@ -957,7 +950,7 @@ if (ch == MARCADOR) {
 					return;
 				}
 				
-				Comunicacao com = new Comunicacao();
+				Comunicacao com = new Comunicacao(null);
 				com.setName("COMUNICACAO");
 				com.start();				
 				

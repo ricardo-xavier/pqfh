@@ -1,5 +1,7 @@
 package br.com.avancoinfo.terminal;
 
+import java.net.Socket;
+
 import javafx.application.Application;
 import javafx.stage.Stage;
 
@@ -35,9 +37,14 @@ public class TerminalAvanco extends Application {
 		cfg = new Configuracao();
 		cfg.carrega();
 		
+		Socket sockSuporte = null;
 		if (suporte) {
 			Suporte sup = new Suporte();
 			sup.showAndWait();
+			sockSuporte = sup.getSock();
+			if (sockSuporte == null) {
+				return;
+			}
 		}
 		
 		if (servidor != null) {
@@ -57,7 +64,7 @@ public class TerminalAvanco extends Application {
 		terminal.inicializa();
 		terminal.show();
 		
-		com = new Comunicacao();
+		com = new Comunicacao(sockSuporte);
 		com.setName("COMUNICACAO");
 		com.start();
 		

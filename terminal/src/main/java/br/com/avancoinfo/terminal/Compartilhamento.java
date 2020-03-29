@@ -50,25 +50,25 @@ public class Compartilhamento {
 			// envia a tela atual
 			for (int lin=0; lin < Terminal.getLinhas(); lin++) {
 
-				String cmd = String.format("%-10s%04d%04d%04d%02d%80s", 
-						"DADOS", sessao, chave, 82, lin, new String(dados[lin]));
-				System.err.println(cmd);
+				String cmd = String.format("%-10s%04d%04d%02d%s%n", 
+						"DADOS", sessao, chave, lin, new String(dados[lin]));
+				System.err.print(cmd);
 				sock.getOutputStream().write(cmd.getBytes());
 
-				cmd = String.format("%-10s%04d%04d%04d%02d%80s", 
-						"FRENTE", sessao, chave, 82, lin, new String(frente[lin]));
+				cmd = String.format("%-10s%04d%04d%02d%s%n", 
+						"FRENTE", sessao, chave, lin, new String(frente[lin]));
 				sock.getOutputStream().write(cmd.getBytes());
 
-				cmd = String.format("%-10s%04d%04d%04d%02d%80s", 
-						"FUNDO", sessao, chave, 82, lin, new String(fundo[lin]));
+				cmd = String.format("%-10s%04d%04d%02d%s%n", 
+						"FUNDO", sessao, chave, lin, new String(fundo[lin]));
 				sock.getOutputStream().write(cmd.getBytes());
 
 				StringBuilder atrs = new StringBuilder();
 				for (int j=0; j<80; j++) {
 					atrs.append(String.format("%02d", atributos[lin][j]));
 				}
-				cmd = String.format("%-10s%04d%04d%04d%02d%160s", 
-						"ATRIBUTOS", sessao, chave, 162, lin, atrs.toString());
+				cmd = String.format("%-10s%04d%04d%02d%s%n", 
+						"ATRIBUTOS", sessao, chave, lin, atrs.toString());
 				sock.getOutputStream().write(cmd.getBytes());				
 
 			}

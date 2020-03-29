@@ -3,6 +3,7 @@ package br.com.avancoinfo.terminal;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.Socket;
 import java.util.Properties;
 
 import com.jcraft.jsch.ChannelShell;
@@ -15,6 +16,11 @@ public class Comunicacao extends Thread {
 	private static final int TAMBUF = 8192;
 	private Session sessao;
 	private OutputStream saida;
+	private Socket sockSuporte;
+	
+	public Comunicacao(Socket sockSuporte) {
+		this.sockSuporte = sockSuporte;
+	}
 
 	@Override
 	public void run() {
@@ -28,22 +34,34 @@ public class Comunicacao extends Thread {
 			
 			// conecta
 			
+			ChannelShell canal = null;
+			InputStream entrada = null;
 			Configuracao cfg = TerminalAvanco.getCfg();
-			Debug.grava("servidor: " + cfg.getServidor() + "\n");
-			Debug.grava("porta: " + cfg.getPorta() + "\n");
 			
-			JSch jsch = new JSch();
-			sessao = jsch.getSession(cfg.getUsuario(), cfg.getServidor(), cfg.getPorta());
-			Properties config = new Properties();
-			config.setProperty("StrictHostKeyChecking", "no");
-			sessao.setConfig(config);
-			sessao.setPassword(cfg.getSenha());
-			sessao.connect();
-			ChannelShell canal = (ChannelShell) sessao.openChannel("shell");
-			InputStream entrada = canal.getInputStream();
-			saida = canal.getOutputStream();
-			canal.connect();
-			terminal.setConectado(true, cfg.getServidor(), cfg.getPorta(), cfg.getUsuario());
+			if (sockSuporte == null) {
+				
+				Debug.grava("servidor: " + cfg.getServidor() + "\n");
+				Debug.grava("porta: " + cfg.getPorta() + "\n");
+			
+				JSch jsch = new JSch();
+				sessao = jsch.getSession(cfg.getUsuario(), cfg.getServidor(), cfg.getPorta());
+				Properties config = new Properties();
+				config.setProperty("StrictHostKeyChecking", "no");
+				sessao.setConfig(config);
+				sessao.setPassword(cfg.getSenha());
+				sessao.connect();
+				canal = (ChannelShell) sessao.openChannel("shell");
+				entrada = canal.getInputStream();
+				saida = canal.getOutputStream();
+				canal.connect();
+				terminal.setConectado(true, cfg.getServidor(), cfg.getPorta(), cfg.getUsuario());
+			} else {
+				
+				terminal.setConectado(true, cfg.getServidorCompartilhamento(), cfg.getPortaCompartilhamento(), null);
+				entrada = sockSuporte.getInputStream();
+				saida = sockSuporte.getOutputStream();
+				//TODO tela inicial
+			}
 
 			// loop para ler entrada
 			while (true) {
@@ -52,7 +70,7 @@ public class Comunicacao extends Thread {
 					break;
 				}
 				
-				if (canal.getExitStatus() != -1) {
+				if ((canal != null) && (canal.getExitStatus() != -1)) {
 					break;
 				}
 				

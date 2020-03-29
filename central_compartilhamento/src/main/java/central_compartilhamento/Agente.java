@@ -31,22 +31,29 @@ public class Agente extends Thread {
 
 			while (true) {
 
-				// COMANDO SESSAO CHAVE N DADOS
-				// 10      4      4     4 N (8192)
+				// COMANDO SESSAO CHAVE DADOS  \n
+				// 10      4      4     (8192)
 				byte[] buf = new byte[8192];
-				sock.getInputStream().read(buf, 0, 22);
+				int n = sock.getInputStream().read(buf, 0, 18);
+				if (n != 18) {
+					return;
+				}
 				String s = new String(buf);
+				System.out.println(s);
 				String cmd = s.substring(0, 10).trim();
 				int sessao = Integer.parseInt(s.substring(10, 14));
 				int chave = Integer.parseInt(s.substring(14, 18));
-				int n = Integer.parseInt(s.substring(18, 22));
-				System.out.println("agente: " + sessao + " " + chave + " " + n);
 			
-				if (n > 0) {
-					sock.getInputStream().read(buf, 0, n);
-					s = new String(buf);
-					System.out.println("agente: " + s);
+				StringBuilder sb = new StringBuilder();
+				while (true) {
+					int c = sock.getInputStream().read();
+					if (c == '\n') {
+						break;
+					}
+					sb.append((char) c);
 				}
+				s = sb.toString();
+				System.out.println(s);
 			
 				if (sessao != this.sessao) {
 					return;
