@@ -39,7 +39,7 @@ public class Agente extends Thread {
 					return;
 				}
 				String s = new String(buf);
-				System.out.println(s);
+				System.err.println(s);
 				String cmd = s.substring(0, 10).trim();
 				int sessao = Integer.parseInt(s.substring(10, 14));
 				int chave = Integer.parseInt(s.substring(14, 18));
@@ -53,7 +53,7 @@ public class Agente extends Thread {
 					sb.append((char) c);
 				}
 				s = sb.toString();
-				System.out.println(s);
+				System.err.println(s);
 			
 				if (sessao != this.sessao) {
 					return;
@@ -64,6 +64,10 @@ public class Agente extends Thread {
 				}
 			
 				if (cmd.equals("STOP")) {
+					sock.close();
+					synchronized (Central.getAgentes()) {
+						Central.getAgentes().remove(sessao);
+					}
 					return;
 				}
 				
@@ -93,6 +97,10 @@ public class Agente extends Thread {
 			e.printStackTrace();
 		}
 
+	}
+
+	public int getChave() {
+		return chave;
 	}
 
 }

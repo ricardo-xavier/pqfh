@@ -45,22 +45,44 @@ public class Suporte extends Stage {
 				try {
 					sock = new Socket(host, porta);
 					
+					String chave = edtChave.getText();
+					
+					String cmd = String.format("S%-8s%n", chave);
+					System.err.print(cmd);
+					sock.getOutputStream().write(cmd.getBytes());
+					
+					String resp = readLine(sock);
+					if (resp.startsWith("ERRO:")) {
+						Alert alert = new Alert(AlertType.ERROR);
+						alert.setTitle("Erro");
+						alert.setHeaderText(resp.substring(5));
+						alert.showAndWait();							
+					} else {
+						Alert alert = new Alert(AlertType.INFORMATION);
+						alert.setTitle("Informação");
+						alert.setHeaderText("Conectado ao terminal remoto");
+						alert.setContentText("Em desenvolvimento... \n O terminal será fechado.");
+						alert.showAndWait();													
+					}
+					sock.close();
+					
 				} catch (IOException e) {
+					e.printStackTrace();
 					Alert alert = new Alert(AlertType.ERROR);
 					alert.setTitle("Erro");
-					alert.setHeaderText("Erro na comunicação com o servidor");
-					alert.setContentText(e.getMessage());
-					alert.showAndWait();		
-					e.printStackTrace();
+					alert.setHeaderText("Erro na comunicação com o servidor de compartilhamento");
+					alert.setContentText("Verifique se a configuração está correta e se o servidor está ativo");
+					alert.showAndWait();							
 				}
 				
 				close();
+				System.exit(0);
 			}
 		});
 		botoes.getChildren().add(btnConfirma);
 		
 		Button btnCancela = new Button("Cancela");
-		btnConfirma.setOnAction(new EventHandler<ActionEvent>() {
+		btnCancela.setOnAction(new EventHandler<ActionEvent>() {
 			
 			@Override
 			public void handle(ActionEvent event) {
@@ -79,6 +101,18 @@ public class Suporte extends Stage {
 		initModality(Modality.WINDOW_MODAL);
 		scene.getStylesheets().add(Terminal.class.getResource("avanco.css").toExternalForm());
 		
+	}
+	
+	private String readLine(Socket sock) throws IOException {
+		StringBuilder sb = new StringBuilder();
+		while (true) {
+			int c = sock.getInputStream().read();
+			if (c == '\n') {
+				break;
+			}
+			sb.append((char) c);
+		}
+		return sb.toString();
 	}
 
 	public Socket getSock() {

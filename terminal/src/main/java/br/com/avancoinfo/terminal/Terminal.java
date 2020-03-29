@@ -23,6 +23,7 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.Tooltip;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseEvent;
@@ -39,7 +40,7 @@ import javafx.stage.WindowEvent;
 
 public class Terminal extends Stage {
 	
-	private static final int VERSAO = 25;
+	private static final int VERSAO = 26;
 	private static final int LINHAS = 25;
 	private static final int COLUNAS = 80;
 	private static final int MARGEM = 5;
@@ -107,6 +108,9 @@ public class Terminal extends Stage {
 	private GridPane pnlBotoes;
 	private VBox pnlSocial;
 	private FlowPane pnlNavegacao;
+	private FlowPane pnlConfigShare;
+	
+	private boolean compartilhado;
 	
 	public void inicializa() {
 		
@@ -155,13 +159,16 @@ public class Terminal extends Stage {
 		
 		pnlSocial = new VBox();
 		Social.monta(pnlSocial);
+		pnlSocial.setVisible(false);
 		statusBar.setLeft(pnlSocial);
 		
-		FlowPane pnlConfigShare = new FlowPane();
+		pnlConfigShare = new FlowPane();
+		pnlConfigShare.setVisible(false);
 		pnlConfigShare.setAlignment(Pos.CENTER_RIGHT);
 		
 		Image imageConfig = new Image(getClass().getResourceAsStream("config.png"));
 		Button btnConfig = new Button("", new ImageView(imageConfig));
+		btnConfig.setTooltip(new Tooltip("Configuração"));
 		btnConfig.getStyleClass().add("botao");
 		btnConfig.setFocusTraversable(false);
 		pnlConfigShare.getChildren().add(btnConfig);
@@ -179,6 +186,7 @@ public class Terminal extends Stage {
 		Image imageShare = new Image(getClass().getResourceAsStream("share.png"), 36, 36, false, false);
 		Image imageStopShare = new Image(getClass().getResourceAsStream("stopshare.png"), 36, 36, false, false);
 		Button btnShare = new Button("", new ImageView(imageShare));
+		btnConfig.setTooltip(new Tooltip("Compartilhar"));
 		btnShare.getStyleClass().add("botao");
 		btnShare.setFocusTraversable(false);
 		pnlConfigShare.getChildren().add(btnShare);
@@ -186,9 +194,29 @@ public class Terminal extends Stage {
 			
 			@Override
 			public void handle(ActionEvent event) {
+				
+				if (compartilhado) {
+					compartilhado = false;
+					Compartilhamento.fecha();
+					btnShare.setGraphic(new ImageView(imageShare));
+					btnConfig.setTooltip(new Tooltip("Compartilhar"));
+					return;
+				}
+				
+				if ((cfg.getServidorCompartilhamento() == null) 
+						|| (cfg.getPortaCompartilhamento() == 0)) {
+					Alert alert = new Alert(AlertType.INFORMATION);
+					alert.setTitle("Informação");
+					alert.setHeaderText("Servidor/porta de compartilhamento não configurado");
+					alert.setContentText("Ajuste a configuração antes de usar o compartilhamento");
+					alert.showAndWait();		
+					return;
+				}
 
 				if (Compartilhamento.compartilha()) {
 					btnShare.setGraphic(new ImageView(imageStopShare));
+					btnConfig.setTooltip(new Tooltip("Parar Compartilhamento"));
+					compartilhado = true;
 				}
 
 			}
@@ -705,12 +733,14 @@ public class Terminal extends Stage {
 				pnlNavegacao.setVisible(false);
 			}
 			pnlSocial.setVisible(false);
+			pnlConfigShare.setVisible(false);
 			return;
 		}
 		if (pnlNavegacao != null) {
 			pnlNavegacao.setVisible(true);
 		}
 		pnlSocial.setVisible(true);
+		pnlConfigShare.setVisible(true);
 
 		// pinta o fundo
 		for (int i=r.y; i<r.y+r.height; i++) {
@@ -1223,6 +1253,14 @@ public class Terminal extends Stage {
 
 	public void setEstadoLogin(EstadoLogin estadoLogin) {
 		this.estadoLogin = estadoLogin;
+	}
+
+	public boolean isCompartilhado() {
+		return compartilhado;
+	}
+
+	public void setCompartilhado(boolean compartilhado) {
+		this.compartilhado = compartilhado;
 	}
 
 }

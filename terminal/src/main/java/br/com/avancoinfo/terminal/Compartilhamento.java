@@ -5,7 +5,14 @@ import java.net.Socket;
 import java.util.Date;
 import java.util.Random;
 
+import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
+
 public class Compartilhamento {
+	
+	private static Socket sock;
+	private static int sessao;
+	private static int chave;
 
 	public static void main(String[] args) {
 
@@ -23,23 +30,29 @@ public class Compartilhamento {
 
 			// gera uma chave aleatória
 			Random r = new Random(new Date().getTime());
-			int chave = r.nextInt(9999);
+			chave = r.nextInt(9999);
 
 			// conecta
 			String host = TerminalAvanco.getCfg().getServidorCompartilhamento();
 			int porta = TerminalAvanco.getCfg().getPortaCompartilhamento();
-			Socket sock = new Socket(host, porta);
+			sock = new Socket(host, porta);
 
 			// envia a chave
 			System.err.println("chave: " + chave);
-			sock.getOutputStream().write(String.format("%04d", chave).getBytes());
+			sock.getOutputStream().write(String.format("C%04d", chave).getBytes());
 
 			// recebe a sessão
 			byte[] buf = new byte[4];
 			sock.getInputStream().read(buf, 0, 4);
 			String s = new String(buf);
-			int sessao = Integer.parseInt(s);
+			sessao = Integer.parseInt(s);
 			System.err.println("conectado: " + sessao);
+			
+			Alert alert = new Alert(AlertType.INFORMATION);
+			alert.setTitle("Informação");
+			alert.setHeaderText("Chave para acesso ao compartilhamento:");
+			alert.setContentText(String.format("%04d%04d", sessao, chave));
+			alert.show();					
 
 			Terminal terminal = TerminalAvanco.getTerminal();
 			char[][] dados = terminal.getDados();
@@ -73,14 +86,37 @@ public class Compartilhamento {
 
 			}
 
-			sock.close();
 			return true;
 
 		} catch (IOException e) {
 			e.printStackTrace();
+			Alert alert = new Alert(AlertType.ERROR);
+			alert.setTitle("Erro");
+			alert.setHeaderText("Erro na comunicação com o servidor de compartilhamento");
+			alert.setContentText("Verifique se a configuração está correta e se o servidor está ativo");
+			alert.showAndWait();		
 		}
 
 		return false;
+	}
+
+	public static void fecha() {
+
+		if (sock == null) {
+			return;
+		}
+		
+		try {
+			String cmd = String.format("%-10s%04d%04d%n", "STOP", sessao, chave); 
+			System.err.print(cmd);
+			sock.getOutputStream().write(cmd.getBytes());
+			sock.close();
+			
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		sock = null;
+		
 	}
 
 }

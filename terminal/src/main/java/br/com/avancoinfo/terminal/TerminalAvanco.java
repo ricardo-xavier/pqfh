@@ -3,6 +3,8 @@ package br.com.avancoinfo.terminal;
 import java.net.Socket;
 
 import javafx.application.Application;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
 import javafx.stage.Stage;
 
 public class TerminalAvanco extends Application {
@@ -39,6 +41,18 @@ public class TerminalAvanco extends Application {
 		
 		Socket sockSuporte = null;
 		if (suporte) {
+			
+			if ((cfg.getServidorCompartilhamento() == null) 
+					|| (cfg.getPortaCompartilhamento() == 0)) {
+			
+				Alert alert = new Alert(AlertType.INFORMATION);
+				alert.setTitle("Informação");
+				alert.setHeaderText("Servidor/porta de compartilhamento não configurado");
+				alert.setContentText("Ajuste a configuração antes de usar o suporte remoto");
+				alert.showAndWait();
+				return;				
+			}
+			
 			Suporte sup = new Suporte();
 			sup.showAndWait();
 			sockSuporte = sup.getSock();
