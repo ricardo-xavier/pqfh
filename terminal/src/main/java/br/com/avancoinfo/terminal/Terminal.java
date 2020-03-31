@@ -337,188 +337,220 @@ public class Terminal extends Stage {
 				int colMarcadorTemp = -1;
 				boolean fecharMenu = false;
 				
-				for (int i=0; i<tam; i++) {
-					
-					int c = s.charAt(i);
-					char ch = s.charAt(i);
-					
-					if (c == MARCADOR) {
+				if (!s.startsWith("SUPORTE:")) {
+				
+					for (int i = 0; i < tam; i++) {
 
-						Debug.grava(String.format("marcador encontrado lin=%d col=%d montar=%s menu=%s%n", lin, col, montarMenu, menu != null));
-						Button btn = null;
-								
-						if ((pnlNavegacao != null) && (pnlNavegacao.getChildren().size() > 0)) {
-							
-							int u = pnlNavegacao.getChildren().size() - 1;
-							if (col == 34) {
-								// menu principal
-								u = 0;
-							} else {
-							
-								for (int j=0; j<pnlNavegacao.getChildren().size(); j++) {
-									Button b = (Button) pnlNavegacao.getChildren().get(j);
-									if (b.getUserData() != null) {
-										Ponto p = (Ponto) b.getUserData();
-										if (p.getX() == col) {
-											u = j;
-											break;
+						int c = s.charAt(i);
+						char ch = s.charAt(i);
+
+						if (c == MARCADOR) {
+
+							Debug.grava(String.format("marcador encontrado lin=%d col=%d montar=%s menu=%s%n", lin, col,
+									montarMenu, menu != null));
+							Button btn = null;
+
+							if ((pnlNavegacao != null) && (pnlNavegacao.getChildren().size() > 0)) {
+
+								int u = pnlNavegacao.getChildren().size() - 1;
+								if (col == 34) {
+									// menu principal
+									u = 0;
+								} else {
+
+									for (int j = 0; j < pnlNavegacao.getChildren().size(); j++) {
+										Button b = (Button) pnlNavegacao.getChildren().get(j);
+										if (b.getUserData() != null) {
+											Ponto p = (Ponto) b.getUserData();
+											if (p.getX() == col) {
+												u = j;
+												break;
+											}
 										}
 									}
 								}
+
+								btn = (Button) pnlNavegacao.getChildren().get(u);
+								Ponto p = null;
+								if (btn.getUserData() != null) {
+									p = (Ponto) btn.getUserData();
+								}
+								if ((p == null) || (col == p.getX())) {
+									String id = new String(dados[lin]).substring(col + 1);
+									int t = id.indexOf('3');
+									if (t > 0) {
+										id = id.substring(0, t).trim();
+									}
+									BarraNavegacao.atualiza(pnlNavegacao, btn, lin, col, id);
+								}
 							}
 
-							btn = (Button) pnlNavegacao.getChildren().get(u);
-							Ponto p = null;
-							if (btn.getUserData() != null) {
-								p = (Ponto) btn.getUserData();
-							}
-							if ((p == null) || (col == p.getX())) {
-								String id = new String(dados[lin]).substring(col+1);
-								int t = id.indexOf('3');
-								if (t > 0) {
-									id = id.substring(0, t).trim();
-								}
-								BarraNavegacao.atualiza(pnlNavegacao, btn, lin, col, id);
-							}
-						}
-						
-						marcadorRecebido = true;
-						
-						if (!montarMenu) {
-							
-							if ((menu != null) && ((col == 3) || (col == 4))) {
-								
-								if (MenuInterno.dentroMenu(lin, col)) {
-									linMarcador = lin;
-									colMarcador = col;
-									boolean existe = false;
-									for (Ponto p : marcadores) {
-										if ((p.getY() == lin) && p.getX() == col) {
-											existe = true;
-											break;
+							marcadorRecebido = true;
+
+							if (!montarMenu) {
+
+								if ((menu != null) && ((col == 3) || (col == 4))) {
+
+									if (MenuInterno.dentroMenu(lin, col)) {
+										linMarcador = lin;
+										colMarcador = col;
+										boolean existe = false;
+										for (Ponto p : marcadores) {
+											if ((p.getY() == lin) && p.getX() == col) {
+												existe = true;
+												break;
+											}
+										}
+										if (!existe) {
+											marcadores.add(new Ponto(lin, col, null));
 										}
 									}
-									if (!existe) {
-										marcadores.add(new Ponto(lin, col, null));
-									}
-								}
-								
-								fecharMenu = true;
-							}
-							
-							if ((estadoLogin == EstadoLogin.OK) && (menu == null) && (col > 4)) {
-								linMarcadorTemp = lin;
-								colMarcadorTemp = col;
-							}
-							
-						}
-					}
-					
-					switch (estado) {
-					
-					case ESTADO_INICIAL:
 
-						switch (c) {
-					
-						case '\r':
-							col = 0;
-							alteraRegiao(0, -1);
-							break;
-					
-						case '\n':
-						
-							if (lin < (LINHAS - 1)) {
-								lin++;
-								alteraRegiao(-1, lin);
-							
-							} else {
-					
-								scroll();
-								alteraRegiao(-1, -1);
+									fecharMenu = true;
+								}
+
+								if ((estadoLogin == EstadoLogin.OK) && (menu == null) && (col > 4)) {
+									linMarcadorTemp = lin;
+									colMarcadorTemp = col;
+								}
+
 							}
-						
-							break;
-							
-						case '\b':
-							if (col > 0) {
-								col--;
-								dados[lin][col] = ' ';
-								alteraRegiao(col, -1);
-							}
-							break;
-						
-						case ESC:
-							estado = ESTADO_ESC;
-							break;
-							
-						case BELL:
-							break;
-					
-						default:
-					
-							dados[lin][col] = ch;
-							atributos[lin][col] = atributo;
-							frente[lin][col] = corFrente;
-							fundo[lin][col] = corFundo;
-							
-							if (col < (COLUNAS - 1)) {
-								col++;
-								alteraRegiao(col, -1);
-								
-							} else {
+						}
+
+						switch (estado) {
+
+						case ESTADO_INICIAL:
+
+							switch (c) {
+
+							case '\r':
 								col = 0;
-								lin++;
-								alteraRegiao(col, lin);
+								alteraRegiao(0, -1);
+								break;
+
+							case '\n':
+
+								if (lin < (LINHAS - 1)) {
+									lin++;
+									alteraRegiao(-1, lin);
+
+								} else {
+
+									scroll();
+									alteraRegiao(-1, -1);
+								}
+
+								break;
+
+							case '\b':
+								if (col > 0) {
+									col--;
+									dados[lin][col] = ' ';
+									alteraRegiao(col, -1);
+								}
+								break;
+
+							case ESC:
+								estado = ESTADO_ESC;
+								break;
+
+							case BELL:
+								break;
+
+							default:
+
+								dados[lin][col] = ch;
+								atributos[lin][col] = atributo;
+								frente[lin][col] = corFrente;
+								fundo[lin][col] = corFundo;
+
+								if (col < (COLUNAS - 1)) {
+									col++;
+									alteraRegiao(col, -1);
+
+								} else {
+									col = 0;
+									lin++;
+									alteraRegiao(col, lin);
+								}
+
+								break;
 							}
-						
 							break;
-						}
-						break;
-					
-					case ESTADO_ESC:
-						seq[iseq++] = ch;
-						if (Character.isAlphabetic(ch)) {
-							escape.processaSeq(seq, iseq);
-							// ^[[]RunDLL32.EXE shell32.dll,ShellExec_RunDLL "\tmp\enum.pdf"^[[1*^M
-							if ((ch == 'R') 
-									&& new String(seq, 0, iseq).equals("[]R")
-									&& (i < (tam - 2))
-									&& (comandos[i+1] == 'u')
-									&& (comandos[i+2] == 'n')) {
-								estado = ESTADO_EXEC;
-								
-							} else {
-								iseq = 0;
-								estado = ESTADO_INICIAL;	
+
+						case ESTADO_ESC:
+							seq[iseq++] = ch;
+							if (Character.isAlphabetic(ch)) {
+								escape.processaSeq(seq, iseq);
+								// ^[[]RunDLL32.EXE shell32.dll,ShellExec_RunDLL "\tmp\enum.pdf"^[[1*^M
+								if ((ch == 'R') && new String(seq, 0, iseq).equals("[]R") && (i < (tam - 2))
+										&& (comandos[i + 1] == 'u') && (comandos[i + 2] == 'n')) {
+									estado = ESTADO_EXEC;
+
+								} else {
+									iseq = 0;
+									estado = ESTADO_INICIAL;
+								}
 							}
-						}
-						break;
-						
-					case ESTADO_EXEC:
-						seq[iseq++] = ch;
-						if (ch == '*') {
-							estado = ESTADO_INICIAL;
-							String cmd = new String(seq, 0, iseq);
-							System.err.println(cmd);
-							int p = cmd.indexOf("RunDLL ");
-							if (p > 0) {
-								cmd = cmd.substring(p + 6);
-								p = cmd.indexOf("\u001b");
+							break;
+
+						case ESTADO_EXEC:
+							seq[iseq++] = ch;
+							if (ch == '*') {
+								estado = ESTADO_INICIAL;
+								String cmd = new String(seq, 0, iseq);
+								System.err.println(cmd);
+								int p = cmd.indexOf("RunDLL ");
 								if (p > 0) {
-									cmd = cmd.substring(0, p);
-									try {
-										Runtime.getRuntime().exec("explorer " + cmd);
-									} catch (IOException e) {
-										e.printStackTrace();
+									cmd = cmd.substring(p + 6);
+									p = cmd.indexOf("\u001b");
+									if (p > 0) {
+										cmd = cmd.substring(0, p);
+										try {
+											Runtime.getRuntime().exec("explorer " + cmd);
+										} catch (IOException e) {
+											e.printStackTrace();
+										}
 									}
 								}
 							}
+							break;
+
 						}
+
+					}
+				} else {
+					
+					// SUPORTE:
+					String cmd = s.substring(8, 18).trim();
+					String args = s.substring(18);
+					
+					switch (cmd) {
+					
+					case "DADOS":
+						
+						int y = Integer.parseInt(args.substring(0, 2));
+						int n = args.substring(2).length();
+						for (int x=0; x<n; x++) {
+							dados[y][x] = args.charAt(x+2);
+						}
+						for (int x=n; x<COLUNAS; x++) {
+							dados[y][x] = ' ';
+						}
+						alteraRegiao(-1, y);
 						break;
 						
+					case "FRENTE":
+						break;
+							
+					case "FUNDO":
+						break;
+							
+					case "ATRIBUTOS":
+						break;
 						
 					}
-						
+					
 				}
 				
 				Debug.gravaTela(tam);
@@ -1029,7 +1061,7 @@ public class Terminal extends Stage {
 		
 		int dif;
 		
-		if ((x == -1) && (x == -1)) {
+		if ((x == -1) && (y == -1)) {
 			r.setBounds(0, 0, COLUNAS, LINHAS);
 			return;
 		}

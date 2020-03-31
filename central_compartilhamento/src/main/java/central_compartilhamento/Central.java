@@ -79,6 +79,8 @@ public class Central {
 				}
 
 				sock.getOutputStream().write("OK\n".getBytes());
+				AgenteSuporte agenteSuporte = new AgenteSuporte(sock, agente);
+				agenteSuporte.start();
 				
 			}
 		}

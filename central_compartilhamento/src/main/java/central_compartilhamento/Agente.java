@@ -12,6 +12,7 @@ public class Agente extends Thread {
     private String[] frente;
     private String[] fundo;
     private String[] atributos;
+    
 
 	public Agente(Socket sock, int sessao, int chave) {
 		this.sock = sock;
@@ -101,6 +102,26 @@ public class Agente extends Thread {
 
 	public int getChave() {
 		return chave;
+	}
+
+	public Socket getSock() {
+		return sock;
+	}
+
+	public String[] getDados() {
+		return dados;
+	}
+
+	public String[] getFrente() {
+		return frente;
+	}
+
+	public String[] getFundo() {
+		return fundo;
+	}
+
+	public String[] getAtributos() {
+		return atributos;
 	}
 
 }

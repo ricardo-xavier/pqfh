@@ -24,12 +24,20 @@ public class Comunicacao extends Thread {
 
 	@Override
 	public void run() {
+		Terminal terminal = TerminalAvanco.getTerminal();
+		if (sockSuporte == null) {
+			processaSsh(terminal);
+		} else {
+			processaSuporte(terminal);
+		}
+	}
+	
+	private void processaSsh(Terminal terminal) {
 
 		byte[] buf = new byte[TAMBUF];
 		int pos = 0;
 		boolean enviarComando = true;
-		Terminal terminal = TerminalAvanco.getTerminal();
-
+		
 		try {
 			
 			// conecta
@@ -38,31 +46,22 @@ public class Comunicacao extends Thread {
 			InputStream entrada = null;
 			Configuracao cfg = TerminalAvanco.getCfg();
 			
-			if (sockSuporte == null) {
-				
-				Debug.grava("servidor: " + cfg.getServidor() + "\n");
-				Debug.grava("porta: " + cfg.getPorta() + "\n");
+			Debug.grava("servidor: " + cfg.getServidor() + "\n");
+			Debug.grava("porta: " + cfg.getPorta() + "\n");
 			
-				JSch jsch = new JSch();
-				sessao = jsch.getSession(cfg.getUsuario(), cfg.getServidor(), cfg.getPorta());
-				Properties config = new Properties();
-				config.setProperty("StrictHostKeyChecking", "no");
-				sessao.setConfig(config);
-				sessao.setPassword(cfg.getSenha());
-				sessao.connect();
-				canal = (ChannelShell) sessao.openChannel("shell");
-				entrada = canal.getInputStream();
-				saida = canal.getOutputStream();
-				canal.connect();
-				terminal.setConectado(true, cfg.getServidor(), cfg.getPorta(), cfg.getUsuario());
-			} else {
+			JSch jsch = new JSch();
+			sessao = jsch.getSession(cfg.getUsuario(), cfg.getServidor(), cfg.getPorta());
+			Properties config = new Properties();
+			config.setProperty("StrictHostKeyChecking", "no");
+			sessao.setConfig(config);
+			sessao.setPassword(cfg.getSenha());
+			sessao.connect();
+			canal = (ChannelShell) sessao.openChannel("shell");
+			entrada = canal.getInputStream();
+			saida = canal.getOutputStream();
+			canal.connect();
+			terminal.setConectado(true, cfg.getServidor(), cfg.getPorta(), cfg.getUsuario());
 				
-				terminal.setConectado(true, cfg.getServidorCompartilhamento(), cfg.getPortaCompartilhamento(), null);
-				entrada = sockSuporte.getInputStream();
-				saida = sockSuporte.getOutputStream();
-				//TODO tela inicial
-			}
-
 			// loop para ler entrada
 			while (true) {
 
@@ -70,7 +69,7 @@ public class Comunicacao extends Thread {
 					break;
 				}
 				
-				if ((canal != null) && (canal.getExitStatus() != -1)) {
+				if (canal.getExitStatus() != -1) {
 					break;
 				}
 				
@@ -111,7 +110,7 @@ public class Comunicacao extends Thread {
 				}
 					
 				synchronized (terminal.getFila()) {
-					Debug.grava(String.format("%s +FILA %d %s%n", Thread.currentThread().getName(), 
+					Debug.grava(String.format("%s +FILA %d %d %s%n", Thread.currentThread().getName(), 
 							terminal.getFila().size(), pos, new String(buf, 0, pos)));
 					terminal.getFila().add(new Buffer(pos, buf));
 				}
@@ -146,6 +145,49 @@ public class Comunicacao extends Thread {
 		
 		terminal.desconecta();
 
+	}
+
+	private void processaSuporte(Terminal terminal) {
+		
+		InputStream entrada = null;
+		Configuracao cfg = TerminalAvanco.getCfg();
+		
+		try {
+			terminal.setConectado(true, cfg.getServidorCompartilhamento(), cfg.getPortaCompartilhamento(), null);
+			entrada = sockSuporte.getInputStream();
+			saida = sockSuporte.getOutputStream();
+			
+			// loop para ler entrada
+			while (true) {
+				
+				String cmd = "SUPORTE:" + readLine(entrada);
+				System.err.println(cmd);
+				
+				synchronized (terminal.getFila()) {
+					Debug.grava(String.format("%s +FILA %d %d %s%n", Thread.currentThread().getName(), 
+							terminal.getFila().size(), cmd.length(), cmd));
+					terminal.getFila().add(new Buffer(cmd.length(), cmd.getBytes()));
+				}
+				terminal.atualiza();
+				
+			}
+			
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+	}
+	
+	private String readLine(InputStream entrada) throws IOException {
+		StringBuilder sb = new StringBuilder();
+		while (true) {
+			int c = entrada.read();
+			if (c == '\n') {
+				break;
+			}
+			sb.append((char) c);
+		}
+		return sb.toString();
 	}
 	
 	public void envia(String s) {

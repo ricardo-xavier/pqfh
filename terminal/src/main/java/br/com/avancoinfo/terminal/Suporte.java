@@ -56,15 +56,10 @@ public class Suporte extends Stage {
 						Alert alert = new Alert(AlertType.ERROR);
 						alert.setTitle("Erro");
 						alert.setHeaderText(resp.substring(5));
-						alert.showAndWait();							
-					} else {
-						Alert alert = new Alert(AlertType.INFORMATION);
-						alert.setTitle("Informação");
-						alert.setHeaderText("Conectado ao terminal remoto");
-						alert.setContentText("Em desenvolvimento... \n O terminal será fechado.");
-						alert.showAndWait();													
+						alert.showAndWait();
+						sock.close();
+						sock = null;
 					}
-					sock.close();
 					
 				} catch (IOException e) {
 					e.printStackTrace();
@@ -76,7 +71,6 @@ public class Suporte extends Stage {
 				}
 				
 				close();
-				System.exit(0);
 			}
 		});
 		botoes.getChildren().add(btnConfirma);
