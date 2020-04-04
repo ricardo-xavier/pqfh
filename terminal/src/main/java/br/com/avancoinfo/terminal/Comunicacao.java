@@ -161,7 +161,7 @@ public class Comunicacao extends Thread {
 			while (true) {
 				
 				String cmd = "SUPORTE:" + readLine(entrada);
-				System.err.println(cmd);
+//				System.err.println(cmd);
 				
 				synchronized (terminal.getFila()) {
 					Debug.grava(String.format("%s +FILA %d %d %s%n", Thread.currentThread().getName(), 
@@ -169,7 +169,6 @@ public class Comunicacao extends Thread {
 					terminal.getFila().add(new Buffer(cmd.length(), cmd.getBytes()));
 				}
 				terminal.atualiza();
-				
 			}
 			
 		} catch (IOException e) {

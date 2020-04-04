@@ -1,16 +1,17 @@
 package br.com.avancoinfo.terminal;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.Socket;
 
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
-import javafx.scene.control.Alert.AlertType;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
@@ -44,14 +45,12 @@ public class Suporte extends Stage {
 				int porta = TerminalAvanco.getCfg().getPortaCompartilhamento();
 				try {
 					sock = new Socket(host, porta);
-					
 					String chave = edtChave.getText();
 					
 					String cmd = String.format("S%-8s%n", chave);
-					System.err.print(cmd);
 					sock.getOutputStream().write(cmd.getBytes());
 					
-					String resp = readLine(sock);
+					String resp = readLine(sock.getInputStream());
 					if (resp.startsWith("ERRO:")) {
 						Alert alert = new Alert(AlertType.ERROR);
 						alert.setTitle("Erro");
@@ -97,10 +96,10 @@ public class Suporte extends Stage {
 		
 	}
 	
-	private String readLine(Socket sock) throws IOException {
+	private String readLine(InputStream entrada) throws IOException {
 		StringBuilder sb = new StringBuilder();
 		while (true) {
-			int c = sock.getInputStream().read();
+			int c = entrada.read();
 			if (c == '\n') {
 				break;
 			}
@@ -108,7 +107,7 @@ public class Suporte extends Stage {
 		}
 		return sb.toString();
 	}
-
+	
 	public Socket getSock() {
 		return sock;
 	}

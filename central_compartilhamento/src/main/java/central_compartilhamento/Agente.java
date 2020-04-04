@@ -2,6 +2,9 @@ package central_compartilhamento;
 
 import java.io.IOException;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 
 public class Agente extends Thread {
 
@@ -12,12 +15,14 @@ public class Agente extends Thread {
     private String[] frente;
     private String[] fundo;
     private String[] atributos;
-    
+    private Socket sockSuporte;    
+    private List<String> pendentes;
 
 	public Agente(Socket sock, int sessao, int chave) {
 		this.sock = sock;
 		this.sessao = sessao;
 		this.chave = chave;
+		pendentes = new ArrayList<String>();
 	}
 
 	@Override
@@ -39,11 +44,11 @@ public class Agente extends Thread {
 				if (n != 18) {
 					return;
 				}
-				String s = new String(buf);
-				System.err.println(s);
-				String cmd = s.substring(0, 10).trim();
-				int sessao = Integer.parseInt(s.substring(10, 14));
-				int chave = Integer.parseInt(s.substring(14, 18));
+				String cabec = new String(buf, 0, n);
+				String cmd = cabec.substring(0, 10).trim();
+//				System.err.println(cmd);
+				int sessao = Integer.parseInt(cabec.substring(10, 14));
+				int chave = Integer.parseInt(cabec.substring(14, 18));
 			
 				StringBuilder sb = new StringBuilder();
 				while (true) {
@@ -53,8 +58,7 @@ public class Agente extends Thread {
 					}
 					sb.append((char) c);
 				}
-				s = sb.toString();
-				System.err.println(s);
+				String s = sb.toString();
 			
 				if (sessao != this.sessao) {
 					return;
@@ -73,8 +77,19 @@ public class Agente extends Thread {
 				}
 				
 				if (cmd.equals("DADOS")) {
+					System.out.println("<" + new Date().getTime() + " " + s);
 					int i = Integer.parseInt(s.substring(0, 2));
 					dados[i] = s.substring(2);
+				}
+				
+				if (cmd.equals("DADOSR")) {
+					System.out.println("=" + new Date().getTime() + " " + s);
+					s = cabec.substring(0, 10) + s + "\n";
+					if (sockSuporte != null) {
+						sockSuporte.getOutputStream().write(s.getBytes());
+					} else {
+						pendentes.add(s);
+					}
 				}
 				
 				if (cmd.equals("FRENTE")) {
@@ -122,6 +137,24 @@ public class Agente extends Thread {
 
 	public String[] getAtributos() {
 		return atributos;
+	}
+
+	public Socket getSockSuporte() {
+		return sockSuporte;
+	}
+
+	public void setSockSuporte(Socket sockSuporte) {
+		this.sockSuporte = sockSuporte;
+		try {
+			for (String cmd : pendentes) {
+				if (cmd.startsWith("DADOSR")) {
+					System.out.print("pendente>" + new Date().getTime() + " " + cmd);
+				}
+				sockSuporte.getOutputStream().write(cmd.getBytes());
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 }

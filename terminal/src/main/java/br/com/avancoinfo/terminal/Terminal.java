@@ -2,6 +2,7 @@ package br.com.avancoinfo.terminal;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -183,44 +184,47 @@ public class Terminal extends Stage {
 			}
 		});
 		
-		Image imageShare = new Image(getClass().getResourceAsStream("share.png"), 36, 36, false, false);
-		Image imageStopShare = new Image(getClass().getResourceAsStream("stopshare.png"), 36, 36, false, false);
-		Button btnShare = new Button("", new ImageView(imageShare));
-		btnConfig.setTooltip(new Tooltip("Compartilhar"));
-		btnShare.getStyleClass().add("botao");
-		btnShare.setFocusTraversable(false);
-		pnlConfigShare.getChildren().add(btnShare);
-		btnShare.setOnAction(new EventHandler<ActionEvent>() {
+		if (!TerminalAvanco.isSuporte()) {
+			Image imageShare = new Image(getClass().getResourceAsStream("share.png"), 36, 36, false, false);
+			Image imageStopShare = new Image(getClass().getResourceAsStream("stopshare.png"), 36, 36, false, false);
+			Button btnShare = new Button("", new ImageView(imageShare));
+			btnShare.setTooltip(new Tooltip("Compartilhar"));
+			btnShare.getStyleClass().add("botao");
+			btnShare.setFocusTraversable(false);
+			pnlConfigShare.getChildren().add(btnShare);
+			btnShare.setOnAction(new EventHandler<ActionEvent>() {
 			
-			@Override
-			public void handle(ActionEvent event) {
+				@Override
+				public void handle(ActionEvent event) {
 				
-				if (compartilhado) {
-					compartilhado = false;
-					Compartilhamento.fecha();
-					btnShare.setGraphic(new ImageView(imageShare));
-					btnConfig.setTooltip(new Tooltip("Compartilhar"));
-					return;
-				}
+					if (compartilhado) {
+						compartilhado = false;
+						Compartilhamento.fecha();
+						btnShare.setGraphic(new ImageView(imageShare));
+						btnConfig.setTooltip(new Tooltip("Compartilhar"));
+						return;
+					}
 				
-				if ((cfg.getServidorCompartilhamento() == null) 
-						|| (cfg.getPortaCompartilhamento() == 0)) {
-					Alert alert = new Alert(AlertType.INFORMATION);
-					alert.setTitle("Informação");
-					alert.setHeaderText("Servidor/porta de compartilhamento não configurado");
-					alert.setContentText("Ajuste a configuração antes de usar o compartilhamento");
-					alert.showAndWait();		
-					return;
-				}
+					if ((cfg.getServidorCompartilhamento() == null) 
+							|| (cfg.getPortaCompartilhamento() == 0)) {
+						Alert alert = new Alert(AlertType.INFORMATION);
+						alert.setTitle("Informação");
+						alert.setHeaderText("Servidor/porta de compartilhamento não configurado");
+						alert.setContentText("Ajuste a configuração antes de usar o compartilhamento");
+						alert.showAndWait();		
+						return;
+					}
 
-				if (Compartilhamento.compartilha()) {
-					btnShare.setGraphic(new ImageView(imageStopShare));
-					btnConfig.setTooltip(new Tooltip("Parar Compartilhamento"));
-					compartilhado = true;
-				}
+					String chaveCompartilhamento = Compartilhamento.compartilha();
+					if (chaveCompartilhamento != null) {
+						btnShare.setGraphic(new ImageView(imageStopShare));
+						btnShare.setTooltip(new Tooltip("Parar Compartilhamento " + chaveCompartilhamento));
+						compartilhado = true;
+					}
 
-			}
-		});
+				}
+			});
+		}
 		
 		statusBar.setRight(pnlConfigShare);
 		
@@ -525,29 +529,92 @@ public class Terminal extends Stage {
 					String cmd = s.substring(8, 18).trim();
 					String args = s.substring(18);
 					
+					int y = Integer.parseInt(args.substring(0, 2));
+					int n = args.substring(2).length();
+					
 					switch (cmd) {
 					
 					case "DADOS":
-						
-						int y = Integer.parseInt(args.substring(0, 2));
-						int n = args.substring(2).length();
+						System.out.println("<" + new Date().getTime() + " " + args);
 						for (int x=0; x<n; x++) {
 							dados[y][x] = args.charAt(x+2);
 						}
 						for (int x=n; x<COLUNAS; x++) {
 							dados[y][x] = ' ';
 						}
-						alteraRegiao(-1, y);
+						break;
+						
+					case "DADOSR":
+						System.out.println("<" + new Date().getTime() + " " + args);
+						int x1 = Integer.parseInt(args.substring(2, 4));
+						int x2 = Integer.parseInt(args.substring(4, 6));
+						int j = 0;
+						for (int x=x1; x<=x2; x++) {
+							dados[y][x] = args.charAt(j+6);
+							j++;
+						}						
 						break;
 						
 					case "FRENTE":
+						for (int x=0; x<n; x++) {
+							frente[y][x] = args.charAt(x+2);
+						}
+						for (int x=n; x<COLUNAS; x++) {
+							frente[y][x] = ' ';
+						}
 						break;
+												
+					case "FRENTER":
+						x1 = Integer.parseInt(args.substring(2, 4));
+						x2 = Integer.parseInt(args.substring(4, 6));
+						j = 0;
+						for (int x=x1; x<=x2; x++) {
+							frente[y][x] = args.charAt(j+6);
+							j++;
+						}						
+						break;						
 							
 					case "FUNDO":
+						for (int x=0; x<n; x++) {
+							fundo[y][x] = args.charAt(x+2);
+						}
+						for (int x=n; x<COLUNAS; x++) {
+							fundo[y][x] = ' ';
+						}						
 						break;
+						
+					case "FUNDOR":
+						x1 = Integer.parseInt(args.substring(2, 4));
+						x2 = Integer.parseInt(args.substring(4, 6));
+						j = 0;
+						for (int x=x1; x<=x2; x++) {
+							fundo[y][x] = args.charAt(j+6);
+							j++;
+						}						
+						break;						
 							
 					case "ATRIBUTOS":
+						for (int x=0; x<(n/2); x++) {
+							atributos[y][x] = Integer.parseInt(args.substring(2+x*2, 2+x*2+2));
+						}
+						for (int x=n; x<COLUNAS; x++) {
+							atributos[y][x] = 0;
+						}
+						alteraRegiao(0, y);
+						alteraRegiao(COLUNAS-1, y);
 						break;
+						
+					case "ATRIBUTOSR":
+						x1 = Integer.parseInt(args.substring(2, 4));
+						x2 = Integer.parseInt(args.substring(4, 6));
+						j = 0;
+						for (int x=x1; x<=x2; x++) {
+							atributos[y][x] = Integer.parseInt(args.substring(j*2+6, j*2+6+2));
+							j++;
+						}
+						alteraRegiao(x1, y);
+						alteraRegiao(x2, y);						
+						break;						
 						
 					}
 					
@@ -773,6 +840,12 @@ public class Terminal extends Stage {
 		}
 		pnlSocial.setVisible(true);
 		pnlConfigShare.setVisible(true);
+		
+		try {
+			Compartilhamento.atualiza();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 
 		// pinta o fundo
 		for (int i=r.y; i<r.y+r.height; i++) {

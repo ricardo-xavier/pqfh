@@ -78,6 +78,10 @@ public class TerminalAvanco extends Application {
 		terminal.inicializa();
 		terminal.show();
 		
+		if (sockSuporte != null) {
+			terminal.setEstadoLogin(EstadoLogin.OK);
+		}
+		
 		com = new Comunicacao(sockSuporte);
 		com.setName("COMUNICACAO");
 		com.start();

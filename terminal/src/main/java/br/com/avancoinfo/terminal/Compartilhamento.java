@@ -1,9 +1,12 @@
 package br.com.avancoinfo.terminal;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.Socket;
 import java.util.Date;
 import java.util.Random;
+
+import com.sun.javafx.geom.Rectangle;
 
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
@@ -24,7 +27,7 @@ public class Compartilhamento {
 		System.out.println(String.valueOf(dados));
 	}
 
-	public static boolean compartilha()  {
+	public static String compartilha()  {
 
 		try {
 
@@ -40,7 +43,7 @@ public class Compartilhamento {
 			// envia a chave
 			System.err.println("chave: " + chave);
 			sock.getOutputStream().write(String.format("C%04d", chave).getBytes());
-
+			
 			// recebe a sessão
 			byte[] buf = new byte[4];
 			sock.getInputStream().read(buf, 0, 4);
@@ -51,7 +54,8 @@ public class Compartilhamento {
 			Alert alert = new Alert(AlertType.INFORMATION);
 			alert.setTitle("Informação");
 			alert.setHeaderText("Chave para acesso ao compartilhamento:");
-			alert.setContentText(String.format("%04d%04d", sessao, chave));
+			String chaveCompartilhamento = String.format("%04d%04d", sessao, chave);
+			alert.setContentText(chaveCompartilhamento);
 			alert.show();					
 
 			Terminal terminal = TerminalAvanco.getTerminal();
@@ -65,8 +69,8 @@ public class Compartilhamento {
 
 				String cmd = String.format("%-10s%04d%04d%02d%s%n", 
 						"DADOS", sessao, chave, lin, new String(dados[lin]));
-				System.err.print(cmd);
-				sock.getOutputStream().write(cmd.getBytes());
+				System.out.print(">" + new Date().getTime() + " " + cmd);
+				sock.getOutputStream().write(cmd.getBytes("ISO-8859-1"));
 
 				cmd = String.format("%-10s%04d%04d%02d%s%n", 
 						"FRENTE", sessao, chave, lin, new String(frente[lin]));
@@ -86,7 +90,7 @@ public class Compartilhamento {
 
 			}
 
-			return true;
+			return chaveCompartilhamento;
 
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -97,7 +101,7 @@ public class Compartilhamento {
 			alert.showAndWait();		
 		}
 
-		return false;
+		return null;
 	}
 
 	public static void fecha() {
@@ -116,6 +120,57 @@ public class Compartilhamento {
 			e.printStackTrace();
 		}
 		sock = null;
+		
+	}
+
+	public static Socket getSock() {
+		return sock;
+	}
+
+	public static void atualiza() throws UnsupportedEncodingException, IOException {
+
+		if (sock == null) {
+			return;
+		}
+		
+		Terminal terminal = TerminalAvanco.getTerminal();
+		char[][] dados = terminal.getDados();
+		char[][] frente = terminal.getFrente();
+		char[][] fundo = terminal.getFundo();
+		int[][] atributos = terminal.getAtributos();
+		Rectangle r = terminal.getR();
+		
+		int y1 = r.y;
+		int y2 = r.y + r.height - 1;
+		int x1 = r.x;
+		int x2 = r.x + r.width - 1;
+
+		// envia a tela atual
+		for (int lin=y1; lin <=y2; lin++) {
+
+			String cmd = String.format("%-10s%04d%04d%02d%02d%02d%s%n", 
+					"DADOSR", sessao, chave, lin, x1, x2, new String(dados[lin]).substring(x1, x2+1));
+			System.out.print(">" + new Date().getTime() + " " + cmd);
+			sock.getOutputStream().write(cmd.getBytes("ISO-8859-1"));
+
+			cmd = String.format("%-10s%04d%04d%02d%02d%02d%s%n", 
+					"FRENTER", sessao, chave, lin, x1, x2, new String(frente[lin]).substring(x1, x2+1));
+			sock.getOutputStream().write(cmd.getBytes());
+
+			cmd = String.format("%-10s%04d%04d%02d%02d%02d%s%n", 
+					"FUNDOR", sessao, chave, lin, x1, x2, new String(fundo[lin]).substring(x1, x2+1));
+			sock.getOutputStream().write(cmd.getBytes());
+
+			StringBuilder atrs = new StringBuilder();
+			for (int j=x1; j<x2; j++) {
+				atrs.append(String.format("%02d", x1, x2, atributos[lin][j]));
+			}
+			cmd = String.format("%-10s%04d%04d%02d%02d%02d%s%n", 
+					"ATRIBUTOSR", sessao, chave, lin, x1, x2, atrs.toString());
+			sock.getOutputStream().write(cmd.getBytes());				
+
+		}
+
 		
 	}
 

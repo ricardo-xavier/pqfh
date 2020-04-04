@@ -35,7 +35,7 @@ public class Central {
 				sock.getInputStream().read(buf, 0, 4);
 				String s = new String(buf);
 				int chave = Integer.parseInt(s);
-				System.out.println("central:chave: " + chave);
+				System.out.println("central:chave: " + chave + " " + new Date().getTime());
 			
 				// envia a sessão
 				int sessao = agentes.size() + 1;
@@ -59,7 +59,7 @@ public class Central {
 				sock.getInputStream().read(buf, 0, 8);
 				String s = new String(buf);
 				int sessao = Integer.parseInt(s.substring(0, 4));
-				System.out.println("central:suporte:sessao: " + sessao);
+				System.out.println("central:suporte:sessao: " + sessao + " " + new Date().getTime());
 				
 				// recupera o agente
 				Agente agente = agentes.get(sessao);
