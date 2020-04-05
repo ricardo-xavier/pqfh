@@ -81,7 +81,22 @@ public class Agente extends Thread {
 					dados[i] = s.substring(2);
 				}
 				
-				if (cmd.equals("DADOSR")) {
+				if (cmd.equals("FRENTE")) {
+					int i = Integer.parseInt(s.substring(0, 2));
+					frente[i] = s.substring(2);
+				}
+				
+				if (cmd.equals("FUNDO")) {
+					int i = Integer.parseInt(s.substring(0, 2));
+					fundo[i] = s.substring(2);
+				}
+				
+				if (cmd.equals("ATRIBUTOS")) {
+					int i = Integer.parseInt(s.substring(0, 2));
+					atributos[i] = s.substring(2);
+				}
+				
+				if (cmd.equals("REFRESH")) {
 //					System.out.println("=" + new Date().getTime() + " " + s);
 					s = cabec.substring(0, 10) + s + "\n";
 					if (sockSuporte != null) {
@@ -91,47 +106,6 @@ public class Agente extends Thread {
 					}
 				}
 				
-				if (cmd.equals("FRENTE")) {
-					int i = Integer.parseInt(s.substring(0, 2));
-					frente[i] = s.substring(2);
-				}
-				
-				if (cmd.equals("FRENTER")) {
-					s = cabec.substring(0, 10) + s + "\n";
-					if (sockSuporte != null) {
-						sockSuporte.getOutputStream().write(s.getBytes());
-					} else {
-						pendentes.add(s);
-					}
-				}
-				
-				if (cmd.equals("FUNDO")) {
-					int i = Integer.parseInt(s.substring(0, 2));
-					fundo[i] = s.substring(2);
-				}
-				
-				if (cmd.equals("FUNDOR")) {
-					s = cabec.substring(0, 10) + s + "\n";
-					if (sockSuporte != null) {
-						sockSuporte.getOutputStream().write(s.getBytes());
-					} else {
-						pendentes.add(s);
-					}
-				}
-				
-				if (cmd.equals("ATRIBUTOS")) {
-					int i = Integer.parseInt(s.substring(0, 2));
-					atributos[i] = s.substring(2);
-				}
-				
-				if (cmd.equals("ATRIBUTOSR")) {
-					s = cabec.substring(0, 10) + s + "\n";
-					if (sockSuporte != null) {
-						sockSuporte.getOutputStream().write(s.getBytes());
-					} else {
-						pendentes.add(s);
-					}
-				}
 				
 			}
 

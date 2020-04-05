@@ -150,30 +150,22 @@ public class Compartilhamento {
 
 		// envia a tela atual
 		for (int lin=y1; lin <=y2; lin++) {
-
-			String cmd = String.format("%-10s%04d%04d%02d%02d%02d%s%n", 
-					"DADOSR", sessao, chave, lin, x1, x2, new String(dados[lin]).substring(x1, x2+1));
-//			System.out.print(">" + new Date().getTime() + " " + cmd);
-			sock.getOutputStream().write(cmd.getBytes("ISO-8859-1"));
-
-			cmd = String.format("%-10s%04d%04d%02d%02d%02d%s%n", 
-					"FRENTER", sessao, chave, lin, x1, x2, new String(frente[lin]).substring(x1, x2+1));
-			sock.getOutputStream().write(cmd.getBytes());
-
-			cmd = String.format("%-10s%04d%04d%02d%02d%02d%s%n", 
-					"FUNDOR", sessao, chave, lin, x1, x2, new String(fundo[lin]).substring(x1, x2+1));
-			sock.getOutputStream().write(cmd.getBytes());
-
+			
 			StringBuilder atrs = new StringBuilder();
 			for (int j=x1; j<=x2; j++) {
 				atrs.append(String.format("%02d", atributos[lin][j]));
-			}
-			cmd = String.format("%-10s%04d%04d%02d%02d%02d%s%n", 
-					"ATRIBUTOSR", sessao, chave, lin, x1, x2, atrs.toString());
-			sock.getOutputStream().write(cmd.getBytes());				
+			}			
+
+			String cmd = String.format("%-10s%04d%04d%02d%02d%02d%s%s%s%s%n", 
+					"REFRESH", sessao, chave, lin, x1, x2, 
+					new String(dados[lin]).substring(x1, x2+1),
+					new String(frente[lin]).substring(x1, x2+1),
+					new String(fundo[lin]).substring(x1, x2+1),
+					atrs);
+//			System.out.print(">" + new Date().getTime() + " " + cmd);
+			sock.getOutputStream().write(cmd.getBytes("ISO-8859-1"));
 
 		}
-
 		
 	}
 

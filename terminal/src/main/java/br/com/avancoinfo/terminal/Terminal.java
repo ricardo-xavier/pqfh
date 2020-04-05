@@ -546,17 +546,6 @@ public class Terminal extends Stage {
 						}
 						break;
 						
-					case "DADOSR":
-//						System.out.println("<" + new Date().getTime() + " " + args);
-						int x1 = Integer.parseInt(args.substring(2, 4));
-						int x2 = Integer.parseInt(args.substring(4, 6));
-						int j = 0;
-						for (int x=x1; x<=x2; x++) {
-							dados[y][x] = args.charAt(j+6);
-							j++;
-						}						
-						break;
-						
 					case "FRENTE":
 						if (n > COLUNAS) {
 							n = COLUNAS;
@@ -569,16 +558,6 @@ public class Terminal extends Stage {
 						}
 						break;
 												
-					case "FRENTER":
-						x1 = Integer.parseInt(args.substring(2, 4));
-						x2 = Integer.parseInt(args.substring(4, 6));
-						j = 0;
-						for (int x=x1; x<=x2; x++) {
-							frente[y][x] = args.charAt(j+6);
-							j++;
-						}						
-						break;						
-							
 					case "FUNDO":
 						if (n > COLUNAS) {
 							n = COLUNAS;
@@ -591,16 +570,6 @@ public class Terminal extends Stage {
 						}						
 						break;
 						
-					case "FUNDOR":
-						x1 = Integer.parseInt(args.substring(2, 4));
-						x2 = Integer.parseInt(args.substring(4, 6));
-						j = 0;
-						for (int x=x1; x<=x2; x++) {
-							fundo[y][x] = args.charAt(j+6);
-							j++;
-						}						
-						break;						
-							
 					case "ATRIBUTOS":
 						if (n > COLUNAS * 2) {
 							n = COLUNAS * 2;
@@ -615,17 +584,23 @@ public class Terminal extends Stage {
 						alteraRegiao(COLUNAS-1, y);
 						break;
 						
-					case "ATRIBUTOSR":
-						x1 = Integer.parseInt(args.substring(2, 4));
-						x2 = Integer.parseInt(args.substring(4, 6));
-						j = 0;
+					case "REFRESH":
+//						System.out.println("<" + new Date().getTime() + " " + args);
+						int x1 = Integer.parseInt(args.substring(2, 4));
+						int x2 = Integer.parseInt(args.substring(4, 6));
+						n = x2 - x1 + 1;
+						int j = 0;
 						for (int x=x1; x<=x2; x++) {
-							atributos[y][x] = Integer.parseInt(args.substring(j*2+6, j*2+6+2));
+							dados[y][x] = args.charAt(j+6);
+							frente[y][x] = args.charAt(j+6 + n);
+							fundo[y][x] = args.charAt(j+6 + n*2);
+							atributos[y][x] = Integer.parseInt(args.substring(j*2+6 + n*3, j*2+6+2 + n*3));
 							j++;
-						}
+						}						
 						alteraRegiao(x1, y);
-						alteraRegiao(x2, y);						
-						break;						
+						alteraRegiao(x2, y);												
+						break;
+						
 						
 					}
 					
