@@ -76,7 +76,7 @@ public class Agente extends Thread {
 				}
 				
 				if (cmd.equals("DADOS")) {
-//					System.out.println("<" + new Date().getTime() + " " + s);
+					System.err.println("<" + s);
 					int i = Integer.parseInt(s.substring(0, 2));
 					dados[i] = s.substring(2);
 				}
@@ -173,9 +173,6 @@ public class Agente extends Thread {
 		this.sockSuporte = sockSuporte;
 		try {
 			for (String cmd : pendentes) {
-//				if (cmd.startsWith("DADOSR")) {
-//					System.out.print(">" + new Date().getTime() + " " + cmd);
-//				}
 				sockSuporte.getOutputStream().write(cmd.getBytes());
 			}
 		} catch (IOException e) {

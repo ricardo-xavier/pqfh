@@ -19,7 +19,7 @@ public class AgenteSuporte extends Thread {
 			for (int lin = 0; lin < 25; lin++) {
 
 				String cmd = String.format("%-10s%02d%s%n", "DADOS", lin, new String(dados[lin]));
-//				System.out.print(">" + new Date().getTime() + " " + cmd);
+				System.err.print(">" + cmd);
 				sock.getOutputStream().write(cmd.getBytes());
 
 				cmd = String.format("%-10s%02d%s%n", "FRENTE", lin, new String(frente[lin]));
@@ -41,7 +41,7 @@ public class AgenteSuporte extends Thread {
 				if (s == null) {
 					break;
 				}
-				if (s.trim().length() == 0) {
+				if (s.length() == 0) {
 					continue;
 				}
 				s += "\n";

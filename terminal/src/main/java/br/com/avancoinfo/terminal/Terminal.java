@@ -535,6 +535,9 @@ public class Terminal extends Stage {
 					
 					case "DADOS":
 //						System.out.println("<" + new Date().getTime() + " " + args);
+						if (n > COLUNAS) {
+							n = COLUNAS;
+						}
 						for (int x=0; x<n; x++) {
 							dados[y][x] = args.charAt(x+2);
 						}
@@ -555,6 +558,9 @@ public class Terminal extends Stage {
 						break;
 						
 					case "FRENTE":
+						if (n > COLUNAS) {
+							n = COLUNAS;
+						}						
 						for (int x=0; x<n; x++) {
 							frente[y][x] = args.charAt(x+2);
 						}
@@ -574,6 +580,9 @@ public class Terminal extends Stage {
 						break;						
 							
 					case "FUNDO":
+						if (n > COLUNAS) {
+							n = COLUNAS;
+						}						
 						for (int x=0; x<n; x++) {
 							fundo[y][x] = args.charAt(x+2);
 						}
@@ -593,6 +602,9 @@ public class Terminal extends Stage {
 						break;						
 							
 					case "ATRIBUTOS":
+						if (n > COLUNAS * 2) {
+							n = COLUNAS * 2;
+						}						
 						for (int x=0; x<(n/2); x++) {
 							atributos[y][x] = Integer.parseInt(args.substring(2+x*2, 2+x*2+2));
 						}
