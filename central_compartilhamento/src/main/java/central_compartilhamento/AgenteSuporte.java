@@ -41,7 +41,12 @@ public class AgenteSuporte extends Thread {
 				if (s == null) {
 					break;
 				}
-				System.err.println("AGENTE SUPORTE " + s);
+				if (s.trim().length() == 0) {
+					continue;
+				}
+				s += "\n";
+				agente.getSock().getOutputStream().write(s.getBytes());
+				agente.getSock().getOutputStream().flush();
 			}
 
 		} catch (IOException e) {

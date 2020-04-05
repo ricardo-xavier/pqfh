@@ -192,8 +192,16 @@ public class Comunicacao extends Thread {
 	public void envia(String s) {
 		try {
 			Debug.grava("> " + s + "\n");
-			saida.write(s.getBytes());
-			saida.flush();
+			
+			if (sockSuporte == null) {				
+				saida.write(s.getBytes());
+				saida.flush();
+				
+			} else {
+				s += "\n";
+				sockSuporte.getOutputStream().write(s.getBytes());
+				sockSuporte.getOutputStream().flush();
+			}
 			
 		} catch (IOException e) {
 			e.printStackTrace();

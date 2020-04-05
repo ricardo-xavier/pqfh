@@ -89,6 +89,9 @@ public class Compartilhamento {
 				sock.getOutputStream().write(cmd.getBytes());				
 
 			}
+			
+			ControleRemoto controle = new ControleRemoto(sock);
+			controle.start();
 
 			return chaveCompartilhamento;
 
@@ -132,8 +135,6 @@ public class Compartilhamento {
 		if (sock == null) {
 			return;
 		}
-		
-		System.err.println("atualiza");
 		
 		Terminal terminal = TerminalAvanco.getTerminal();
 		char[][] dados = terminal.getDados();
