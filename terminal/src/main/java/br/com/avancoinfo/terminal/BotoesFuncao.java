@@ -48,6 +48,8 @@ public class BotoesFuncao {
 				return false;
 			}
 		}
+		teclas.add("ESC");
+		descricoes.add("Retorna");
 
 		int lin = 0;
 		for (int i = teclas.size() - 1; i >= 0; i--) {
@@ -113,11 +115,17 @@ public class BotoesFuncao {
 						com.envia("\u001b[X");
 						break;
 
+					case "ESC":
+						com.envia("\u001b");
+						break;
+
 					}
 
 					Terminal terminal = TerminalAvanco.getTerminal();
 					if (terminal != null) {
-						terminal.getMenu().close();
+						if (terminal.getMenu() != null) {
+							terminal.getMenu().close();
+						}
 						terminal.setMenu(null);
 						terminal.setEstadoLogin(EstadoLogin.OK);
 						terminal.alteraRegiao(-1, -1);

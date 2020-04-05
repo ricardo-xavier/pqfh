@@ -40,7 +40,7 @@ import javafx.stage.WindowEvent;
 
 public class Terminal extends Stage {
 	
-	private static final int VERSAO = 27;
+	private static final int VERSAO = 28;
 	private static final int LINHAS = 25;
 	private static final int COLUNAS = 80;
 	private static final int MARGEM = 5;
@@ -1360,3 +1360,4 @@ public class Terminal extends Stage {
 // 25 - titulo e botões de funçao no menu principal
 // 26 - conexão e tela inicial do suporte remoto
 // 27 - atualização das telas do suporte remoto
+// 28 - selecionar filial com duplo click e botão ESC
