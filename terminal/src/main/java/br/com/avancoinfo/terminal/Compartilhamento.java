@@ -69,7 +69,7 @@ public class Compartilhamento {
 
 				String cmd = String.format("%-10s%04d%04d%02d%s%n", 
 						"DADOS", sessao, chave, lin, new String(dados[lin]));
-				System.out.print(">" + new Date().getTime() + " " + cmd);
+//				System.out.print(">" + new Date().getTime() + " " + cmd);
 				sock.getOutputStream().write(cmd.getBytes("ISO-8859-1"));
 
 				cmd = String.format("%-10s%04d%04d%02d%s%n", 
@@ -128,10 +128,12 @@ public class Compartilhamento {
 	}
 
 	public static void atualiza() throws UnsupportedEncodingException, IOException {
-
+		
 		if (sock == null) {
 			return;
 		}
+		
+		System.err.println("atualiza");
 		
 		Terminal terminal = TerminalAvanco.getTerminal();
 		char[][] dados = terminal.getDados();
@@ -150,7 +152,7 @@ public class Compartilhamento {
 
 			String cmd = String.format("%-10s%04d%04d%02d%02d%02d%s%n", 
 					"DADOSR", sessao, chave, lin, x1, x2, new String(dados[lin]).substring(x1, x2+1));
-			System.out.print(">" + new Date().getTime() + " " + cmd);
+//			System.out.print(">" + new Date().getTime() + " " + cmd);
 			sock.getOutputStream().write(cmd.getBytes("ISO-8859-1"));
 
 			cmd = String.format("%-10s%04d%04d%02d%02d%02d%s%n", 
@@ -162,8 +164,8 @@ public class Compartilhamento {
 			sock.getOutputStream().write(cmd.getBytes());
 
 			StringBuilder atrs = new StringBuilder();
-			for (int j=x1; j<x2; j++) {
-				atrs.append(String.format("%02d", x1, x2, atributos[lin][j]));
+			for (int j=x1; j<=x2; j++) {
+				atrs.append(String.format("%02d", atributos[lin][j]));
 			}
 			cmd = String.format("%-10s%04d%04d%02d%02d%02d%s%n", 
 					"ATRIBUTOSR", sessao, chave, lin, x1, x2, atrs.toString());

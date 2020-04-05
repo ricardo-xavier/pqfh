@@ -77,13 +77,13 @@ public class Agente extends Thread {
 				}
 				
 				if (cmd.equals("DADOS")) {
-					System.out.println("<" + new Date().getTime() + " " + s);
+//					System.out.println("<" + new Date().getTime() + " " + s);
 					int i = Integer.parseInt(s.substring(0, 2));
 					dados[i] = s.substring(2);
 				}
 				
 				if (cmd.equals("DADOSR")) {
-					System.out.println("=" + new Date().getTime() + " " + s);
+//					System.out.println("=" + new Date().getTime() + " " + s);
 					s = cabec.substring(0, 10) + s + "\n";
 					if (sockSuporte != null) {
 						sockSuporte.getOutputStream().write(s.getBytes());
@@ -97,14 +97,41 @@ public class Agente extends Thread {
 					frente[i] = s.substring(2);
 				}
 				
+				if (cmd.equals("FRENTER")) {
+					s = cabec.substring(0, 10) + s + "\n";
+					if (sockSuporte != null) {
+						sockSuporte.getOutputStream().write(s.getBytes());
+					} else {
+						pendentes.add(s);
+					}
+				}
+				
 				if (cmd.equals("FUNDO")) {
 					int i = Integer.parseInt(s.substring(0, 2));
 					fundo[i] = s.substring(2);
 				}
 				
+				if (cmd.equals("FUNDOR")) {
+					s = cabec.substring(0, 10) + s + "\n";
+					if (sockSuporte != null) {
+						sockSuporte.getOutputStream().write(s.getBytes());
+					} else {
+						pendentes.add(s);
+					}
+				}
+				
 				if (cmd.equals("ATRIBUTOS")) {
 					int i = Integer.parseInt(s.substring(0, 2));
 					atributos[i] = s.substring(2);
+				}
+				
+				if (cmd.equals("ATRIBUTOSR")) {
+					s = cabec.substring(0, 10) + s + "\n";
+					if (sockSuporte != null) {
+						sockSuporte.getOutputStream().write(s.getBytes());
+					} else {
+						pendentes.add(s);
+					}
 				}
 				
 			}
@@ -147,9 +174,9 @@ public class Agente extends Thread {
 		this.sockSuporte = sockSuporte;
 		try {
 			for (String cmd : pendentes) {
-				if (cmd.startsWith("DADOSR")) {
-					System.out.print("pendente>" + new Date().getTime() + " " + cmd);
-				}
+//				if (cmd.startsWith("DADOSR")) {
+//					System.out.print(">" + new Date().getTime() + " " + cmd);
+//				}
 				sockSuporte.getOutputStream().write(cmd.getBytes());
 			}
 		} catch (IOException e) {

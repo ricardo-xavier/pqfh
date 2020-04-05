@@ -2,7 +2,6 @@ package br.com.avancoinfo.terminal;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -41,7 +40,7 @@ import javafx.stage.WindowEvent;
 
 public class Terminal extends Stage {
 	
-	private static final int VERSAO = 26;
+	private static final int VERSAO = 27;
 	private static final int LINHAS = 25;
 	private static final int COLUNAS = 80;
 	private static final int MARGEM = 5;
@@ -535,7 +534,7 @@ public class Terminal extends Stage {
 					switch (cmd) {
 					
 					case "DADOS":
-						System.out.println("<" + new Date().getTime() + " " + args);
+//						System.out.println("<" + new Date().getTime() + " " + args);
 						for (int x=0; x<n; x++) {
 							dados[y][x] = args.charAt(x+2);
 						}
@@ -545,7 +544,7 @@ public class Terminal extends Stage {
 						break;
 						
 					case "DADOSR":
-						System.out.println("<" + new Date().getTime() + " " + args);
+//						System.out.println("<" + new Date().getTime() + " " + args);
 						int x1 = Integer.parseInt(args.substring(2, 4));
 						int x2 = Integer.parseInt(args.substring(4, 6));
 						int j = 0;
@@ -708,6 +707,12 @@ public class Terminal extends Stage {
 					verificaMenuPrincipal();
 					verificaFilial();
 				}
+		
+				try {
+					Compartilhamento.atualiza();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
 				
 				mostra();
 				
@@ -841,12 +846,6 @@ public class Terminal extends Stage {
 		pnlSocial.setVisible(true);
 		pnlConfigShare.setVisible(true);
 		
-		try {
-			Compartilhamento.atualiza();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-
 		// pinta o fundo
 		for (int i=r.y; i<r.y+r.height; i++) {
 			if (i >= 25) {
@@ -1372,3 +1371,5 @@ public class Terminal extends Stage {
 
 // 24 - correções na barra de navegação
 // 25 - titulo e botões de funçao no menu principal
+// 26 - conexão e tela inicial do suporte remoto
+// 27 - atualização das telas do suporte remoto
