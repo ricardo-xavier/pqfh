@@ -87,6 +87,7 @@ typedef struct {
     int ncomps;
     int ncols;
     column_t *columns[MAX_COMPS];
+    int idxcolumns[MAX_COMPS];
 } _key_t;
 
 #define MSGSZ 4096
@@ -242,4 +243,8 @@ void put_cache(table_t *table);
 void memfh_cbl(char mode, unsigned short op, fcd_t *fcd, char *filename);
 
 void pqfh_split_file(char *filename);
+
+table_t *cache_get(char *name);
+void cache_put(table_t *table);
+
 #endif

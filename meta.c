@@ -12,6 +12,7 @@ fcd_t fcd01;
 fcd_t fcd02;
 bool montafcd01=true;
 bool montafcd02=true;
+bool usecache=false;
 
 bool tabela_convertida(char *tabela);
 bool nome_dicionario(char *tabela, char *nome);
@@ -23,8 +24,14 @@ bool table_info(PGconn *conn, table_t *table, fcd_t *fcd) {
     int        i, offset, oid;
     column_t   col;
     unsigned short reclen;
+    table_t *tabcache;
 
-    nome_dicionario(table->name, table->dictname);
+    tabcache = usecache ? cache_get(table->name) : NULL;
+    if (tabcache == NULL) {
+        nome_dicionario(table->name, table->dictname);
+    } else {
+        strcpy(table->dictname, tabcache->dictname);
+    }    
 
     if (api != NULL) {
         sprintf(sql, "SELECT api FROM tabela_api where tabela='%s'", table->dictname);
@@ -44,98 +51,148 @@ bool table_info(PGconn *conn, table_t *table, fcd_t *fcd) {
         PQclear(res);
     }
 
-    table->convertida = tabela_convertida(table->dictname);
+    if (tabcache == NULL) {
+        table->convertida = tabela_convertida(table->dictname);
+    } else {
+        table->convertida = tabcache->convertida;
+    }    
     if (!table->convertida) {
         fcd->isam = 'S';
+        if (usecache && (tabcache == NULL)) {
+            cache_put(table);    
+        }        
         return false;
     }
 
     table->columns = NULL;
     reclen = getshort(fcd->rec_len);
 
-    sprintf(sql, "SELECT oid FROM pg_class where relname='%s'", table->name);
-    res = PQexec(conn, sql);
-    if ((PQresultStatus(res) != PGRES_TUPLES_OK) || (PQntuples(res) == 0)) {
-        oid = 0;
-    } else {
-        oid = atoi(PQgetvalue(res, 0, 0));
-    }
-    PQclear(res);
-    table->oid = oid;
-
-    // declara o cursor
-    sprintf(sql, "declare cursor_columns cursor for  \nselect column_name,data_type,character_maximum_length,numeric_precision,numeric_scale\n    from information_schema.columns\n    where table_name = '%s'\n    order by ordinal_position", table->name);
-    if (dbg > 1) {
-        fprintf(flog, "%ld %s\n", time(NULL), sql);
-    }
-    res = PQexec(conn, sql);
-    if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-        fprintf(flog, "%ld Erro na execucao do comando: %s\n%s\n",
-            time(NULL), PQerrorMessage(conn), sql);
-        PQclear(res);
-        return false;
-    }
-    PQclear(res);
-
-    // le os registros do cursor
-    offset = 0;
-    for (i=0;;i++) {
-        res = PQexec(conn, "fetch next in cursor_columns");
+    if (tabcache == NULL) {
+        sprintf(sql, "SELECT oid FROM pg_class where relname='%s'", table->name);
+        res = PQexec(conn, sql);
         if ((PQresultStatus(res) != PGRES_TUPLES_OK) || (PQntuples(res) == 0)) {
-            PQclear(res);
-            break;
-        }
-
-        strcpy(col.name, PQgetvalue(res, 0, 0));
-        col.offset = offset;
-
-        strcpy(aux, PQgetvalue(res, 0, 1));
-
-        if (!strcmp(aux, "numeric")) {
-            col.tp = 'n';
-            strcpy(aux, PQgetvalue(res, 0, 3));
-            col.len = atoi(aux);
-            strcpy(aux, PQgetvalue(res, 0, 4));
-            col.dec = atoi(aux);
-
-        } else if (!strcmp(aux, "character") || !strcmp(aux, "character varying")) {
-            col.tp = 's';
-            strcpy(aux, PQgetvalue(res, 0, 2));
-            col.len = atoi(aux);
-            col.dec = 0;
-
+            oid = 0;
         } else {
-            fprintf(flog, "pendente type %s\n", aux);
-            exit(-1);
+            oid = atoi(PQgetvalue(res, 0, 0));
         }
-
-        if (dbg > 2) {
-            fprintf(flog, "    %d %d %s %c %d\n", i, offset, col.name, col.tp, col.len);
-        }
-
         PQclear(res);
-        if (offset < reclen) {
-            col.pk = false;
-            table->columns = list2_append(table->columns, &col, sizeof(column_t));
+        table->oid = oid;
+    } else {
+        table->oid = tabcache->oid;
+    }    
+
+    if (tabcache == NULL) {
+        // declara o cursor
+        sprintf(sql, "declare cursor_columns cursor for  \nselect column_name,data_type,character_maximum_length,numeric_precision,numeric_scale\n    from information_schema.columns\n    where table_name = '%s'\n    order by ordinal_position", table->name);
+        if (dbg > 1) {
+            fprintf(flog, "%ld %s\n", time(NULL), sql);
         }
-        offset += col.len;
+        res = PQexec(conn, sql);
+        if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+            fprintf(flog, "%ld Erro na execucao do comando: %s\n%s\n",
+                time(NULL), PQerrorMessage(conn), sql);
+            PQclear(res);
+            return false;
+        }
+        PQclear(res);
 
+        // le os registros do cursor
+        offset = 0;
+        for (i=0;;i++) {
+            res = PQexec(conn, "fetch next in cursor_columns");
+            if ((PQresultStatus(res) != PGRES_TUPLES_OK) || (PQntuples(res) == 0)) {
+                PQclear(res);
+                break;
+            }
+
+            strcpy(col.name, PQgetvalue(res, 0, 0));
+            col.offset = offset;
+
+            strcpy(aux, PQgetvalue(res, 0, 1));
+
+            if (!strcmp(aux, "numeric")) {
+                col.tp = 'n';
+                strcpy(aux, PQgetvalue(res, 0, 3));
+                col.len = atoi(aux);
+                strcpy(aux, PQgetvalue(res, 0, 4));
+                col.dec = atoi(aux);
+
+            } else if (!strcmp(aux, "character") || !strcmp(aux, "character varying")) {
+                col.tp = 's';
+                strcpy(aux, PQgetvalue(res, 0, 2));
+                col.len = atoi(aux);
+                col.dec = 0;
+
+            } else {
+                fprintf(flog, "pendente type %s\n", aux);
+                exit(-1);
+            }
+
+            if (dbg > 2) {
+                fprintf(flog, "    %d %d %s %c %d\n", i, offset, col.name, col.tp, col.len);
+            }
+
+            PQclear(res);
+            if (offset < reclen) {
+                col.pk = false;
+                table->columns = list2_append(table->columns, &col, sizeof(column_t));
+            }
+            offset += col.len;
+
+        }
+
+        res = PQexec(conn, "CLOSE cursor_columns");
+        PQclear(res);
+    } else {
+
+        list2_t *ptr;
+        for (ptr=tabcache->columns; ptr!=NULL; ptr=ptr->next) {
+            table->columns = list2_append(table->columns, (column_t *) ptr->buf, sizeof(column_t));
+        }
+        table->columns = list2_first(table->columns);
     }
-
-    res = PQexec(conn, "CLOSE cursor_columns");
-    PQclear(res);
 
     if (table->columns == NULL) {
+        if (usecache && (tabcache == NULL)) {
+            cache_put(table);    
+        }        
         return false;
     }
     table->columns = list2_first(table->columns);
     
-    getkeys(fcd, table);
+    if (tabcache == NULL) {
+        getkeys(fcd, table);
+    } else {
 
-    strcpy(table->schema, get_schema(conn, table->name));
+        list2_t *ptr;
+        for (ptr=tabcache->keys; ptr!=NULL; ptr=ptr->next) {
+            _key_t *key = (_key_t *) ptr->buf;
+            for (int c=0; c<key->ncols; c++) {
+                list2_t *ptrcol;
+                int idx = 0;
+                for (ptrcol=table->columns; ptrcol!=NULL; ptrcol=ptrcol->next, idx++) {
+                    if (idx == key->idxcolumns[c]) {    
+                        key->columns[c] = (column_t *) ptrcol->buf;
+                        break;
+                    }    
+                }    
+            }        
+            table->keys = list2_append(table->keys, (_key_t *) ptr->buf, sizeof(_key_t));
+        }
+        table->keys = list2_first(table->keys);
+    }
+
+    if (tabcache == NULL) {
+        strcpy(table->schema, get_schema(conn, table->name));
+    } else {
+        strcpy(table->schema, tabcache->schema);
+    }
 
     table->clones = get_clones(table->name);
 
+    if (usecache && (tabcache == NULL)) {
+        cache_put(table);    
+    }        
     return true;
 }
 

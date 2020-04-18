@@ -7,6 +7,7 @@ extern int dbg;
 extern bool lock_manual;
 extern char mode;
 extern char table_mode;
+extern bool usecache;
 #ifndef ISAM
 extern list2_t *weak;
 #endif
@@ -60,6 +61,14 @@ void command(PGconn *conn, fcd_t *fcd) {
         commit();
         mode = salva_mode;
     }
+
+    if (!memcmp(fcd->record, "CACHE_START", 11)) {
+        usecache = true;    
+    }        
+
+    if (!memcmp(fcd->record, "CACHE_STOP", 10)) {
+        usecache = false;    
+    }        
 #endif
 
     if (!memcmp(fcd->record, "CMPISAM", 7)) {

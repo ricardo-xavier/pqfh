@@ -1,0 +1,88 @@
+#include <string.h>
+#include <malloc.h>
+#include "pqfh.h"
+
+extern int dbg;
+
+list2_t *cache = NULL;
+
+// procura uma tabela no cache e retorna seus metadados
+table_t *cache_get(char *name) {
+    list2_t *ptr;
+    table_t *table;
+    for (ptr=cache; ptr!=NULL; ptr=ptr->prior) {
+        table = (table_t *) ptr->buf;
+        if (!strcmp(table->name, name)) {
+            if (dbg > 2) {
+                list2_t *ptr;
+                for (ptr=table->keys; ptr!=NULL; ptr=ptr->next) {
+                    _key_t *key = (_key_t *) ptr->buf;
+                    for (int c=0; c<key->ncols; c++) {
+                        list2_t *ptrcol;
+                        int idx = 0;
+                        for (ptrcol=table->columns; ptrcol!=NULL; ptrcol=ptrcol->next, idx++) {
+                            if (idx == key->idxcolumns[c]) {    
+                                key->columns[c] = (column_t *) ptrcol->buf;
+                                break;
+                            }    
+                        }    
+                    }        
+                }             
+                int offset = 0;
+                int i = 0;
+                for (ptr=table->columns; ptr!=NULL; ptr=ptr->next) {
+                    column_t *col = (column_t *) ptr->buf;    
+                    fprintf(flog, "    %d %d %s %c %d\n", i, offset, col->name, col->tp, col->len);
+                    offset += col->len;
+                    i++;
+                }    
+                for (ptr=table->keys; ptr!=NULL; ptr=ptr->next) {
+                    _key_t *key = (_key_t *) ptr->buf;
+                    fprintf(flog, "%ld key %d %d %d\n", time(NULL), key->id, key->ncomps, key->ncols);
+                    for (int c=0; c<key->ncols; c++) {
+                        fprintf(flog, "    %s\n", key->columns[c]->name);
+                    }
+                }
+            }
+            return table;
+        }
+    }
+    return NULL;
+}
+
+// adiciona os metadados de uma tabela ao cache
+void cache_put(table_t *table) {
+
+    list2_t *ptr;
+    table_t *aux = (table_t *) malloc(sizeof(table_t));
+
+    strcpy(aux->name, table->name);
+    strcpy(aux->dictname, table->dictname);
+    aux->convertida = table->convertida;
+    aux->oid = table->oid;
+
+    for (ptr=table->columns; ptr!=NULL; ptr=ptr->next) {
+        aux->columns = list2_append(aux->columns, (column_t *) ptr->buf, sizeof(column_t));
+    }
+    aux->columns = list2_first(aux->columns);
+
+    for (ptr=table->keys; ptr!=NULL; ptr=ptr->next) {
+        _key_t *key = (_key_t *) ptr->buf;    
+        for (int c=0; c<key->ncols; c++) {
+            column_t *col1 = key->columns[c];
+            list2_t *ptrcol;
+            int idx = 0;
+            for (ptrcol=table->columns; ptrcol!=NULL; ptrcol=ptrcol->next, idx++) {
+                column_t *col2 = ptrcol->buf;    
+                if (col2 == col1) {
+                    key->idxcolumns[c] = idx;    
+                    break;
+                }
+            }    
+        }        
+        aux->keys = list2_append(aux->keys, (_key_t *) ptr->buf, sizeof(_key_t));
+    }
+    aux->keys = list2_first(aux->keys);
+
+    cache = list2_append(cache, aux, sizeof(table_t));
+}
