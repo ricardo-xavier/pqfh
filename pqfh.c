@@ -15,7 +15,7 @@
 // insert into tabela_api values('sp05a51', 'planoGerencial');
 //
 
-#define VERSAO "v3.7.0 18/04/2020"
+#define VERSAO "v3.7.1 22/04/2020"
 
 int dbg=-1;
 int dbg_upd=-1;
@@ -1160,4 +1160,5 @@ void pqfh_split(char *filename) {
 //                  close          estava abortando no op_close porque nao estava tratando como isam
 // 3.6.0  - 16/03 - delete file e mode L
 // 3.7.0  - 18/04 - cache de metadados
+// 3.7.1  - 22/04 - remover o cache no create table
  

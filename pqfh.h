@@ -246,5 +246,6 @@ void pqfh_split_file(char *filename);
 
 table_t *cache_get(char *name);
 void cache_put(table_t *table);
+void cache_remove(char *name);
 
 #endif

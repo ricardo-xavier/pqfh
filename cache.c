@@ -58,6 +58,7 @@ void cache_put(table_t *table) {
 
     strcpy(aux->name, table->name);
     strcpy(aux->dictname, table->dictname);
+    strcpy(aux->schema, table->schema);
     aux->convertida = table->convertida;
     aux->oid = table->oid;
 
@@ -85,4 +86,18 @@ void cache_put(table_t *table) {
     aux->keys = list2_first(aux->keys);
 
     cache = list2_append(cache, aux, sizeof(table_t));
+}
+
+// remove uma tabela do cache
+void cache_remove(char *name) {
+    list2_t *ptr;
+    table_t *table;
+    for (ptr=cache; ptr!=NULL; ptr=ptr->prior) {
+        table = (table_t *) ptr->buf;
+        if (!strcmp(table->name, name)) {
+            cache = list2_remove(cache, ptr);    
+            cache = list2_last(cache);
+            break;
+        }
+    }
 }

@@ -12,6 +12,7 @@ void  create_table(PGconn *conn, table_t *tab, fcd_t *fcd, unsigned short opcode
     char     *p, aux[257];
     int      len;
 
+    cache_remove(tab->name);
     strcpy(schema, get_schema(conn, tab->dictname));
     //sprintf(sql, "create table %s.%s as select * from %s.%s where 1=2", schema, tab->name, schema, tab->dictname);
     sprintf(sql, "create table %s.%s() INHERITS (%s.%s) WITH (OIDS=false)", schema, tab->name, schema, tab->dictname);
