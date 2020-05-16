@@ -42,6 +42,8 @@ bool op_open(PGconn *conn, fcd_t *fcd, unsigned short opcode) {
     tab = (table_t *) malloc(sizeof(table_t));
     tab_open = tab;
     strcpy(tab->name, filename);
+    strcpy(tab->dictname, "");
+    strcpy(tab->schema, "");
     tab->columns = NULL;
     tab->keys = NULL;
     tab->key_next = -1;

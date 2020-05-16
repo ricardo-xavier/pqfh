@@ -15,7 +15,7 @@
 // insert into tabela_api values('sp05a51', 'planoGerencial');
 //
 
-#define VERSAO "v3.7.1 22/04/2020"
+#define VERSAO "v3.7.2 16/05/2020"
 
 int dbg=-1;
 int dbg_upd=-1;
@@ -1161,4 +1161,5 @@ void pqfh_split(char *filename) {
 // 3.6.0  - 16/03 - delete file e mode L
 // 3.7.0  - 18/04 - cache de metadados
 // 3.7.1  - 22/04 - remover o cache no create table
+// 3.7.2  - 15/05 - inicializar dictname e schema no open - estava abortando no cache put
  
