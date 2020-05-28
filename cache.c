@@ -62,11 +62,13 @@ void cache_put(table_t *table) {
     aux->convertida = table->convertida;
     aux->oid = table->oid;
 
+    aux->columns = NULL;
     for (ptr=table->columns; ptr!=NULL; ptr=ptr->next) {
         aux->columns = list2_append(aux->columns, (column_t *) ptr->buf, sizeof(column_t));
     }
     aux->columns = list2_first(aux->columns);
 
+    aux->keys = NULL;
     for (ptr=table->keys; ptr!=NULL; ptr=ptr->next) {
         _key_t *key = (_key_t *) ptr->buf;    
         for (int c=0; c<key->ncols; c++) {
