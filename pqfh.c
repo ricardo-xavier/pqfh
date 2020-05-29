@@ -1163,4 +1163,5 @@ void pqfh_split(char *filename) {
 // 3.7.1  - 22/04 - remover o cache no create table
 // 3.7.2  - 15/05 - inicializar dictname e schema no open - estava abortando no cache put
 // 3.7.3  - 27/05 - inicializar columns e keys no cache_put
+// 3.7.4  - 28/05 - nao gravar tabelas nao convertidas no cache
  
