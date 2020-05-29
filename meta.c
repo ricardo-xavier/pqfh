@@ -58,9 +58,11 @@ bool table_info(PGconn *conn, table_t *table, fcd_t *fcd) {
     }    
     if (!table->convertida) {
         fcd->isam = 'S';
+        /*
         if (usecache && (tabcache == NULL)) {
             cache_put(table);    
         }        
+        */
         return false;
     }
 

@@ -15,7 +15,7 @@
 // insert into tabela_api values('sp05a51', 'planoGerencial');
 //
 
-#define VERSAO "v3.7.3 27/05/2020"
+#define VERSAO "v3.7.4 28/05/2020"
 
 int dbg=-1;
 int dbg_upd=-1;
