@@ -17,7 +17,7 @@
 // insert into tabela_api values('sp05a51', 'planoGerencial');
 //
 
-#define VERSAO "v3.8.0 29/05/2020"
+#define VERSAO "v3.8.1 30/05/2020"
 
 int dbg=-1;
 int dbg_upd=-1;
@@ -416,7 +416,6 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
     memcpy(filename, fcd->file_name, fnlen);
     filename[fnlen] = 0;
     op = getshort(opcode);
-
 
     if ((op >= OP_OPEN_INPUT) && (op <= OP_OPEN_EXTEND)) {
         if (fcd->open_mode == 128) {
@@ -1221,4 +1220,5 @@ void pqfh_split(char *filename) {
 // 3.7.3  - 27/05 - inicializar columns e keys no cache_put
 // 3.7.4  - 28/05 - nao gravar tabelas nao convertidas no cache
 // 3.8.0  - 29/05 - tratamento do 114
+// 3.8.1  - 30/05 - desalocar tabela pqfh no close
  

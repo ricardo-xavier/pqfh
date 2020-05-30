@@ -31,6 +31,7 @@ bool op_close(PGconn *conn, fcd_t *fcd) {
     }
 
     if (!strcmp(tab->name, "pqfh")) {
+        free_tab(tab);
         fcd->open_mode = 128;
         memcpy(fcd->status, ST_OK, 2);
         return true;
