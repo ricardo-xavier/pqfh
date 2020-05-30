@@ -347,13 +347,15 @@ fcd_t *_fcd;
 
 void trata114(int s) {
 
-    FILE *log114 = fopen("pqfh114.log", "a");
+    FILE *log114;
     time_t t = time(NULL);
     struct tm *tm = localtime(&t);
     short reclen, fnlen;
     char filename[257], record[MAX_REC_LEN+1];
     char *usuario;
 
+    umask(0);
+    log114 = fopen("pqfh114.log", "a");
     setbuf(log114, NULL);
     fprintf(log114, "%02d/%02d/%04d %02d:%02d:%02d\n", tm->tm_mday, tm->tm_mon+1, tm->tm_year+1900,
                     tm->tm_hour, tm->tm_min, tm->tm_sec);
