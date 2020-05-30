@@ -6,6 +6,7 @@ extern int dbg;
 list2_t *weak;
 
 bool op_close(PGconn *conn, fcd_t *fcd) {
+    funcao = _OP_CLOSE;    
     unsigned int fileid;
     table_t      *tab;
 

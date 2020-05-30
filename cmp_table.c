@@ -8,7 +8,7 @@ extern fcd_t *fcd_open;
 extern table_t *tab_open;
 
 int reccmp(unsigned char *recbd, unsigned char *recisam, int reclen, table_t *tab) {
-
+    funcao = _RECCMP;
     list2_t *ptr;
     column_t *col;    
     unsigned char buf_isam[MAX_REC_LEN+1];
@@ -58,7 +58,7 @@ int reccmp(unsigned char *recbd, unsigned char *recisam, int reclen, table_t *ta
 }
 
 void cmp_table(PGconn *conn, bool sync) {
-
+    funcao = _CMP_TABLE;
     fcd_t *fcd_bd, *fcd_isam;
     unsigned char opcode[2], record1[MAX_REC_LEN+1], record2[MAX_REC_LEN+1];
     char logname[257];

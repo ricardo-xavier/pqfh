@@ -18,7 +18,7 @@ bool tabela_convertida(char *tabela);
 bool nome_dicionario(char *tabela, char *nome);
 
 bool table_info(PGconn *conn, table_t *table, fcd_t *fcd) {
-
+    funcao = _TABLE_INFO;
     PGresult   *res;
     char       sql[MAX_REC_LEN+1], aux[33], *p;
     int        i, offset, oid;
@@ -199,7 +199,7 @@ bool table_info(PGconn *conn, table_t *table, fcd_t *fcd) {
 }
 
 char *get_schema(PGconn *conn, char *table) {
-
+    funcao = _GET_SCHEMA;
     PGresult   *res;
     char       sql[MAX_REC_LEN+1];
 
@@ -269,6 +269,7 @@ char *get_schema(PGconn *conn, char *table) {
 
 
 bool tabela_convertida(char *tabela) {
+    funcao = _TABELA_CONVERTIDA;
 
     unsigned char opcode[2];
     char *nomeenv;
@@ -356,6 +357,7 @@ bool tabela_convertida(char *tabela) {
  *
  */
 bool nome_dicionario(char *tabela, char *nome) {
+    funcao = _NOME_DICIONARIO;
 
     unsigned char opcode[2];
     char *nomeenv, *p, prefixo[33];
@@ -456,6 +458,7 @@ bool nome_dicionario(char *tabela, char *nome) {
 }
 
 void free_tab(table_t *tab) {
+    funcao = _FREE_TAB;
     int k, a;
     tab->columns = list2_free(tab->columns);
     tab->columns = NULL;

@@ -8,6 +8,7 @@ extern int dbg_times;
 extern bool eof_start;
 
 void op_next_prev(PGconn *conn, fcd_t *fcd, char dir) {
+    funcao = _OP_NEXT_PREV;    
 
     unsigned int fileid;
     unsigned short reclen, keylen;

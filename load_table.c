@@ -8,6 +8,7 @@ extern fcd_t *fcd_open;
 extern table_t *tab_open;
 
 void  load_table(PGconn *conn) {
+    funcao = _LOAD_TABLE;    
 
     fcd_t *fcd;
     table_t *tab;

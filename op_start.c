@@ -10,6 +10,7 @@ bool partial_weak=false;
 bool eof_start=false;
 
 void op_start(PGconn *conn, fcd_t *fcd, char *op) {
+    funcao = _OP_START;    
 
     unsigned int   fileid;
     unsigned short keyid, keylen;

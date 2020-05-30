@@ -9,7 +9,7 @@ int partial_key=0;
 bool force_partial=false;
 
 void getkeys(fcd_t *fcd, table_t *tab) {
-
+    funcao = _GETKEYS;
     unsigned short nkeys;
     unsigned short cdaoffset, ncomps, offset, k, c;
     unsigned char  *kda, *cda;
@@ -114,7 +114,7 @@ void getkeys(fcd_t *fcd, table_t *tab) {
 }
 
 void adiciona_comp(unsigned char *record, _key_t key, int c, char *_op, char *where, char *order) {
-
+    funcao = _ADICIONA_COMP;
     char aux[257], op[3];
     unsigned char  buf[257];
     column_t *col;
@@ -198,6 +198,7 @@ void adiciona_comp(unsigned char *record, _key_t key, int c, char *_op, char *wh
 }
 
 void getwhere(unsigned char *record, table_t *table, int keyid, char *op, char *where, char *order) {
+    funcao = _GETWHERE;
     list2_t *ptr;
     _key_t *key;
     int k;
@@ -221,6 +222,7 @@ void getwhere(unsigned char *record, table_t *table, int keyid, char *op, char *
 int seq;
 
 void adiciona_comp_prepared(table_t *tab, _key_t key, int c, char *where, char cmd, int keyid) {
+    funcao = _ADICIONA_COMP_PREPARED;
 
     char aux[257];
     column_t *col;
@@ -269,6 +271,7 @@ void adiciona_comp_prepared(table_t *tab, _key_t key, int c, char *where, char c
 }
 
 void getwhere_prepared(table_t *tab, int keyid, char *where, int ini, char cmd) {
+    funcao = _GETWHERE_PREPARED;
     list2_t *ptr;
     _key_t *key;
     int k;
@@ -310,6 +313,7 @@ void getwhere_prepared(table_t *tab, int keyid, char *where, int ini, char cmd) 
 static char kbuf[257];
 
 char *getkbuf(fcd_t *fcd, unsigned short keyid,  table_t *tab, unsigned short *keylen) {
+    funcao = _GETKBUF;
     int      k, c, offset;
     list2_t  *ptr;
     _key_t   *key;

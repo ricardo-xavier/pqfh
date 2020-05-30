@@ -10,6 +10,7 @@ extern bool partial_weak;
 extern char mode;
 
 void op_read_random(PGconn *conn, fcd_t *fcd, bool with_lock) {
+    funcao = _OP_READ_RANDOM;    
 
     unsigned int   fileid ;
     unsigned short keyid, reclen, keylen;

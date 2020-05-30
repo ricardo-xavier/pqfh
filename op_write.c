@@ -9,6 +9,7 @@ extern bool executed;
 extern int pending_commits;
 
 bool op_write(PGconn *conn, fcd_t *fcd) {
+    funcao = _OP_WRITE;    
 #ifndef ISAM
     unsigned int   fileid;
     table_t        *tab;

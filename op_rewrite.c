@@ -10,6 +10,7 @@ extern int pending_commits;
 extern bool executed;
 
 bool op_rewrite(PGconn *conn, fcd_t *fcd) {
+    funcao = _OP_REWRITE;    
 
     unsigned int   fileid;
     unsigned short keyid, keylen; 

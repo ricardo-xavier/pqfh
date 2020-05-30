@@ -6,6 +6,7 @@ extern int dbg;
 extern int pending_commits;
 
 void op_delete_file(PGconn *conn, fcd_t *fcd) {
+    funcao = _OP_DELETE_FILE;    
 
     char     filename[257], aux[257], *p;
     table_t *tab;

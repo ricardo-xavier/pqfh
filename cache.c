@@ -8,6 +8,7 @@ list2_t *cache = NULL;
 
 // procura uma tabela no cache e retorna seus metadados
 table_t *cache_get(char *name) {
+    funcao = _CACHE_GET;
     list2_t *ptr;
     table_t *table;
     for (ptr=cache; ptr!=NULL; ptr=ptr->prior) {
@@ -52,7 +53,7 @@ table_t *cache_get(char *name) {
 
 // adiciona os metadados de uma tabela ao cache
 void cache_put(table_t *table) {
-
+    funcao = _CACHE_PUT;
     list2_t *ptr;
     table_t *aux = (table_t *) malloc(sizeof(table_t));
 
@@ -92,6 +93,7 @@ void cache_put(table_t *table) {
 
 // remove uma tabela do cache
 void cache_remove(char *name) {
+    funcao = _CACHE_REMOVE;
     list2_t *ptr;
     table_t *table;
     for (ptr=cache; ptr!=NULL; ptr=ptr->prior) {

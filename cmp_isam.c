@@ -8,7 +8,7 @@ extern fcd_t *fcd_open;
 extern char mode;
 
 void cmp_isam(PGconn *conn, char *filename2) {
-
+    funcao = _CMP_ISAM;
     fcd_t *fcd1, *fcd2;
     unsigned char opcode[2], record1[MAX_REC_LEN+1], record2[MAX_REC_LEN+1];
     char filename1[257];

@@ -4,6 +4,7 @@
 extern int dbg;
 
 void pq2cob(table_t *tab, PGresult *res, unsigned char *record, unsigned short reclen) {
+    funcao = _PQ2COB;    
 
     list2_t  *ptr;
     column_t *col;

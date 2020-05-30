@@ -248,4 +248,58 @@ table_t *cache_get(char *name);
 void cache_put(table_t *table);
 void cache_remove(char *name);
 
+#ifndef MAIN
+extern int funcao;
+#endif
+
+#define _PQFH 1
+#define _CACHE_PUT 2
+#define _CACHE_GET 3
+#define _CACHE_REMOVE 4
+#define _TABLE_INFO 5
+#define  _GET_SCHEMA 6
+#define _TABELA_CONVERTIDA 7
+#define _NOME_DICIONARIO 8
+#define _FREE_TAB 9
+#define _COMMIT 10    
+#define _THREAD_COMMIT 11
+#define _PQFH_BEGIN_TRANSACTION 12
+#define _PQFH_COMMIT 13
+#define _PQFH_ROLLBACK 14    
+#define _UNLOCK 15
+#define _OP_OPEN 16
+#define _OP_CLOSE 17
+#define _OP_START 18   
+#define _GETKEYS 19
+#define _ADICIONA_COMP 20
+#define _GETWHERE 21
+#define _ADICIONA_COMP_PREPARED 22
+#define _GETWHERE_PREPARED 23
+#define _GETKBUF 24
+#define _OP_NEXT_PREV 25
+#define _OP_READ_RANDOM 26
+#define _PQ2COB 27   
+#define _OP_REWRITE 28   
+#define _OP_WRITE 29   
+#define _OP_DELETE 30   
+#define _CREATE_TABLE 31
+#define _COMMAND 32   
+#define _COPY_TABLE 33
+#define _TRUNCATE_TABLE 34
+#define _LOAD_TABLE 35   
+#define _RECCMP 36
+#define _CMP_TABLE 37
+#define _CMP_ISAM 38
+#define _MEMFH_CBL_OPEN_INPUT 39    
+#define _MEMFH_CBL_OPEN_IO 40    
+#define _MEMFH_CBL_OPEN_OUTPUT 41    
+#define _MEMFH_CBL_WRITE 42    
+#define _MEMFH_CBL_CLOSE 43    
+#define _MEMFH_CBL_REWRITE 44    
+#define _MEMFH_CBL_READ 45    
+#define _MEMFH_CBL_START 46    
+#define _MEMFH_CBL_NEXT 47    
+#define _MEMFH_CBL 48    
+#define _OP_DELETE_FILE 49   
+
 #endif

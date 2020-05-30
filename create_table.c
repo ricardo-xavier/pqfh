@@ -6,6 +6,7 @@
 extern int dbg;
 
 void  create_table(PGconn *conn, table_t *tab, fcd_t *fcd, unsigned short opcode) {
+    funcao = _CREATE_TABLE;    
     char     sql[257], schema[33];
     char     indexdef[257], indexname[257];
     PGresult *res;

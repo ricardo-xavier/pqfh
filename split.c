@@ -6,7 +6,6 @@
 #include <fcntl.h>
 
 void split(char *filename) {
-
     int MAXSZ = 1024 * 1024 * 1024;
     int fdin, fdout = -1, n, sz = MAXSZ, seq = 1;
     char buf[8193], splitname[257];

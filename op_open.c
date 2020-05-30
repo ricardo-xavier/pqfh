@@ -9,6 +9,7 @@ table_t *tab_open;
 int ncomps=0;
 
 bool op_open(PGconn *conn, fcd_t *fcd, unsigned short opcode) {
+    funcao = _OP_OPEN;    
 
     char           filename[257], aux[257], *p;
     table_t        *tab;

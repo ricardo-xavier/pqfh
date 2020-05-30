@@ -9,6 +9,7 @@ extern bool executed;
 extern int pending_commits;
 
 void op_delete(PGconn *conn, fcd_t *fcd) {
+    funcao = _OP_DELETE;    
 
     unsigned int   fileid;
     unsigned short keylen; 

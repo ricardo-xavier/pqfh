@@ -4,8 +4,10 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <signal.h>
 #include <sys/time.h>
 #include <sys/stat.h>
+#define MAIN
 #include "pqfh.h"
 
 // referencias:
@@ -15,7 +17,7 @@
 // insert into tabela_api values('sp05a51', 'planoGerencial');
 //
 
-#define VERSAO "v3.7.4 28/05/2020"
+#define VERSAO "v3.8.0 29/05/2020"
 
 int dbg=-1;
 int dbg_upd=-1;
@@ -30,6 +32,8 @@ fcd_t *fcd_open;
 bool lock_manual=true;
 bool executed=false;
 char table_mode=0;
+int funcao=-1;
+time_t t0;
 
 PGconn *conn=NULL;
 #ifndef ISAM
@@ -46,6 +50,7 @@ extern bool force_partial;
 bool in_transaction=false;
 
 void commit() {
+    funcao = _COMMIT;    
     PGresult *res;
     if (dbg > 0 || (dbg_upd > 0) || (dbg_times > 0) || ((dbg_cmp > 0) && (pending_commits > 0))) {
         fprintf(flog, "%ld commit %d %s\n", time(NULL), pending_commits, in_transaction ? "TRANSACAO" : "AUTO_COMMIT");
@@ -61,6 +66,7 @@ void commit() {
 }
 
 void *thread_commit(void *vargp) {
+    funcao = _THREAD_COMMIT;    
     while (true) {
         sleep(1);
         if (dbg > 1) {
@@ -76,6 +82,7 @@ void *thread_commit(void *vargp) {
 } 
 
 void pqfh_begin_transaction() {
+    funcao = _PQFH_BEGIN_TRANSACTION;    
     in_transaction = true;
     pthread_mutex_lock(&lock);
     commit();
@@ -83,6 +90,7 @@ void pqfh_begin_transaction() {
 }
 
 void pqfh_commit() {
+    funcao = _PQFH_COMMIT;    
     in_transaction = false;
     pthread_mutex_lock(&lock);
     commit();
@@ -90,6 +98,7 @@ void pqfh_commit() {
 }
 
 void pqfh_rollback() {
+    funcao = _PQFH_ROLLBACK;    
     PGresult *res;
     in_transaction = false;
     pthread_mutex_lock(&lock);
@@ -114,6 +123,7 @@ void warning(void *arg, const char *message) {
 }
 
 void unlock(fcd_t *fcd) {
+    funcao = _UNLOCK;    
     table_t *tab;
     char sql[257];
     PGresult *res;
@@ -174,6 +184,7 @@ char get_mode() {
 }
 
 void get_debug() {
+    t0 = time(NULL);    
     char *logname = getenv("PQFH_LOGNAME");
     char *env = getenv("PQFH_DBG");
     if (env == NULL) {
@@ -331,10 +342,49 @@ void mostra_tempos() {
     fprintf(stderr, "tempo_cobolpost=%ld %d\n", tempo_cobolpost, qtde_cobolpost);
 }
 
+unsigned short op;
+fcd_t *_fcd;
+
+void trata114(int s) {
+
+    FILE *log114 = fopen("pqfh114.log", "a");
+    time_t t = time(NULL);
+    struct tm *tm = localtime(&t);
+    short reclen, fnlen;
+    char filename[257], record[MAX_REC_LEN+1];
+    char *usuario;
+
+    setbuf(log114, NULL);
+    fprintf(log114, "%02d/%02d/%04d %02d:%02d:%02d\n", tm->tm_mday, tm->tm_mon+1, tm->tm_year+1900,
+                    tm->tm_hour, tm->tm_min, tm->tm_sec);
+
+    usuario = getenv("USER");
+    if (usuario != NULL) {
+        fprintf(log114, "usuario=%s\n", usuario);
+    }    
+
+    fprintf(log114, "op=%04x\n", op);
+
+    fnlen = getshort(_fcd->file_name_len);
+    memcpy(filename, _fcd->file_name, fnlen);
+    filename[fnlen] = 0;
+    fprintf(log114, "arquivo=%s\n", filename);
+
+    reclen = getshort(_fcd->rec_len);
+    memcpy(record, _fcd->record, reclen);
+    record[reclen] = 0;
+    fprintf(log114, "registro=[%s]\n", filename);
+
+    fprintf(log114, "funcao=%d\n", funcao);
+    fprintf(log114, "tempo=%ld\n\n", t-t0);
+
+    fclose(log114);
+    exit(-1);
+}    
+
 void pqfh(unsigned char *opcode, fcd_t *fcd) {
 
     struct timeval tv1, tv2;
-    unsigned short op;
     short          reclen, fnlen;
     char           filename[257], record[MAX_REC_LEN+1];
     long           tempo;
@@ -348,9 +398,13 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
     char           undo[MAX_REC_LEN+1];
 #endif
 
+    funcao = _PQFH;
+
+    _fcd = fcd;
     gettimeofday(&tv1, NULL);
     if (dbg == -1) {
         get_debug();
+        signal(SIGSEGV, trata114);
     }
     mode = get_mode();
     executed = false;
@@ -1164,4 +1218,5 @@ void pqfh_split(char *filename) {
 // 3.7.2  - 15/05 - inicializar dictname e schema no open - estava abortando no cache put
 // 3.7.3  - 27/05 - inicializar columns e keys no cache_put
 // 3.7.4  - 28/05 - nao gravar tabelas nao convertidas no cache
+// 3.8.0  - 29/05 - tratamento do 114
  

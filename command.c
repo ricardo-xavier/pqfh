@@ -13,6 +13,7 @@ extern list2_t *weak;
 #endif
 
 void command(PGconn *conn, fcd_t *fcd) {
+    funcao = _COMMAND;    
     char *p, aux[257];
 #ifndef ISAM
     unsigned short reclen;

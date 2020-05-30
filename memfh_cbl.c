@@ -15,6 +15,7 @@ bool start=false;
 void memfh_cbl_open_output(fcd_t *fcd, char *filename);
 
 void memfh_cbl_open_input(fcd_t *fcd, char *filename) {
+    funcao = _MEMFH_CBL_OPEN_INPUT;    
 
     for (int i=0; i<MAX_HDRS; i++) {
         if ((hdrs[i] != 0) && !strcmp(hdrs[i]->filename, filename)) {    
@@ -30,6 +31,7 @@ void memfh_cbl_open_input(fcd_t *fcd, char *filename) {
 }
 
 void memfh_cbl_open_io(fcd_t *fcd, char *filename) {
+    funcao = _MEMFH_CBL_OPEN_IO;    
 
     for (int i=0; i<MAX_HDRS; i++) {
         if ((hdrs[i] != 0) && !strcmp(hdrs[i]->filename, filename)) {    
@@ -45,6 +47,7 @@ void memfh_cbl_open_io(fcd_t *fcd, char *filename) {
 }
 
 void memfh_cbl_open_output(fcd_t *fcd, char *filename) {
+    funcao = _MEMFH_CBL_OPEN_OUTPUT;    
 
     short nkeys, k, ncomps, c, cdaoffset, reclen;
     int offset, len, fileid;
@@ -110,6 +113,7 @@ void memfh_cbl_open_output(fcd_t *fcd, char *filename) {
 }    
 
 void memfh_cbl_write(fcd_t *fcd) {
+    funcao = _MEMFH_CBL_WRITE;    
 
     int fileid;
     memfh_hdr_t *hdr;
@@ -138,6 +142,7 @@ void memfh_cbl_write(fcd_t *fcd) {
 }
 
 void memfh_cbl_close(fcd_t *fcd, bool free) {
+    funcao = _MEMFH_CBL_CLOSE;    
 
     int fileid;
     memfh_hdr_t *hdr;
@@ -175,6 +180,7 @@ void memfh_cbl_close(fcd_t *fcd, bool free) {
 }
 
 void memfh_cbl_rewrite(fcd_t *fcd) {
+    funcao = _MEMFH_CBL_REWRITE;    
 
     int fileid;
     memfh_hdr_t *hdr;
@@ -198,6 +204,7 @@ void memfh_cbl_rewrite(fcd_t *fcd) {
 }
 
 void memfh_cbl_read(fcd_t *fcd) {
+    funcao = _MEMFH_CBL_READ;    
 
     int fileid;
     memfh_hdr_t *hdr;
@@ -221,6 +228,7 @@ void memfh_cbl_read(fcd_t *fcd) {
 }
 
 void memfh_cbl_start(fcd_t *fcd) {
+    funcao = _MEMFH_CBL_START;    
 
     int fileid;
     short keyid;
@@ -247,6 +255,7 @@ void memfh_cbl_start(fcd_t *fcd) {
 }
 
 void memfh_cbl_next(fcd_t *fcd) {
+    funcao = _MEMFH_CBL_NEXT;    
 
     int fileid;
     short keyid;
@@ -277,6 +286,7 @@ void memfh_cbl_next(fcd_t *fcd) {
 }
 
 void memfh_cbl(char mode, unsigned short op, fcd_t *fcd, char *filename) {
+    funcao = _MEMFH_CBL;    
 
     if (dbg > 1) {    
         fprintf(flog, "memfh_cbl %04x [%s]\n", op, filename);

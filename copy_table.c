@@ -7,6 +7,7 @@ extern int dbg;
 extern int pending_commits;
 
 void  copy_table(PGconn *conn, char *_source, char *_dest) {
+    funcao = _COPY_TABLE;    
     char     sql[257], schema[33], *source, *dest;
     PGresult *res;
 
@@ -58,6 +59,7 @@ void  copy_table(PGconn *conn, char *_source, char *_dest) {
 }
 
 void  truncate_table(PGconn *conn, char *_tabname) {
+    funcao = _TRUNCATE_TABLE;    
     char     sql[257], schema[33], *tabname;
     PGresult *res;
 
