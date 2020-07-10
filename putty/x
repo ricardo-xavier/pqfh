@@ -1,0 +1,12 @@
+		integral = !strncmp(linhas[y], "Avanco", 6);
+		if (!integral) {
+			int i;
+			for (i=2; i<80; i++) {
+				if ((linhas[y][i] == ':')
+					&& (linhas[y][i-2] == 'F')
+					&& isdigit(linhas[y][i-1])) {
+					integral = 1;
+					break;
+				}
+			}
+		}

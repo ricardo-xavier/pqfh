@@ -1,0 +1,7 @@
+if (0) {
+FILE *f=fopen("putty.log", "a");
+cmd[icmd] = 0;
+fprintf(f, "nchars=%d c=%d state=%d %d [%s] %c\n", 
+nchars, c, term->termstate, icmd, cmd, c);
+fclose(f);
+}
