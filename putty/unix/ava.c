@@ -1,7 +1,10 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
-#define WORD int
+#include <gtk/gtk.h>
+#if !GTK_CHECK_VERSION(3,0,0)
+#include <gdk/gdkkeysyms.h>
+#endif
 
 extern char integral;
 extern char linhas[25][81];
@@ -9,14 +12,12 @@ extern char linhas[25][81];
 char vermelho22 = 0;
 char vermelho23 = 0;
 
-WORD decimal_point = '?';
+short decimal_point = '?';
 
 void ava_integral(int y);
 
 void ava_move(int y, int x) {
 
-	fprintf(stderr, "ava_move %d %d\n", y, x);
-/*
 	int i;
 
 	if (y > 24) {
@@ -24,6 +25,7 @@ void ava_move(int y, int x) {
 	}
 	for (i = x; linhas[y][i] == ' '; i++);
 
+	fprintf(stderr, "ava_move %d %d\n", y, x);
 	//FILE *f=fopen("putty.log", "a");
 
 	for (; linhas[y][i] && (i < 78); i++) {
@@ -60,9 +62,7 @@ void ava_move(int y, int x) {
 			}
 					
 			if (ok == 1) {
-				decimal_point = decimal == '.' 
-					? VK_OEM_PERIOD
-					: VK_OEM_COMMA;
+				decimal_point = decimal == '.' ? '.' : ',';
 				break;
 			}
 		}
@@ -71,14 +71,11 @@ void ava_move(int y, int x) {
 	//fprintf(f, "move %d %d %d\n", y, x, decimal_point);
 	//fprintf(f, "%s\n", linhas[y]+x);
 	//fclose(f);
-*/
 	
 }
 
-WORD ava_converte_decimal(WORD tecla, int y, int x) {
+short ava_converte_decimal(short tecla, int y, int x) {
 
-	fprintf(stderr, "ava_converte_decimal %d %d %d\n", tecla, y, x);
-/*
 	if (!integral 
 		|| (decimal_point == '?')
 		|| (y > 24) 
@@ -87,34 +84,36 @@ WORD ava_converte_decimal(WORD tecla, int y, int x) {
 		return tecla;
 	}
 
-	if ((tecla == VK_OEM_PERIOD)
-		|| (tecla == VK_OEM_COMMA)
-		|| (tecla == VK_DECIMAL)
-		|| (tecla == 194)) {
+	if ((tecla == '.')
+		|| (tecla == ',')
+		|| (tecla == GDK_KEY_KP_Decimal)      // .
+		|| (tecla == GDK_KEY_KP_Separator)) { // ,
 
+		fprintf(stderr, "ava_converte_decimal %d %d %d\n", y, x, tecla);
 		return decimal_point;
 	}
-*/
 
 	return tecla;
 }
 
-void ava_seta_cor(int y, int r, int g) {
+void ava_seta_cor(int y, int attr) {
+	fprintf(stderr, "seta cor %d %d\n", y, attr);
 	if (y == 22) {
-		vermelho22 = r == 187 && g == 0;
-	} else {
-		vermelho23 = r == 187 && g == 0;
+		vermelho22 = attr == 31;
+		ava_integral(y);
+	} else if (y == 23) {
+		vermelho23 = attr == 31;
+		ava_integral(y);
 	}
-	ava_integral(y);
 }
 
 void ava_integral(int y) {
 
 	int i;
 
-	fprintf(stderr, "ava_integral %d [%s]\n", y, linhas[y]);
 	integral = !strncmp(linhas[y], "Avanco", 6);
 	if (integral) {
+		fprintf(stderr, "ava_integral %d [%s]\n", y, linhas[y]);
 		return;
 	}
 
@@ -123,6 +122,7 @@ void ava_integral(int y) {
 			&& (linhas[y][i-2] == 'F')
 			&& isdigit(linhas[y][i-1])) {
 			integral = 1;
+			fprintf(stderr, "ava_integral %d [%s]\n", y, linhas[y]);
 			break;
 		}
 	}
@@ -131,4 +131,7 @@ void ava_integral(int y) {
 	}
 
 	integral = vermelho22 || vermelho23;
+	if (integral) {
+		fprintf(stderr, "ava_integral %d %d %d\n", y, vermelho22, vermelho23);
+	}
 }

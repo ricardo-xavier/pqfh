@@ -46,6 +46,8 @@
 
 #include "x11misc.h"
 
+extern char integral;
+
 /* Colours come in two flavours: configurable, and xterm-extended. */
 #define NEXTCOLOURS 240 /* 216 colour-cube plus 24 shades of grey */
 #define NALLCOLOURS (NCFGCOLOURS + NEXTCOLOURS)
@@ -638,7 +640,7 @@ static void warn_on_close_callback(void *vctx, int result)
 {
     GtkFrontend *inst = (GtkFrontend *)vctx;
     unregister_dialog(&inst->seat, DIALOG_SLOT_WARN_ON_CLOSE);
-    if (result)
+    if (result && !integral)
         gtk_widget_destroy(inst->window);
 }
 
@@ -662,12 +664,22 @@ gint delete_window(GtkWidget *widget, GdkEvent *event, GtkFrontend *inst)
          */
         if (!find_and_raise_dialog(inst, DIALOG_SLOT_WARN_ON_CLOSE)) {
             char *title = dupcat(appname, " Exit Confirmation", NULL);
-            GtkWidget *dialog = create_message_box(
-                inst->window, title,
-                "Are you sure you want to close this session?",
-                string_width("Most of the width of the above text"),
-                false, &buttons_yn, warn_on_close_callback, inst);
-            register_dialog(&inst->seat, DIALOG_SLOT_WARN_ON_CLOSE, dialog);
+			/* ricardo */
+			if (!integral) {
+            	GtkWidget *dialog = create_message_box(
+                	inst->window, title,
+                	"Are you sure you want to close this session?",
+                	string_width("Most of the width of the above text"),
+                	false, &buttons_yn, warn_on_close_callback, inst);
+            	register_dialog(&inst->seat, DIALOG_SLOT_WARN_ON_CLOSE, dialog);
+			} else {
+            	GtkWidget *dialog = create_message_box(
+                	inst->window, title,
+                	"Por favor encerre o sistema antes de fechar o terminal",
+                	string_width("Most of the width of the above text"),
+                	false, &buttons_ok, warn_on_close_callback, inst);
+            	register_dialog(&inst->seat, DIALOG_SLOT_WARN_ON_CLOSE, dialog);
+			}
             sfree(title);
         }
         return true;
@@ -1032,13 +1044,13 @@ gint key_event(GtkWidget *widget, GdkEventKey *event, gpointer data)
     bool generated_something = false;
     char num_keypad_key = '\0';
 
+	/* ricardo */
     if (event->type == GDK_KEY_PRESS) {
-		int y=0; //TODO
-		int x=0;
-		fprintf(stderr, "key_event %d %c\n", event->keyval, event->keyval);
-        int k = ava_converte_decimal(event->keyval, y, x);
-		fprintf(stderr, "k = %d %c\n", k, k);
+        int x = inst->term->curs.x;
+        int y = inst->term->curs.y;
+        event->keyval = ava_converte_decimal(event->keyval, y, x);
 	}
+
     noise_ultralight(NOISE_SOURCE_KEY, event->keyval);
 
 #ifdef OSX_META_KEY_CONFIG

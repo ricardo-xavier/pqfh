@@ -66,6 +66,10 @@ const wchar_t sel_nl[] = SEL_NL;
 char linhas[25][81];
 char integral = 0;
 extern void ava_integral(int y);
+#ifdef UNIX
+extern void ava_seta_cor(int y, int attr);
+extern void ava_move(int y, int x);
+#endif
 
 /*
  * Fetch the character at a particular position in a line array,
@@ -2322,6 +2326,9 @@ static void scroll(Terminal *term, int topline, int botline,
  */
 static void move(Terminal *term, int x, int y, int marg_clip)
 {
+#ifdef UNIX
+	ava_move(y, x);
+#endif
     if (x < 0)
         x = 0;
     if (x >= term->cols)
@@ -4085,6 +4092,9 @@ static void term_out(Terminal *term)
                              */
                             int i;
                             for (i = 0; i < term->esc_nargs; i++) {
+#ifdef UNIX
+								ava_seta_cor(term->curs.y, term->esc_args[i]);
+#endif
                                 switch (def(term->esc_args[i], 0)) {
                                   case 0:       /* restore defaults */
                                     term->curr_attr = term->default_attr;
