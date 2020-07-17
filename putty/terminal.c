@@ -67,7 +67,7 @@ char linhas[25][81];
 char integral = 0;
 extern void ava_integral(int y);
 #ifdef UNIX
-extern void ava_seta_cor(int y, int attr);
+extern void ava_seta_cor(int y, int nbg);
 extern void ava_move(int y, int x);
 #endif
 
@@ -4092,9 +4092,6 @@ static void term_out(Terminal *term)
                              */
                             int i;
                             for (i = 0; i < term->esc_nargs; i++) {
-#ifdef UNIX
-								ava_seta_cor(term->curs.y, term->esc_args[i]);
-#endif
                                 switch (def(term->esc_args[i], 0)) {
                                   case 0:       /* restore defaults */
                                     term->curr_attr = term->default_attr;
@@ -5395,8 +5392,13 @@ static void do_paint_draw(Terminal *term, termline *ldata, int x, int y,
 {
 	/* ricardo */
 	if (y < 25) {
-		int i;
-		for (i=0; i<ccount && ((x+i) < 80); i++) {
+#ifdef UNIX
+		if ((x == 0) && ((y == 22) || (y == 23))) {
+			int nbg = (attr & ATTR_BGMASK) >> ATTR_BGSHIFT;
+			ava_seta_cor(y, nbg);
+		}
+#endif
+		for (int i=0; i<ccount && ((x+i) < 80); i++) {
 			linhas[y][x+i] = ch[i] & 0xff;
 		}
         }

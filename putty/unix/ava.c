@@ -25,7 +25,7 @@ void ava_move(int y, int x) {
 	}
 	for (i = x; linhas[y][i] == ' '; i++);
 
-	fprintf(stderr, "ava_move %d %d\n", y, x);
+	//fprintf(stderr, "ava_move %d %d\n", y, x);
 	//FILE *f=fopen("putty.log", "a");
 
 	for (; linhas[y][i] && (i < 78); i++) {
@@ -89,20 +89,20 @@ short ava_converte_decimal(short tecla, int y, int x) {
 		|| (tecla == GDK_KEY_KP_Decimal)      // .
 		|| (tecla == GDK_KEY_KP_Separator)) { // ,
 
-		fprintf(stderr, "ava_converte_decimal %d %d %d\n", y, x, tecla);
+		//fprintf(stderr, "ava_converte_decimal %d %d %d %d\n", y, x, tecla, decimal_point);
 		return decimal_point;
 	}
 
 	return tecla;
 }
 
-void ava_seta_cor(int y, int attr) {
-	fprintf(stderr, "seta cor %d %d\n", y, attr);
+void ava_seta_cor(int y, int nbg) {
+	//fprintf(stderr, "seta cor %d %d\n", y, nbg);
 	if (y == 22) {
-		vermelho22 = attr == 31;
+		vermelho22 = nbg == 1;
 		ava_integral(y);
 	} else if (y == 23) {
-		vermelho23 = attr == 31;
+		vermelho23 = nbg == 1;
 		ava_integral(y);
 	}
 }
@@ -113,7 +113,7 @@ void ava_integral(int y) {
 
 	integral = !strncmp(linhas[y], "Avanco", 6);
 	if (integral) {
-		fprintf(stderr, "ava_integral %d [%s]\n", y, linhas[y]);
+		//fprintf(stderr, "ava_integral %d [%s]\n", y, linhas[y]);
 		return;
 	}
 
@@ -122,7 +122,7 @@ void ava_integral(int y) {
 			&& (linhas[y][i-2] == 'F')
 			&& isdigit(linhas[y][i-1])) {
 			integral = 1;
-			fprintf(stderr, "ava_integral %d [%s]\n", y, linhas[y]);
+			//fprintf(stderr, "ava_integral %d [%s]\n", y, linhas[y]);
 			break;
 		}
 	}
@@ -132,6 +132,6 @@ void ava_integral(int y) {
 
 	integral = vermelho22 || vermelho23;
 	if (integral) {
-		fprintf(stderr, "ava_integral %d %d %d\n", y, vermelho22, vermelho23);
+		//fprintf(stderr, "ava_integral %d %d %d\n", y, vermelho22, vermelho23);
 	}
 }
