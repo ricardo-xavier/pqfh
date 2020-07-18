@@ -74,7 +74,7 @@ void ava_move(int y, int x) {
 	
 }
 
-short ava_converte_decimal(short tecla, int y, int x) {
+short ava_converte_decimal(int tecla, int y, int x) {
 
 	if (!integral 
 		|| (decimal_point == '?')

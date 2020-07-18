@@ -4729,7 +4729,15 @@ static void term_out(Terminal *term)
                          fprintf(f, "exec [%s]\n", p); 
                          fclose(f);
                        }
+#ifdef UNIX
+                       char *b;
+                       for (b=p; *b; b++) {
+                           if (*b == '\\') *b = '/';
+                       }
+                       sprintf(explorer, "/usr/bin/evince smb:%s", p);
+#else
                        sprintf(explorer, "explorer %s", p);
+#endif
                        int r = system(explorer);
                        if (1) {
                          FILE *f=fopen("putty.log", "a");
