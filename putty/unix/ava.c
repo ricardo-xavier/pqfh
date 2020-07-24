@@ -106,7 +106,11 @@ short ava_converte_decimal(int tecla, int y, int x) {
 		|| (decimal_point == '?')
 		|| (y > 24) 
 		|| (x == 0)
-		|| (!isdigit(linhas[y][x-1]) && (linhas[y][x-1] != ' ') && (((unsigned char) linhas[y][x-1]) < 128))) {
+		|| (!isdigit(linhas[y][x-1]) 
+			&& (linhas[y][x-1] != ' ') 
+			&& (linhas[y][x-1] != '|') 
+			&& (((unsigned char) linhas[y][x-1]) > 31)
+			&& (((unsigned char) linhas[y][x-1]) < 128))) {
 		return tecla;
 	}
 
@@ -143,7 +147,9 @@ void ava_integral() {
 	}
 
 	integral = !strncmp(linhas[22], "Avanco", 6)
-			|| !strncmp(linhas[23], "Avanco", 6);
+			|| !strncmp(linhas[23], "Avanco", 6)
+			|| (strstr(linhas[22], "Confirma") != NULL)
+			|| (strstr(linhas[23], "Confirma") != NULL);
 	if (integral) {
 		//fprintf(stderr, "ava_integral %d [%s]\n", y, linhas[y]);
 		return;
