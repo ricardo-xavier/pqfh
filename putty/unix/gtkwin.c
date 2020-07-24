@@ -47,6 +47,7 @@
 #include "x11misc.h"
 
 extern char integral;
+void ava_tempo_resposta();
 
 /* Colours come in two flavours: configurable, and xterm-extended. */
 #define NEXTCOLOURS 240 /* 216 colour-cube plus 24 shades of grey */
@@ -665,6 +666,7 @@ gint delete_window(GtkWidget *widget, GdkEvent *event, GtkFrontend *inst)
         if (!find_and_raise_dialog(inst, DIALOG_SLOT_WARN_ON_CLOSE)) {
             char *title = dupcat(appname, " Exit Confirmation", NULL);
 			/* ricardo */
+			ava_tempo_resposta();
 			if (!integral) {
             	GtkWidget *dialog = create_message_box(
                 	inst->window, title,

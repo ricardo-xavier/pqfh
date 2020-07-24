@@ -14,7 +14,33 @@ char vermelho23 = 0;
 
 short decimal_point = '?';
 
-void ava_integral(int y);
+char inativo = 0;
+time_t t_enviado = 0;
+time_t t_recebido = 0;
+
+void ava_integral();
+
+void ava_inativa() {
+	inativo = 1;
+	integral = 0;
+}
+
+void ava_enviado() {
+	t_enviado = time(NULL);
+}
+
+void ava_recebido() {
+	t_recebido = time(NULL);
+}
+
+void ava_tempo_resposta() {
+	int tempo = (int) (t_recebido - t_enviado);
+	//fprintf(stderr, "tempo_resposta %d\n", tempo);
+	if ((tempo > 10) || (tempo < -10)) {
+		//fprintf(stderr, "INATIVO\n");
+		integral = 0;
+	}
+}
 
 void ava_move(int y, int x) {
 
@@ -80,7 +106,7 @@ short ava_converte_decimal(int tecla, int y, int x) {
 		|| (decimal_point == '?')
 		|| (y > 24) 
 		|| (x == 0)
-		|| (!isdigit(linhas[y][x-1]) && (linhas[y][x-1] != ' '))) {
+		|| (!isdigit(linhas[y][x-1]) && (linhas[y][x-1] != ' ') && (((unsigned char) linhas[y][x-1]) < 128))) {
 		return tecla;
 	}
 
@@ -107,23 +133,32 @@ void ava_seta_cor(int y, int nbg) {
 	}
 }
 
-void ava_integral(int y) {
+void ava_integral() {
 
-	int i;
+	int i, y;
 
-	integral = !strncmp(linhas[y], "Avanco", 6);
+	if (inativo) {
+		integral = 0;
+		return;
+	}
+
+	integral = !strncmp(linhas[22], "Avanco", 6)
+			|| !strncmp(linhas[23], "Avanco", 6);
 	if (integral) {
 		//fprintf(stderr, "ava_integral %d [%s]\n", y, linhas[y]);
 		return;
 	}
 
 	for (i=2; i<80; i++) {
-		if ((linhas[y][i] == ':')
-			&& (linhas[y][i-2] == 'F')
-			&& isdigit(linhas[y][i-1])) {
-			integral = 1;
-			//fprintf(stderr, "ava_integral %d [%s]\n", y, linhas[y]);
-			break;
+		for (y=22; y<24; y++) {
+			if ((linhas[y][i] == ':')
+				&& (linhas[y][i-2] == 'F')
+				&& isdigit(linhas[y][i-1])) {
+				integral = 1;
+				y = 24;
+				//fprintf(stderr, "ava_integral %d [%s]\n", y, linhas[y]);
+				break;
+			}
 		}
 	}
 	if (integral) {

@@ -110,7 +110,7 @@ GTK_CONFIG = sh -c 'pkg-config gtk+-3.0 x11 $$0 2>/dev/null || pkg-config gtk+-2
 unexport CFLAGS # work around a weird issue with krb5-config
 
 CFLAGS = -O2 -Wall -Werror -std=gnu99 -Wvla -g -I.././ -I../charset/ \
-		-I../windows/ -I../unix/ $(shell $(GTK_CONFIG) --cflags) -D _FILE_OFFSET_BITS=64 -DUNIX
+		-I../windows/ -I../unix/ $(shell $(GTK_CONFIG) --cflags) -D _FILE_OFFSET_BITS=64 -DAVA_UNIX
 XLDFLAGS = $(LDFLAGS) $(shell $(GTK_CONFIG) --libs)
 ULDFLAGS = $(LDFLAGS)
 ifeq (,$(findstring NO_GSSAPI,$(COMPAT)))

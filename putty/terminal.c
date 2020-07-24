@@ -65,8 +65,8 @@ const wchar_t sel_nl[] = SEL_NL;
 /* ricardo */
 char linhas[25][81];
 char integral = 0;
-extern void ava_integral(int y);
-#ifdef UNIX
+extern void ava_integral();
+#ifdef AVA_UNIX
 extern void ava_seta_cor(int y, int nbg);
 extern void ava_move(int y, int x);
 #endif
@@ -2326,7 +2326,7 @@ static void scroll(Terminal *term, int topline, int botline,
  */
 static void move(Terminal *term, int x, int y, int marg_clip)
 {
-#ifdef UNIX
+#ifdef AVA_UNIX
 	ava_move(y, x);
 #endif
     if (x < 0)
@@ -4729,7 +4729,7 @@ static void term_out(Terminal *term)
                          fprintf(f, "exec [%s]\n", p); 
                          fclose(f);
                        }
-#ifdef UNIX
+#ifdef AVA_UNIX
                        char *b;
                        for (b=p; *b; b++) {
                            if (*b == '\\') *b = '/';
@@ -5400,7 +5400,7 @@ static void do_paint_draw(Terminal *term, termline *ldata, int x, int y,
 {
 	/* ricardo */
 	if (y < 25) {
-#ifdef UNIX
+#ifdef AVA_UNIX
 		if ((x == 0) && ((y == 22) || (y == 23))) {
 			int nbg = (attr & ATTR_BGMASK) >> ATTR_BGSHIFT;
 			ava_seta_cor(y, nbg);
@@ -5411,7 +5411,7 @@ static void do_paint_draw(Terminal *term, termline *ldata, int x, int y,
 		}
         }
 	if ((y == 22) || (y == 23)) {
-		ava_integral(y);
+		ava_integral();
 	}
 
     if (ch[0] == TRUST_SIGIL_CHAR) {

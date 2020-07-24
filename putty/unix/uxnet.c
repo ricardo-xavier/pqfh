@@ -1074,6 +1074,10 @@ void *sk_getxdmdata(Socket *sock, int *lenp)
     return buf;
 }
 
+void ava_inativa();
+void ava_enviado();
+void ava_recebido();
+
 /*
  * Deal with socket errors detected in try_send().
  */
@@ -1081,6 +1085,7 @@ static void socket_error_callback(void *vs)
 {
     NetSocket *s = (NetSocket *)vs;
 
+	ava_inativa();
     /*
      * Just in case other socket work has caused this socket to vanish
      * or become somehow non-erroneous before this callback arrived...
@@ -1118,6 +1123,7 @@ void try_send(NetSocket *s)
             len = bufdata.len;
         }
         nsent = send(s->s, data, len, urgentflag);
+		ava_enviado();
         noise_ultralight(NOISE_SOURCE_IOLEN, nsent);
         if (nsent <= 0) {
             err = (nsent < 0 ? errno : 0);
@@ -1284,6 +1290,7 @@ static void net_select_result(int fd, int event)
              * type==2 (urgent data).
              */
             ret = recv(s->s, buf, sizeof(buf), MSG_OOB);
+			ava_recebido();
             noise_ultralight(NOISE_SOURCE_IOLEN, ret);
             if (ret <= 0) {
                 plug_closing(s->plug,
@@ -1367,6 +1374,7 @@ static void net_select_result(int fd, int event)
             atmark = true;
 
         ret = recv(s->s, buf, s->oobpending ? 1 : sizeof(buf), 0);
+		ava_recebido();
         noise_ultralight(NOISE_SOURCE_IOLEN, ret);
         if (ret < 0) {
             if (errno == EWOULDBLOCK) {
