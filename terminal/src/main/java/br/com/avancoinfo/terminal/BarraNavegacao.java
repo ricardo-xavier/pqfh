@@ -55,8 +55,8 @@ public class BarraNavegacao {
 		Node ultimo = pnlNavegacao.getChildren().get(pnlNavegacao.getChildren().size()-1);
 		if (!ultimo.getId().equals(texto)) {
 			Button btn = (Button) ultimo;
-			if (!btn.getText().contains(" >>")) {
-				btn.setText(btn.getText() + " >>");
+			if (!btn.getText().contains(">")) {
+				btn.setText(btn.getText() + ">");
 			}
 			
 			Button btnOpcao = new Button(texto);
@@ -92,7 +92,7 @@ public class BarraNavegacao {
 		
 		Node ultimo = pnlNavegacao.getChildren().get(pnlNavegacao.getChildren().size()-1);
 		Button btn = (Button) ultimo;
-		btn.setText(btn.getText().replace(" >>", ""));
+		btn.setText(btn.getText().replace(">", ""));
 	}
 
 	public static void atualiza(FlowPane pnlNavegacao, Button btn, int lin, int col, String id) {

@@ -320,7 +320,7 @@ public class Configuracao extends Stage {
         // avançado
         
 		chkPontoVirgula = new JFXToggleButton();
-		chkPontoVirgula.setText("Enviar ponto e vírgula como decimal");
+		chkPontoVirgula.setText("Detectar ponto decimal");
 		GridPane.setMargin(chkPontoVirgula, new Insets(10, 30, 0, 10));
         
         pnlAvancado.getChildren().add(chkPontoVirgula);

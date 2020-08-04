@@ -53,6 +53,7 @@ public class Menu extends Stage {
 	private boolean encerrar;
 	private GridPane pnlBotoes;
 	private FlowPane pnlNavegacao;
+	private static boolean integral;
 	
 	public Menu(char[][] dados, char[][] frente, FlowPane pnlNavegacao) {
 		
@@ -92,7 +93,7 @@ public class Menu extends Stage {
 		tela.setRight(pnlBotoes);
 
 		if (pnlNavegacao != null) {
-			Button btnPrincipal = new Button("Menu Principal >>");
+			Button btnPrincipal = new Button("Menu Principal>");
 			btnPrincipal.setId("Menu Principal");
 			btnPrincipal.getStyleClass().add("botao");
 			FlowPane.setMargin(btnPrincipal, new Insets(4));
@@ -163,6 +164,7 @@ public class Menu extends Stage {
 				public void handle(ActionEvent event) {
 					Teclado.setUltimaTecla(null);
 					TerminalAvanco.getCom().envia(String.valueOf(tecla));
+					integral = true;
 					if (pnlNavegacao != null) {
 						Button btnOpcao = new Button(opcao);
 						btnOpcao.setId(opcao.trim());
@@ -233,6 +235,7 @@ public class Menu extends Stage {
 			char tecla = teclas.get(o);
 			if (tecla == code.toString().charAt(0)) {
 				TerminalAvanco.getCom().envia(String.valueOf(tecla));
+				integral = true;
 				if (pnlNavegacao != null) {
 					Button btnOpcao = new Button(opcoes.get(o));
 					btnOpcao.setId(opcoes.get(o).trim());
@@ -250,6 +253,14 @@ public class Menu extends Stage {
 
 	public void setEncerrar(boolean encerrar) {
 		this.encerrar = encerrar;
+	}
+
+	public static boolean isIntegral() {
+		return integral;
+	}
+
+	public static void setIntegral(boolean integral) {
+		Menu.integral = integral;
 	}
 
 }

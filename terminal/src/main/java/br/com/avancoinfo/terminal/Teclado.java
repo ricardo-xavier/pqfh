@@ -8,6 +8,7 @@ public class Teclado implements EventHandler<KeyEvent> {
 
 	private Configuracao cfg;
 	private static KeyCode ultimaTecla;
+	private static char decimalPoint = '?';
 	
 	public Teclado(Configuracao cfg) {
 		this.cfg = cfg;
@@ -125,11 +126,17 @@ public class Teclado implements EventHandler<KeyEvent> {
 				
 		default:
 			
-			if (cfg.isPontoVirgula()) {
-				if (event.getText().equals(".") || event.getText().equals(",")) {
-					if (decimalPoint()) {
-						com.envia(".,");
-						break;
+			if (cfg.isPontoVirgula() 
+					&& (event.getText().equals(".") || event.getText().equals(","))) {
+				
+				int col = TerminalAvanco.getTerminal().getCol();
+				if (col > 0) {
+					int lin = TerminalAvanco.getTerminal().getLin();
+					char[][] dados = TerminalAvanco.getTerminal().getDados();
+					int[][] atributos = TerminalAvanco.getTerminal().getAtributos();
+					if (Character.isDigit(dados[lin][col-1]) || ((atributos[lin][col-1] & Escape.A_ACS) == Escape.A_ACS)) {
+						com.envia(getDecimalPoint(event.getText()));
+						break;						
 					}
 				}
 			}
@@ -141,24 +148,8 @@ public class Teclado implements EventHandler<KeyEvent> {
 		event.consume();
 	}
 
-	private boolean decimalPoint() {
-		
-		Terminal terminal = TerminalAvanco.getTerminal();
-		
-		if (terminal.getCol() == 0) {
-			return false;
-		}
-		if (!Character.isDigit(terminal.getDados()[terminal.getLin()][terminal.getCol()-1])) {
-			return false;
-		}
-		for (int i=0; i<Terminal.getLinhas(); i++) {
-			for (int j=0; j<Terminal.getColunas(); j++) {
-				if ((terminal.getAtributos()[i][j] & Escape.A_ACS) == Escape.A_ACS) {
-					return true;
-				}
-			}
-		}
-		return false;
+	private String getDecimalPoint(String tecla) {
+		return (!Menu.isIntegral() || (decimalPoint == '?')) ? tecla : String.valueOf(decimalPoint);
 	}
 	
 	public static KeyCode getUltimaTecla() {
@@ -167,6 +158,14 @@ public class Teclado implements EventHandler<KeyEvent> {
 
 	public static void setUltimaTecla(KeyCode ultimaTecla) {
 		Teclado.ultimaTecla = ultimaTecla;
+	}
+
+	public static char getDecimalPoint() {
+		return decimalPoint;
+	}
+
+	public static void setDecimalPoint(char decimalPoint) {
+		Teclado.decimalPoint = decimalPoint;
 	}
 
 }

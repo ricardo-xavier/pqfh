@@ -397,6 +397,7 @@ public class MenuInterno {
 		if (btn.getUserData() != null) {
 			Ponto p = (Ponto) btn.getUserData();
 			char ch = terminal.getDados()[p.getY()][p.getX()];
+			Menu.setIntegral(false);
 			if (ch != Terminal.getMARCADOR()) {
 				BarraNavegacao.remove(terminal.getPnlNavegacao(), n-1);
 				verificaRemocao();
@@ -406,6 +407,7 @@ public class MenuInterno {
 			// saida de uma tela não menu
 			// a última tecla é ESC e o último menu está com ponto nulo
 			if (Teclado.getUltimaTecla() == KeyCode.ESCAPE) {
+				Menu.setIntegral(false);
 				BarraNavegacao.remove(terminal.getPnlNavegacao(), n-1);
 			}
 			
@@ -522,6 +524,7 @@ public class MenuInterno {
 			if (p >= 0) {
 				s = s.substring(p+1).trim();
 				if (code == KeyCode.ENTER) {
+					Menu.setIntegral(true);
     				if (terminal.getPnlNavegacao() != null) {
     					BarraNavegacao.adiciona(terminal.getPnlNavegacao(), s);
     				}
@@ -537,6 +540,7 @@ public class MenuInterno {
 					temDestaque = true;
 					char ch = terminal.getDados()[y][x];
 					if (ch == code.toString().charAt(0)) {
+						Menu.setIntegral(true);
 	    				if (terminal.getPnlNavegacao() != null) {
 	    					BarraNavegacao.adiciona(terminal.getPnlNavegacao(), s);
 	    				}
@@ -552,6 +556,7 @@ public class MenuInterno {
 			for (int x=x1+1; x<x2; x++) {
 				char ch = terminal.getDados()[y][x];
 				if (Character.isUpperCase(ch) && (ch == code.toString().toUpperCase().charAt(0))) {
+					Menu.setIntegral(true);
     				if (terminal.getPnlNavegacao() != null) {
     					BarraNavegacao.adiciona(terminal.getPnlNavegacao(), s);
     				}
@@ -562,6 +567,7 @@ public class MenuInterno {
 		}
 		
 		if (semDestaque != null) {
+			Menu.setIntegral(true);
 			if (terminal.getPnlNavegacao() != null) {
 				BarraNavegacao.adiciona(terminal.getPnlNavegacao(), semDestaque);
 			}			

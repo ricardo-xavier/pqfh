@@ -40,7 +40,7 @@ import javafx.stage.WindowEvent;
 
 public class Terminal extends Stage {
 	
-	private static final int VERSAO = 28;
+	private static final int VERSAO = 29;
 	private static final int LINHAS = 25;
 	private static final int COLUNAS = 80;
 	private static final int MARGEM = 5;
@@ -278,6 +278,7 @@ public class Terminal extends Stage {
         			if (MenuInterno.getLetraSelecionada() != '?') {
         				TerminalAvanco.getCom().envia(MenuInterno.getLetraSelecionada() == '^' ? "\n" : String.valueOf(MenuInterno.getLetraSelecionada()));
         				MenuInterno.setLetraSelecionada('?');
+        				Menu.setIntegral(true);
         				if (pnlNavegacao != null) {
         					BarraNavegacao.adiciona(pnlNavegacao, MenuInterno.getTexto());
         				}
@@ -292,6 +293,13 @@ public class Terminal extends Stage {
 			
 			@Override
 			public void handle(WindowEvent event) {
+				if ((pnlNavegacao != null) && (pnlNavegacao.getChildren().size() > 1)) {
+					Alert alert = new Alert(AlertType.WARNING);
+					alert.setTitle("Aviso");
+					alert.setHeaderText("Por favor saia do sistema antes de fechar o terminal");
+					alert.showAndWait();		
+					event.consume();
+				}
 				System.err.println("close terminal");
 			}
 		});
@@ -315,6 +323,7 @@ public class Terminal extends Stage {
 				int tam = 0;
 				byte[] comandos = null;
 				marcadorRecebido = false;
+				Configuracao cfg = TerminalAvanco.getCfg();
 				
 				synchronized (fila) {
 
@@ -463,6 +472,15 @@ public class Terminal extends Stage {
 							default:
 
 								dados[lin][col] = ch;
+								if (cfg.isPontoVirgula() && Menu.isIntegral()
+										&& Character.isDigit(ch)
+										&& (col > 3)
+										&& Character.isDigit(dados[lin][col-1])
+										&& ((dados[lin][col-2] == ',') || (dados[lin][col-2] == '.'))
+										&& Character.isDigit(dados[lin][col-3])) {
+									// 9.99
+									Teclado.setDecimalPoint(dados[lin][col-2]);
+								}
 								atributos[lin][col] = atributo;
 								frente[lin][col] = corFrente;
 								fundo[lin][col] = corFundo;
@@ -505,12 +523,18 @@ public class Terminal extends Stage {
 								System.err.println(cmd);
 								int p = cmd.indexOf("RunDLL ");
 								if (p > 0) {
-									cmd = cmd.substring(p + 6);
+									cmd = cmd.substring(p + 7);
 									p = cmd.indexOf("\u001b");
 									if (p > 0) {
 										cmd = cmd.substring(0, p);
 										try {
-											Runtime.getRuntime().exec("explorer " + cmd);
+											String so = System.getProperty("os.name");
+											if (so.toLowerCase().contains("windows")) {
+												Runtime.getRuntime().exec("explorer " + cmd);
+											} else {
+												cmd = cmd.replace('\\', '/');
+												Runtime.getRuntime().exec("/usr/bin/evince smb:" + cmd);
+											}
 										} catch (IOException e) {
 											e.printStackTrace();
 										}
@@ -650,7 +674,6 @@ public class Terminal extends Stage {
 					if (msg.contains("senha:")) {
 						
 						Comunicacao com = TerminalAvanco.getCom();
-						Configuracao cfg = TerminalAvanco.getCfg();
 						
 						com.envia(cfg.getUsuarioIntegral());
 						if (cfg.getUsuarioIntegral().length() < 4) {
@@ -840,6 +863,10 @@ public class Terminal extends Stage {
 			}
 			
 			for (int j=r.x; j<r.x+r.width; j++) {
+				if (j >= 80) {
+					break;
+				}
+				
 				atributos[i][j] &= ~Acs.PROCESSADO;
 				int x1 = j;
 				char corX1 = (atributos[i][x1] & Escape.A_REVERSE) == Escape.A_REVERSE ? frente[i][x1] : fundo[i][x1];
@@ -890,7 +917,10 @@ public class Terminal extends Stage {
 			}
 			
 			for (int j=r.x; j<r.x+r.width; j++) {
-
+				if (j >= 80) {
+					break;
+				}
+				
 				char cor = (atributos[i][j] & Escape.A_REVERSE) == Escape.A_REVERSE ? fundo[i][j] : frente[i][j];
 				if (cor != ultimaCor) {
 					contexto.setStroke(converteCor(cor));
