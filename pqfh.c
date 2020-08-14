@@ -17,7 +17,7 @@
 // insert into tabela_api values('sp05a51', 'planoGerencial');
 //
 
-#define VERSAO "v3.8.1 30/05/2020"
+#define VERSAO "v3.9.0 28/06/2020"
 
 int dbg=-1;
 int dbg_upd=-1;
@@ -345,6 +345,30 @@ void mostra_tempos() {
 unsigned short op;
 fcd_t *_fcd;
 
+void trataHUP(int s) {
+
+    FILE *log114;
+    time_t t = time(NULL);
+    struct tm *tm = localtime(&t);
+    char *usuario;
+
+    umask(0);
+    log114 = fopen("pqfh114.log", "a");
+
+    fprintf(log114, "%02d/%02d/%04d %02d:%02d:%02d\n", tm->tm_mday, tm->tm_mon+1, tm->tm_year+1900,
+                    tm->tm_hour, tm->tm_min, tm->tm_sec);
+
+    usuario = getenv("USER");
+    if (usuario != NULL) {
+        fprintf(log114, "usuario=%s HANGUP\n\n", usuario);
+    } else {
+        fprintf(log114, "HANGUP\n\n");
+    }        
+
+    fclose(log114);
+    exit(-1);
+}
+
 void trata114(int s) {
 
     FILE *log114;
@@ -407,6 +431,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
     if (dbg == -1) {
         get_debug();
         signal(SIGSEGV, trata114);
+        signal(SIGHUP, trataHUP);
     }
     mode = get_mode();
     executed = false;
@@ -1221,4 +1246,5 @@ void pqfh_split(char *filename) {
 // 3.7.4  - 28/05 - nao gravar tabelas nao convertidas no cache
 // 3.8.0  - 29/05 - tratamento do 114
 // 3.8.1  - 30/05 - desalocar tabela pqfh no close
+// 3.9.0  - 28/06 - hangup
  
