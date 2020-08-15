@@ -17,7 +17,7 @@
 // insert into tabela_api values('sp05a51', 'planoGerencial');
 //
 
-#define VERSAO "v3.9.0 28/06/2020"
+#define VERSAO "v3.9.1 15/08/2020"
 
 int dbg=-1;
 int dbg_upd=-1;
@@ -1247,4 +1247,5 @@ void pqfh_split(char *filename) {
 // 3.8.0  - 29/05 - tratamento do 114
 // 3.8.1  - 30/05 - desalocar tabela pqfh no close
 // 3.9.0  - 28/06 - hangup
+// 3.9.1  - 15/08 - chave com campo decimal
  

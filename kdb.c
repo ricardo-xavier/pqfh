@@ -130,6 +130,11 @@ void adiciona_comp(unsigned char *record, _key_t key, int c, char *_op, char *wh
     buf[col->len] = 0;
     if ((col->tp == 'n') && !buf[0]) {
         memset(buf, '0', col->len);
+    } else if ((col->tp == 'n') && (col->dec > 0)) {
+        memcpy(buf, record+col->offset, col->len-col->dec);
+        buf[col->len-col->dec] = '.';
+        memcpy(buf+col->len-col->dec+1, record+col->offset+col->len-col->dec, col->dec);
+        buf[col->len+1] = 0;
     }
 
     last = key.ncols - 1;

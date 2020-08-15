@@ -126,6 +126,11 @@ void op_read_random(PGconn *conn, fcd_t *fcd, bool with_lock) {
         tab->bufs[p][col->len] = 0;
         if ((col->tp == 'n') && !tab->bufs[p][0]) {
             strcpy(tab->bufs[p], "0");
+        } else if ((col->tp == 'n') && (col->dec > 0)) {
+            memcpy(tab->bufs[p], fcd->record+col->offset, col->len-col->dec);
+            tab->bufs[p][col->len-col->dec] = '.';
+            memcpy(tab->bufs[p]+col->len-col->dec+1, fcd->record+col->offset+col->len-col->dec, col->dec);
+            tab->bufs[p][col->len+1] = 0;
         }
         tab->values[p] = tab->bufs[p];
         tab->lengths[p] = col->len;
