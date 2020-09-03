@@ -98,11 +98,15 @@ void op_delete(PGconn *conn, fcd_t *fcd) {
         tab->values[p] = tab->bufs[p];
         tab->lengths[p] = col->len;
         tab->formats[p] = 0;
+        if (col->tp == 'n') {
+            valida_numero(col->name, tab->bufs[p], col->dec > 0);
+        }
         if (dbg > 2) {
             fprintf(flog, "    %d %s %c %d:%d,%d [%s]\n", p, col->name, col->tp, col->offset, col->len, col->dec, tab->bufs[p]);
         }
         p++;
     }
+    valida_comando("DELETE", tab->name);
     nParams = p;
 
     // executa o comando

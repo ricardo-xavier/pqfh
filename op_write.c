@@ -21,7 +21,6 @@ bool op_write(PGconn *conn, fcd_t *fcd) {
     list2_t        *ptr;
     PGresult       *res;
     short          op;
-    char           *ptrch;
 
 #endif    
     if (!memcmp(fcd->file_name, "pqfh", 4)) {
@@ -152,14 +151,7 @@ bool op_write(PGconn *conn, fcd_t *fcd) {
                     tab->bufs[p][col->len - 1] &= ~0x40;
                 }
             }
-            if (!tab->bufs[p][0]) {
-                strcpy(tab->bufs[p], "0");
-            }
-            for (ptrch=tab->bufs[p]; *ptrch; ptrch++) {
-                if (strchr("0123456789-.", *ptrch) == NULL) {
-                    *ptrch = '0';
-                }    
-            }        
+            valida_numero(col->name, tab->bufs[p], col->dec > 0);
         } else {
             memcpy(tab->bufs[p], fcd->record+col->offset, col->len);
             tab->bufs[p][col->len] = 0;
@@ -171,6 +163,7 @@ bool op_write(PGconn *conn, fcd_t *fcd) {
         p++;
 
     }
+    valida_comando("WRITE", tab->name);
 
     // executa o comando
     if (dbg > 2) {

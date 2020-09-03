@@ -135,8 +135,12 @@ void op_read_random(PGconn *conn, fcd_t *fcd, bool with_lock) {
         tab->values[p] = tab->bufs[p];
         tab->lengths[p] = col->len;
         tab->formats[p] = 0;
+        if (col->tp == 'n') {
+            valida_numero(col->name, tab->bufs[p], col->dec > 0);
+        }
         p++;
     }
+    valida_comando("READ", tab->name);
     nParams = p;
 
     if (dbg_times > 1) {

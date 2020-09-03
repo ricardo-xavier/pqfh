@@ -164,16 +164,14 @@ bool op_rewrite(PGconn *conn, fcd_t *fcd) {
                 tab->bufs[p][col->len] = 0;
             }
             if ((fcd->record[col->offset + col->len - 1] & 0x40) == 0x40) {
-                tab->bufs[p][0] = '-';
+                tab->bufs[p][0] = col->len > 1 ? '-' : '0';
                 if (col->dec > 0) {
                     tab->bufs[p][col->len] &= ~0x40;
                 } else {
                     tab->bufs[p][col->len - 1] &= ~0x40;
                 }
             }
-            if (!tab->bufs[p][0]) {
-                strcpy(tab->bufs[p], "0");
-            }
+            valida_numero(col->name, tab->bufs[p], col->dec > 0);
         } else {
             memcpy(tab->bufs[p], fcd->record+col->offset, col->len);
             tab->bufs[p][col->len] = 0;
@@ -195,11 +193,16 @@ bool op_rewrite(PGconn *conn, fcd_t *fcd) {
         memcpy(tab->bufs[p], fcd->record+col->offset, col->len);
         tab->bufs[p][col->len] = 0;
 
+        if (col->tp == 'n') {
+            valida_numero(col->name, tab->bufs[p], col->dec > 0);
+        }
+
         if (dbg > 2) {
             fprintf(flog, "    %d %s %c %d:%d,%d [%s]\n", p, col->name, col->tp, col->offset, col->len, col->dec, tab->bufs[p]);
         }
         p++;
     }
+    valida_comando("REWRITE", tab->name);
 
     nParams = p;
 
