@@ -57,11 +57,13 @@ bool valida_numero(char *coluna, char *conteudo, bool real) {
             sprintf(aux, "%s [%s]", coluna, conteudo);
             erros = list2_append(erros, aux, strlen(aux)+1);
 
+            /*
             for (p=conteudo; *p; p++) {
                 if (strchr("0123456789-.", *p) == NULL) {
                     *p = '0';
                 }    
             }        
+            */
             return false;
         }
     }
