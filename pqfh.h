@@ -249,7 +249,7 @@ void cache_put(table_t *table);
 void cache_remove(char *name);
 
 void valida_comando(char *comando, char *tabela);
-bool valida_numero(char *coluna, char *conteudo, bool real);
+bool valida_numero(table_t *tab, char *coluna, char *conteudo, bool real);
 
 #ifndef MAIN
 extern int funcao;

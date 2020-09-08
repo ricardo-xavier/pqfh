@@ -17,7 +17,7 @@
 // insert into tabela_api values('sp05a51', 'planoGerencial');
 //
 
-#define VERSAO "v3.10.1 05/09/2020"
+#define VERSAO "v3.10.3 08/09/2020"
 
 int dbg=-1;
 int dbg_upd=-1;
@@ -46,6 +46,7 @@ pthread_mutex_t lock;
 list2_t *weak=NULL;
 extern bool replica_in_transaction;
 extern bool force_partial;
+extern bool fatal;
 
 bool in_transaction=false;
 
@@ -77,6 +78,9 @@ void *thread_commit(void *vargp) {
             commit();
             pthread_mutex_unlock(&lock);
         }
+        if (fatal) {
+            exit(-1);
+        }    
     }
     return NULL; 
 } 
@@ -1250,4 +1254,6 @@ void pqfh_split(char *filename) {
 // 3.9.1  - 15/08 - chave com campo decimal
 // 3.10.0 - 03/09 - validacao de campos numericos
 // 3.10.1 - 05/09 - nao corrigir o conteudo na validacao
+// 3.10.2 - 08/09 - corrigir se nao for chave
+// 3.10.3 - 08/09 - abortar se for erro na chave
  

@@ -8,6 +8,7 @@ extern int dbg;
 extern int dbg_times;
 extern bool partial_weak;
 extern char mode;
+extern bool fatal;
 
 void op_read_random(PGconn *conn, fcd_t *fcd, bool with_lock) {
     funcao = _OP_READ_RANDOM;    
@@ -120,6 +121,7 @@ void op_read_random(PGconn *conn, fcd_t *fcd, bool with_lock) {
 
     // seta parametros
     p = 0;
+    fatal = false;
     for (ptr=tab->prms_random[keyid]; ptr!=NULL; ptr=ptr->next) {
         col = (column_t *) ptr->buf;
         memcpy(tab->bufs[p], fcd->record+col->offset, col->len);
@@ -136,7 +138,7 @@ void op_read_random(PGconn *conn, fcd_t *fcd, bool with_lock) {
         tab->lengths[p] = col->len;
         tab->formats[p] = 0;
         if (col->tp == 'n') {
-            valida_numero(col->name, tab->bufs[p], col->dec > 0);
+            valida_numero(tab, col->name, tab->bufs[p], col->dec > 0);
         }
         p++;
     }

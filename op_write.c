@@ -5,6 +5,7 @@
 extern int dbg;
 extern int dbg_upd;
 extern bool executed;
+extern bool fatal;
 
 extern int pending_commits;
 
@@ -119,6 +120,7 @@ bool op_write(PGconn *conn, fcd_t *fcd) {
     }
     // seta os parametros
     p = 0;
+    fatal = false;
     for (ptr=tab->columns; ptr!=NULL; ptr=ptr->next) {
 
         col = (column_t *) ptr->buf;
@@ -151,7 +153,7 @@ bool op_write(PGconn *conn, fcd_t *fcd) {
                     tab->bufs[p][col->len - 1] &= ~0x40;
                 }
             }
-            valida_numero(col->name, tab->bufs[p], col->dec > 0);
+            valida_numero(tab, col->name, tab->bufs[p], col->dec > 0);
         } else {
             memcpy(tab->bufs[p], fcd->record+col->offset, col->len);
             tab->bufs[p][col->len] = 0;

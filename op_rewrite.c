@@ -8,6 +8,7 @@ extern int dbg_upd;
 extern int dbg_times;
 extern int pending_commits;
 extern bool executed;
+extern bool fatal;
 
 bool op_rewrite(PGconn *conn, fcd_t *fcd) {
     funcao = _OP_REWRITE;    
@@ -140,6 +141,7 @@ bool op_rewrite(PGconn *conn, fcd_t *fcd) {
         fprintf(flog, "%ld op_rewrite seta parametros para o update\n", time(NULL));
     }
     p = 0;
+    fatal = false;
     for (ptr=tab->columns; ptr!=NULL; ptr=ptr->next) {
 
         col = (column_t *) ptr->buf;
@@ -171,7 +173,7 @@ bool op_rewrite(PGconn *conn, fcd_t *fcd) {
                     tab->bufs[p][col->len - 1] &= ~0x40;
                 }
             }
-            valida_numero(col->name, tab->bufs[p], col->dec > 0);
+            valida_numero(tab, col->name, tab->bufs[p], col->dec > 0);
         } else {
             memcpy(tab->bufs[p], fcd->record+col->offset, col->len);
             tab->bufs[p][col->len] = 0;
@@ -194,7 +196,7 @@ bool op_rewrite(PGconn *conn, fcd_t *fcd) {
         tab->bufs[p][col->len] = 0;
 
         if (col->tp == 'n') {
-            valida_numero(col->name, tab->bufs[p], col->dec > 0);
+            valida_numero(tab, col->name, tab->bufs[p], col->dec > 0);
         }
 
         if (dbg > 2) {

@@ -5,6 +5,7 @@
 extern int dbg;
 extern int dbg_upd;
 extern bool executed;
+extern bool fatal;
 
 extern int pending_commits;
 
@@ -90,6 +91,7 @@ void op_delete(PGconn *conn, fcd_t *fcd) {
         fprintf(flog, "%ld op_delete seta parametros para o delete\n", time(NULL));
     }
     p = 0;
+    fatal = false;
     for (ptr=tab->prms_delete; ptr!=NULL; ptr=ptr->next) {
         col = (column_t *) ptr->buf;
         col->p = p;
@@ -99,7 +101,7 @@ void op_delete(PGconn *conn, fcd_t *fcd) {
         tab->lengths[p] = col->len;
         tab->formats[p] = 0;
         if (col->tp == 'n') {
-            valida_numero(col->name, tab->bufs[p], col->dec > 0);
+            valida_numero(tab, col->name, tab->bufs[p], col->dec > 0);
         }
         if (dbg > 2) {
             fprintf(flog, "    %d %s %c %d:%d,%d [%s]\n", p, col->name, col->tp, col->offset, col->len, col->dec, tab->bufs[p]);
