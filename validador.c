@@ -35,7 +35,7 @@ void valida_comando(char *comando, char *tabela) {
     fclose(f);
     erros = list2_free(erros);
     if (fatal) {
-fprintf(stderr, "exit\n");            
+        fprintf(stderr, "exit pelo validador\n");            
         exit(-1);
     }    
 }

@@ -17,7 +17,7 @@
 // insert into tabela_api values('sp05a51', 'planoGerencial');
 //
 
-#define VERSAO "v3.10.3 08/09/2020"
+#define VERSAO "v3.10.4 09/09/2020"
 
 int dbg=-1;
 int dbg_upd=-1;
@@ -73,14 +73,15 @@ void *thread_commit(void *vargp) {
         if (dbg > 1) {
             fprintf(flog, "%ld pending_commits %d %s\n", time(NULL), pending_commits, in_transaction ? "TRANSACAO" : "AUTO_COMMIT");
         }
+        if (fatal) {
+            commit();
+            exit(-1);
+        }    
         if ((pending_commits > 0) && !in_transaction) {
             pthread_mutex_lock(&lock);
             commit();
             pthread_mutex_unlock(&lock);
         }
-        if (fatal) {
-            exit(-1);
-        }    
     }
     return NULL; 
 } 
@@ -1256,4 +1257,5 @@ void pqfh_split(char *filename) {
 // 3.10.1 - 05/09 - nao corrigir o conteudo na validacao
 // 3.10.2 - 08/09 - corrigir se nao for chave
 // 3.10.3 - 08/09 - abortar se for erro na chave
+// 3.10.4 - 09/09 - nao fazer lock no commit depois de erro fatal
  
