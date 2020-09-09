@@ -17,7 +17,7 @@
 // insert into tabela_api values('sp05a51', 'planoGerencial');
 //
 
-#define VERSAO "v3.10.4 09/09/2020"
+#define VERSAO "v3.10.5 09/09/2020"
 
 int dbg=-1;
 int dbg_upd=-1;
@@ -89,6 +89,9 @@ void *thread_commit(void *vargp) {
 void pqfh_begin_transaction() {
     funcao = _PQFH_BEGIN_TRANSACTION;    
     in_transaction = true;
+    if (fatal) {
+        exit(-1);
+    }
     pthread_mutex_lock(&lock);
     commit();
     pthread_mutex_unlock(&lock);
@@ -97,6 +100,10 @@ void pqfh_begin_transaction() {
 void pqfh_commit() {
     funcao = _PQFH_COMMIT;    
     in_transaction = false;
+    if (fatal) {
+        commit();
+        exit(-1);
+    }
     pthread_mutex_lock(&lock);
     commit();
     pthread_mutex_unlock(&lock);
@@ -106,6 +113,17 @@ void pqfh_rollback() {
     funcao = _PQFH_ROLLBACK;    
     PGresult *res;
     in_transaction = false;
+    if (fatal) {
+        if (dbg > 0 || (dbg_upd > 0)) {
+            fprintf(flog, "%ld rollback %d %s\n", time(NULL), pending_commits, in_transaction ? "TRANSACAO" : "AUTO_COMMIT");
+        }
+        res = PQexec(conn, "ROLLBACK");
+        if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+            errorbd("ROLLBACK", res);    
+        }
+        PQclear(res);
+        exit(-1);
+    }
     pthread_mutex_lock(&lock);
     if (dbg > 0 || (dbg_upd > 0)) {
         fprintf(flog, "%ld rollback %d %s\n", time(NULL), pending_commits, in_transaction ? "TRANSACAO" : "AUTO_COMMIT");
@@ -695,6 +713,9 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
         }
     }
 
+    if (fatal) {
+        exit(-1);
+    }
     pthread_mutex_lock(&lock);
 #endif
     memcpy(st, fcd->status, 2);
@@ -1257,5 +1278,5 @@ void pqfh_split(char *filename) {
 // 3.10.1 - 05/09 - nao corrigir o conteudo na validacao
 // 3.10.2 - 08/09 - corrigir se nao for chave
 // 3.10.3 - 08/09 - abortar se for erro na chave
-// 3.10.4 - 09/09 - nao fazer lock no commit depois de erro fatal
+// 3.10.5 - 09/09 - nao fazer lock no commit depois de erro fatal
  
