@@ -17,7 +17,7 @@
 // insert into tabela_api values('sp05a51', 'planoGerencial');
 //
 
-#define VERSAO "v3.10.5 09/09/2020"
+#define VERSAO "v3.10.6 22/09/2020"
 
 int dbg=-1;
 int dbg_upd=-1;
@@ -437,7 +437,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
     short          reclen, fnlen;
     char           filename[257], record[MAX_REC_LEN+1];
     long           tempo;
-    unsigned char  open_mode;
+    unsigned char  open_mode, salva_isam;
     char           st[2];
 
 #ifndef ISAM
@@ -464,6 +464,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
     memcpy(filename, fcd->file_name, fnlen);
     filename[fnlen] = 0;
     op = getshort(opcode);
+    salva_isam = 0;
 
     if ((op >= OP_OPEN_INPUT) && (op <= OP_OPEN_EXTEND)) {
         if (fcd->open_mode == 128) {
@@ -484,6 +485,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
 #endif
 
     if ((mode == 'W') && (op == OP_OPEN_IO)) {
+        salva_isam = fcd->isam;    
         fcd->isam = 0;
     }        
 
@@ -639,6 +641,9 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
             if (dbg_cmp > 0) {
                 dbg_status("ISAM", fcd);
             }
+            if (salva_isam != 0) {
+                fcd->isam = salva_isam;
+            }    
             return;
         }    
     }
@@ -1279,4 +1284,5 @@ void pqfh_split(char *filename) {
 // 3.10.2 - 08/09 - corrigir se nao for chave
 // 3.10.3 - 08/09 - abortar se for erro na chave
 // 3.10.5 - 09/09 - nao fazer lock no commit depois de erro fatal
+// 3.10.6 - 22/09 - programa abortando depois de status 41 com W
  
