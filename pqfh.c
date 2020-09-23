@@ -17,7 +17,7 @@
 // insert into tabela_api values('sp05a51', 'planoGerencial');
 //
 
-#define VERSAO "v3.10.6 22/09/2020"
+#define VERSAO "v3.11.0 23/09/2020"
 
 int dbg=-1;
 int dbg_upd=-1;
@@ -49,6 +49,8 @@ extern bool force_partial;
 extern bool fatal;
 
 bool in_transaction=false;
+
+list2_t *stlog=NULL;
 
 void commit() {
     funcao = _COMMIT;    
@@ -174,16 +176,66 @@ long tempo_total=0, tempo_open=0, tempo_close=0, tempo_start=0, tempo_next_prev=
 int  qtde_total=0, qtde_open=0, qtde_close=0, qtde_start=0, qtde_next_prev=0, qtde_read=0, 
     qtde_write=0, qtde_rewrite=0, qtde_delete=0, qtde_isam=0, qtde_cobolpost=0;
 
+bool is_stlog(unsigned char st[2]) {
+    list2_t *ptr;    
+    unsigned char *aux;
+    if (st[0] == '9') {
+        return true;
+    }
+    for (ptr=stlog; ptr!=NULL; ptr=ptr->next) {
+        aux = (unsigned char *) ptr->buf;    
+        if ((aux[0] == st[0]) && (aux[1] == st[1])) {
+            return true;
+        }
+    }
+    return false;    
+}
+
 char get_mode() {
-    int  fd;
-    char mode='I';
+    int  fd, n, i;
+    char mode='I', ch;
+    bool lf=false;
+    char st[3];
 
     if (access(".pqfh", F_OK) == -1) {
         return 'I';
     }
     fd = open(".pqfh", O_RDONLY);
-    read(fd, &mode, 1); 
+    read(fd, &mode, 1);
+
+    i = 0;
+    st[2] = 0;
+    while ((n = read(fd, &ch, 1)) > 0) {
+        if (ch == '\n') {
+            if (!lf) {
+                lf = true;
+                continue;
+            } else {
+                if (i == 2) {    
+                    //printf("st=[%s]\n", st);
+                    stlog = list2_append(stlog, st, 3);
+                }
+                break;
+            }    
+        }
+        if (!lf) {
+            continue;
+        }
+        if (ch == ' ') {
+            if (i == 2) {    
+                //printf("st=[%s]\n", st);
+                stlog = list2_append(stlog, st, 3);
+            }
+            i = 0;
+            continue;
+        }
+        if (i < 2) {
+            st[i++] = ch;
+        }
+    }
     close(fd);
+    stlog = list2_first(stlog);
+
 #ifndef ISAM
     if (mode == 'a') {
         mode = 'A';
@@ -591,7 +643,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
             dbg_record(fcd);
         }
         EXTFH(opcode, fcd);
-        if (fcd->status[0] == '9') {
+        if (is_stlog(fcd->status)) {
             errorisam("pqfh", opcode, fcd);    
         }        
         if (dbg > 0 || DBG_UPD) {
@@ -668,7 +720,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
                 fprintf(flog, "%ld EXTFH %04x [%s]\n", time(NULL), OP_READ_RANDOM, filename);
             }
             EXTFH(opcode, fcd);
-            if (fcd->status[0] == '9') {
+            if (is_stlog(fcd->status)) {
                 errorisam("pqfh", opcode, fcd);    
             }        
             if (dbg > 0) {
@@ -699,7 +751,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
             dbg_record(fcd);
         }
         EXTFH(opcode, fcd);
-        if (fcd->status[0] == '9') {
+        if (is_stlog(fcd->status)) {
             errorisam("pqfh", opcode, fcd);    
         }        
         if (dbg > 0 || DBG_UPD) {
@@ -763,7 +815,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
             }        
             if (fcd->isam == 'S') {
                 EXTFH(opcode, fcd);
-                if (fcd->status[0] == '9') {
+                if (is_stlog(fcd->status)) {
                     errorisam("pqfh", opcode, fcd);    
                 }        
                 if (dbg > 0) {
@@ -780,7 +832,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
                 // executa o open no isam
                 fcd->open_mode = 128;
                 EXTFH(opcode, fcd);
-                if (fcd->status[0] == '9') {
+                if (is_stlog(fcd->status)) {
                     errorisam("pqfh", opcode, fcd);    
                 }        
                 if (memcmp(fcd->status, ST_OK, 2)) {
@@ -830,7 +882,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
             }
             fcd->open_mode = open_mode; 
             EXTFH(opcode, fcd);
-            if (fcd->status[0] == '9') {
+            if (is_stlog(fcd->status)) {
                 errorisam("pqfh", opcode, fcd);    
             }        
             break;
@@ -959,7 +1011,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
                 // regrava o registro anterior
                 memcpy(fcd->record, undo, reclen);
                 EXTFH(opcode, fcd);
-                if (fcd->status[0] == '9') {
+                if (is_stlog(fcd->status)) {
                     errorisam("pqfh", opcode, fcd);    
                 }        
 
@@ -1003,7 +1055,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
                 memcpy(st, fcd->status, 2);
                 putshort(opcode, OP_DELETE);
                 EXTFH(opcode, fcd);
-                if (fcd->status[0] == '9') {
+                if (is_stlog(fcd->status)) {
                     errorisam("pqfh", opcode, fcd);    
                 }        
                 putshort(opcode, OP_WRITE);
@@ -1045,7 +1097,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
                 // insere o registro novamente no isam
                 putshort(opcode, OP_WRITE);
                 EXTFH(opcode, fcd);
-                if (fcd->status[0] == '9') {
+                if (is_stlog(fcd->status)) {
                     errorisam("pqfh", opcode, fcd);    
                 }        
                 putshort(opcode, OP_DELETE);
@@ -1285,4 +1337,5 @@ void pqfh_split(char *filename) {
 // 3.10.3 - 08/09 - abortar se for erro na chave
 // 3.10.5 - 09/09 - nao fazer lock no commit depois de erro fatal
 // 3.10.6 - 22/09 - programa abortando depois de status 41 com W
+// 3.11.0 - 23/09 - selecao de status para log
  
