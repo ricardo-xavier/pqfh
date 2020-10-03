@@ -17,7 +17,7 @@
 // insert into tabela_api values('sp05a51', 'planoGerencial');
 //
 
-#define VERSAO "v3.11.0 23/09/2020"
+#define VERSAO "v3.11.1 03/10/2020"
 
 int dbg=-1;
 int dbg_upd=-1;
@@ -1170,27 +1170,27 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
             break;
 
         case OP_REWRITE:
+            tempo_rewrite += tempo;
+            qtde_rewrite++;
             if (mode == 'W') {
                 break;
             }    
-            tempo_rewrite += tempo;
-            qtde_rewrite++;
             break;
 
         case OP_WRITE:
-            if (mode == 'W') {
-                break;
-            }    
             tempo_write += tempo;
             qtde_write++;
             break;
-
-        case OP_DELETE:
             if (mode == 'W') {
                 break;
             }    
+
+        case OP_DELETE:
             tempo_delete += tempo;
             qtde_delete++;
+            if (mode == 'W') {
+                break;
+            }    
             break;
 
     }
@@ -1338,4 +1338,6 @@ void pqfh_split(char *filename) {
 // 3.10.5 - 09/09 - nao fazer lock no commit depois de erro fatal
 // 3.10.6 - 22/09 - programa abortando depois de status 41 com W
 // 3.11.0 - 23/09 - selecao de status para log
+// 3.11.1 - 03/10 - contabilizar tempos de atualizacoes no modo W
+ 
  
