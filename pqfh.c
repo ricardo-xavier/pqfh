@@ -17,7 +17,7 @@
 // insert into tabela_api values('sp05a51', 'planoGerencial');
 //
 
-#define VERSAO "v3.11.1 03/10/2020"
+#define VERSAO "v3.11.2 05/10/2020"
 
 int dbg=-1;
 int dbg_upd=-1;
@@ -639,7 +639,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
         }
 #endif
         if (dbg > 0 || DBG_UPD) {
-            fprintf(flog, "%ld EXTFH %04x [%s]\n", time(NULL), op, filename);
+            fprintf(flog, "%ld EXTFH %04x [%s] %d\n", time(NULL), op, filename, fcd->open_mode);
             dbg_record(fcd);
         }
         EXTFH(opcode, fcd);
@@ -1339,5 +1339,6 @@ void pqfh_split(char *filename) {
 // 3.10.6 - 22/09 - programa abortando depois de status 41 com W
 // 3.11.0 - 23/09 - selecao de status para log
 // 3.11.1 - 03/10 - contabilizar tempos de atualizacoes no modo W
+// 3.11.2 - 05/10 - a tabela estava ficando aberta no load
  
  
