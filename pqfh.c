@@ -17,7 +17,7 @@
 // insert into tabela_api values('sp05a51', 'planoGerencial');
 //
 
-#define VERSAO "v3.11.2 05/10/2020"
+#define VERSAO "v3.12.0 27/10/2020"
 
 int dbg=-1;
 int dbg_upd=-1;
@@ -342,6 +342,36 @@ FILE *erropen() {
 
 }
 
+FILE *erropenbd() {
+    time_t t;
+    struct tm *tm;
+    int today, tomorow;
+    char filename[257];
+
+    umask(0);
+    t = time(NULL);
+    tm = localtime(&t);
+    today = tm->tm_mday;
+    tomorow = today + 1;
+
+    sprintf(filename, "pqfh_bd_%d.err", tomorow);
+    if (access(filename, F_OK) != -1) {
+        unlink(filename);
+    }        
+
+    if (tomorow > 28) {
+        tomorow = 1;
+        sprintf(filename, "pqfh_bd_%d.err", tomorow);
+        if (access(filename, F_OK) != -1) {
+            unlink(filename);
+        }        
+    }        
+
+    sprintf(filename, "pqfh_bd_%d.err", today);
+    return fopen(filename, "a");
+
+}
+
 void errorisam(char *msg, unsigned char *opcode, fcd_t *fcd) {
     FILE *f;
     char user[257], *u, filename[257];
@@ -387,6 +417,12 @@ void errorbd(char *command, PGresult *res) {
     } else {
         strcpy(user, u);
     }    
+    fprintf(f, "%ld BD [%s]\n%s\n%s\n\n", time(NULL), user, command, PQerrorMessage(conn));
+    fclose(f);
+
+    if ((f = erropenbd()) == NULL) {
+        return;
+    }
     fprintf(f, "%ld [%s]\n%s\n%s\n\n", time(NULL), user, command, PQerrorMessage(conn));
     fclose(f);
 }
@@ -1340,5 +1376,6 @@ void pqfh_split(char *filename) {
 // 3.11.0 - 23/09 - selecao de status para log
 // 3.11.1 - 03/10 - contabilizar tempos de atualizacoes no modo W
 // 3.11.2 - 05/10 - a tabela estava ficando aberta no load
+// 3.12.0 - 27/10 - log separado para erros de banco
  
  
