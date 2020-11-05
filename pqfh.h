@@ -209,6 +209,7 @@ void unlock(fcd_t *fcd);
 void get_debug();
 void errorisam(char *msg, unsigned char *opcode, fcd_t *fcd);
 void errorbd(char *command, PGresult *res);
+void warningbd(char *command, char *key, unsigned char status[2]);
 
 void deadlock_log(char *msg);
 void deallocate(PGconn *conn, table_t *tab);

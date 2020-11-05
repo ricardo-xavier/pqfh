@@ -10,12 +10,14 @@ extern bool partial_weak;
 extern char mode;
 extern bool fatal;
 
+char kbuf_read[MAX_KEY_LEN+1];
+
 void op_read_random(PGconn *conn, fcd_t *fcd, bool with_lock) {
     funcao = _OP_READ_RANDOM;    
 
     unsigned int   fileid ;
     unsigned short keyid, reclen, keylen;
-    char           kbuf[MAX_KEY_LEN+1], sql[257], stmt_name[65], where[MAX_REC_LEN+1];
+    char           sql[257], stmt_name[65], where[MAX_REC_LEN+1];
     int            nParams, p;
     table_t        *tab;
     column_t       *col;
@@ -60,9 +62,9 @@ void op_read_random(PGconn *conn, fcd_t *fcd, bool with_lock) {
 */
 
     keyid = getshort(fcd->key_id);
-    strcpy(kbuf, getkbuf(fcd, keyid, tab, &keylen));
+    strcpy(kbuf_read, getkbuf(fcd, keyid, tab, &keylen));
     if (dbg > 1) {
-        fprintf(flog, "%ld key %d %d [%s]\n", time(NULL), keyid, keylen, kbuf);
+        fprintf(flog, "%ld key %d %d [%s]\n", time(NULL), keyid, keylen, kbuf_read);
     }
     sprintf(stmt_name, "%s_%ld_%d", tab->name, tab->timestamp, keyid);
 
@@ -79,9 +81,9 @@ void op_read_random(PGconn *conn, fcd_t *fcd, bool with_lock) {
 
         getwhere_prepared(tab, keyid, where, 0, 's');
         if ((lock || with_lock) && (mode != 'W')) {
-            if ((tab->oid > 0) && (atoi(kbuf) > 0)) {
+            if ((tab->oid > 0) && (atoi(kbuf_read) > 0)) {
                 char result[9];
-                sprintf(sql, "SELECT pg_try_advisory_lock(%d, %d)", tab->oid, atoi(kbuf));
+                sprintf(sql, "SELECT pg_try_advisory_lock(%d, %d)", tab->oid, atoi(kbuf_read));
                 res = PQexec(conn, sql);
                 if ((PQresultStatus(res) != PGRES_TUPLES_OK) || (PQntuples(res) == 0)) {
                     strcpy(result, "f");
@@ -90,7 +92,7 @@ void op_read_random(PGconn *conn, fcd_t *fcd, bool with_lock) {
                 }
                 PQclear(res);
                 if (dbg > 0) {
-                    fprintf(flog, "%ld advisory_lock(%d,%d)=[%s]\n", time(NULL), tab->oid, atoi(kbuf), result);
+                    fprintf(flog, "%ld advisory_lock(%d,%d)=[%s]\n", time(NULL), tab->oid, atoi(kbuf_read), result);
                 }
                 if (result[0] == 'f') {
                     memcpy(fcd->status, ST_LOCKED, 2); 
@@ -100,7 +102,7 @@ void op_read_random(PGconn *conn, fcd_t *fcd, bool with_lock) {
                     }
                     return;
                 }
-                tab->advisory_lock = atoi(kbuf);
+                tab->advisory_lock = atoi(kbuf_read);
             }
         }
         sprintf(sql, "select * from %s.%s where %s", tab->schema, tab->name, where);

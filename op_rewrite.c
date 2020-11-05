@@ -10,6 +10,8 @@ extern int pending_commits;
 extern bool executed;
 extern bool fatal;
 
+extern char kbuf_read[MAX_KEY_LEN+1];
+
 bool op_rewrite(PGconn *conn, fcd_t *fcd) {
     funcao = _OP_REWRITE;    
 
@@ -70,6 +72,7 @@ bool op_rewrite(PGconn *conn, fcd_t *fcd) {
     if (memcmp(fcd->status, ST_OK, 2)) {
         // registro nao encontrado
         putshort(fcd->key_id, keyid);
+        warningbd("rewrite", kbuf_read, fcd->status);
         return false;
     }
     if (dbg > 2) {

@@ -8,6 +8,7 @@ extern bool executed;
 extern bool fatal;
 
 extern int pending_commits;
+extern char kbuf_read[MAX_KEY_LEN+1];
 
 void op_delete(PGconn *conn, fcd_t *fcd) {
     funcao = _OP_DELETE;    
@@ -54,6 +55,7 @@ void op_delete(PGconn *conn, fcd_t *fcd) {
         if (dbg > 0 || DBG_UPD) {
             fprintf(flog, "%ld status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
         }
+        warningbd("delete", kbuf_read, fcd->status);
         return;
     }
 
@@ -97,6 +99,14 @@ void op_delete(PGconn *conn, fcd_t *fcd) {
         col->p = p;
         memcpy(tab->bufs[p], fcd->record+col->offset, col->len);
         tab->bufs[p][col->len] = 0;
+        if ((col->tp == 'n') && !tab->bufs[p][0]) {
+            strcpy(tab->bufs[p], "0");
+        } else if ((col->tp == 'n') && (col->dec > 0)) {
+            memcpy(tab->bufs[p], fcd->record+col->offset, col->len-col->dec);
+            tab->bufs[p][col->len-col->dec] = '.';
+            memcpy(tab->bufs[p]+col->len-col->dec+1, fcd->record+col->offset+col->len-col->dec, col->dec);
+            tab->bufs[p][col->len+1] = 0;
+        }
         tab->values[p] = tab->bufs[p];
         tab->lengths[p] = col->len;
         tab->formats[p] = 0;

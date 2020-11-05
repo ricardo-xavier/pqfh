@@ -9,6 +9,8 @@ extern bool fatal;
 
 extern int pending_commits;
 
+extern char kbuf_read[MAX_KEY_LEN+1];
+
 bool op_write(PGconn *conn, fcd_t *fcd) {
     funcao = _OP_WRITE;    
 #ifndef ISAM
@@ -67,6 +69,7 @@ bool op_write(PGconn *conn, fcd_t *fcd) {
         if (dbg > 0 || DBG_UPD) {
             fprintf(flog, "%ld status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
         }
+        warningbd("write", kbuf_read, fcd->status);    
         putshort(fcd->key_id, keyid);
         return false;
     }

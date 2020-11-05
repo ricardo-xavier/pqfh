@@ -17,7 +17,7 @@
 // insert into tabela_api values('sp05a51', 'planoGerencial');
 //
 
-#define VERSAO "v3.12.0 27/10/2020"
+#define VERSAO "v3.12.1 05/11/2020"
 
 int dbg=-1;
 int dbg_upd=-1;
@@ -424,6 +424,33 @@ void errorbd(char *command, PGresult *res) {
         return;
     }
     fprintf(f, "%ld [%s]\n%s\n%s\n\n", time(NULL), user, command, PQerrorMessage(conn));
+    fclose(f);
+}
+
+void warningbd(char *command, char *key, unsigned char status[2]) {
+    FILE *f;
+    char user[257], *u;
+
+    if (mode != 'W') {
+        return;
+    }    
+
+    if ((f = erropen()) == NULL) {
+        return;
+    }
+    u = getenv("USER");
+    if (u == NULL) {
+        strcpy(user, "");
+    } else {
+        strcpy(user, u);
+    }    
+    fprintf(f, "%ld BD [%s] %s [%s] st=%c%c\n\n", time(NULL), user, command, key, status[0], status[1]);
+    fclose(f);
+
+    if ((f = erropenbd()) == NULL) {
+        return;
+    }
+    fprintf(f, "%ld [%s] %s [%s] st=%c%c\n\n", time(NULL), user, command, key, status[0], status[1]);
     fclose(f);
 }
 #endif
@@ -1377,5 +1404,6 @@ void pqfh_split(char *filename) {
 // 3.11.1 - 03/10 - contabilizar tempos de atualizacoes no modo W
 // 3.11.2 - 05/10 - a tabela estava ficando aberta no load
 // 3.12.0 - 27/10 - log separado para erros de banco
+// 3.12.1 - 05/11 - delete com decimal na chave e warnings de banco
  
  
