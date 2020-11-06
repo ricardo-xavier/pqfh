@@ -17,7 +17,7 @@
 // insert into tabela_api values('sp05a51', 'planoGerencial');
 //
 
-#define VERSAO "v3.12.1 05/11/2020"
+#define VERSAO "v3.12.2 06/11/2020"
 
 int dbg=-1;
 int dbg_upd=-1;
@@ -427,7 +427,7 @@ void errorbd(char *command, PGresult *res) {
     fclose(f);
 }
 
-void warningbd(char *command, char *key, unsigned char status[2]) {
+void warningbd(char *command, char *tabname, char *key, unsigned char status[2]) {
     FILE *f;
     char user[257], *u;
 
@@ -444,7 +444,7 @@ void warningbd(char *command, char *key, unsigned char status[2]) {
     } else {
         strcpy(user, u);
     }    
-    fprintf(f, "%ld BD [%s] %s [%s] st=%c%c\n\n", time(NULL), user, command, key, status[0], status[1]);
+    fprintf(f, "%ld BD [%s] %s [%s] [%s] st=%c%c\n\n", time(NULL), user, command, tabname, key, status[0], status[1]);
     fclose(f);
 
     if ((f = erropenbd()) == NULL) {
@@ -1405,5 +1405,6 @@ void pqfh_split(char *filename) {
 // 3.11.2 - 05/10 - a tabela estava ficando aberta no load
 // 3.12.0 - 27/10 - log separado para erros de banco
 // 3.12.1 - 05/11 - delete com decimal na chave e warnings de banco
+// 3.12.2 - 06/11 - aumento da variavel sql no delete e nome da tabela no warning
  
  

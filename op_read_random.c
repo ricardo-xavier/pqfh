@@ -17,7 +17,7 @@ void op_read_random(PGconn *conn, fcd_t *fcd, bool with_lock) {
 
     unsigned int   fileid ;
     unsigned short keyid, reclen, keylen;
-    char           sql[257], stmt_name[65], where[MAX_REC_LEN+1];
+    char           sql[MAX_REC_LEN+1], stmt_name[65], where[MAX_REC_LEN+1];
     int            nParams, p;
     table_t        *tab;
     column_t       *col;

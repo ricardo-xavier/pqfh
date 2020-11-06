@@ -55,7 +55,7 @@ void op_delete(PGconn *conn, fcd_t *fcd) {
         if (dbg > 0 || DBG_UPD) {
             fprintf(flog, "%ld status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
         }
-        warningbd("delete", kbuf_read, fcd->status);
+        warningbd("delete", tab->name, kbuf_read, fcd->status);
         return;
     }
 

@@ -72,7 +72,7 @@ bool op_rewrite(PGconn *conn, fcd_t *fcd) {
     if (memcmp(fcd->status, ST_OK, 2)) {
         // registro nao encontrado
         putshort(fcd->key_id, keyid);
-        warningbd("rewrite", kbuf_read, fcd->status);
+        warningbd("rewrite", tab->name, kbuf_read, fcd->status);
         return false;
     }
     if (dbg > 2) {
