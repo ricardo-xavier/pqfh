@@ -13,7 +13,7 @@ FILE *flog;
 
 #define MAX_COL_LEN  256
 #define MAX_KEY_LEN  256
-#define MAX_NAME_LEN 30
+#define MAX_NAME_LEN 50
 #define MAX_REC_LEN  19624
 #define MAX_COLS     512
 #define MAX_KEYS     16

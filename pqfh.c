@@ -17,7 +17,7 @@
 // insert into tabela_api values('sp05a51', 'planoGerencial');
 //
 
-#define VERSAO "v3.12.2 06/11/2020"
+#define VERSAO "v3.12.3 18/11/2020"
 
 int dbg=-1;
 int dbg_upd=-1;
@@ -1406,5 +1406,6 @@ void pqfh_split(char *filename) {
 // 3.12.0 - 27/10 - log separado para erros de banco
 // 3.12.1 - 05/11 - delete com decimal na chave e warnings de banco
 // 3.12.2 - 06/11 - aumento da variavel sql no delete e nome da tabela no warning
+// 3.12.5 - 18/11 - aumento do tamanho do nome das colunas
  
  
