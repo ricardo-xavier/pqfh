@@ -17,7 +17,7 @@
 // insert into tabela_api values('sp05a51', 'planoGerencial');
 //
 
-#define VERSAO "v3.12.3 18/11/2020"
+#define VERSAO "v3.12.6 24/11/2020"
 
 int dbg=-1;
 int dbg_upd=-1;
@@ -450,7 +450,7 @@ void warningbd(char *command, char *tabname, char *key, unsigned char status[2])
     if ((f = erropenbd()) == NULL) {
         return;
     }
-    fprintf(f, "%ld [%s] %s [%s] st=%c%c\n\n", time(NULL), user, command, key, status[0], status[1]);
+    fprintf(f, "%ld [%s] %s [%s] [%s] st=%c%c\n\n", time(NULL), user, command, tabname, key, status[0], status[1]);
     fclose(f);
 }
 #endif
@@ -1407,5 +1407,6 @@ void pqfh_split(char *filename) {
 // 3.12.1 - 05/11 - delete com decimal na chave e warnings de banco
 // 3.12.2 - 06/11 - aumento da variavel sql no delete e nome da tabela no warning
 // 3.12.5 - 18/11 - aumento do tamanho do nome das colunas
+// 3.12.6 - 24/11 - mostrar o nome da tabela no warningbd
  
  
