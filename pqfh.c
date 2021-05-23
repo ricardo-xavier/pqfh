@@ -17,7 +17,7 @@
 // insert into tabela_api values('sp05a51', 'planoGerencial');
 //
 
-#define VERSAO "v3.12.6 24/11/2020"
+#define VERSAO "v3.13.0 14/03/2021"
 
 int dbg=-1;
 int dbg_upd=-1;
@@ -483,6 +483,10 @@ void mostra_tempos() {
 unsigned short op;
 fcd_t *_fcd;
 
+void trataTerm(int s) {
+    fprintf(stderr, "SIGTERM\n");
+}
+
 void trataHUP(int s) {
 
     FILE *log114;
@@ -490,6 +494,7 @@ void trataHUP(int s) {
     struct tm *tm = localtime(&t);
     char *usuario;
 
+    fprintf(stderr, "SIGHUP\n");
     umask(0);
     log114 = fopen("pqfh114.log", "a");
 
@@ -570,6 +575,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
         get_debug();
         signal(SIGSEGV, trata114);
         signal(SIGHUP, trataHUP);
+        signal(SIGTERM, trataTerm);
     }
     mode = get_mode();
     executed = false;
@@ -692,6 +698,9 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
         record[reclen] = 0;
         fprintf(flog, "%ld cmd=%d %04x [%s] [%s]\n", time(NULL), ++seqcmd, op, filename, record);
     }
+    if ((mode != 'I') && (op == OP_COMMIT)) {
+        pqfh_commit();
+    }        
 
     if (((mode == 'I') || (mode == 'W') || (fcd->isam == 'S')) && memcmp(filename, "pqfh", 4)) {
 #ifdef API
@@ -841,6 +850,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
     memcpy(st, fcd->status, 2);
     open_mode = fcd->open_mode;
     switch (op) {
+
         case OP_OPEN_INPUT:
         case OP_OPEN_OUTPUT:
         case OP_OPEN_EXTEND:
@@ -1408,5 +1418,6 @@ void pqfh_split(char *filename) {
 // 3.12.2 - 06/11 - aumento da variavel sql no delete e nome da tabela no warning
 // 3.12.5 - 18/11 - aumento do tamanho do nome das colunas
 // 3.12.6 - 24/11 - mostrar o nome da tabela no warningbd
+// 3.13.0 - 14/03 - commit no sigterm
  
  

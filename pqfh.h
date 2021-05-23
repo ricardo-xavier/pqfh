@@ -160,6 +160,7 @@ typedef struct {
 #define OP_DELETE        0xfaf7
 #define OP_DELETE_FILE   0xfaf8
 #define OP_UNLOCK        0xfa0e
+#define OP_COMMIT        0xfadc
 
 #define ST_OK                "00"
 #define ST_FILE_NOT_FOUND    "35"
@@ -305,5 +306,6 @@ extern int funcao;
 #define _MEMFH_CBL_NEXT 47    
 #define _MEMFH_CBL 48    
 #define _OP_DELETE_FILE 49   
+#define _OP_COMMIT 50
 
 #endif
