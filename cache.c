@@ -99,7 +99,7 @@ void cache_remove(char *name) {
     for (ptr=cache; ptr!=NULL; ptr=ptr->prior) {
         table = (table_t *) ptr->buf;
         if (!strcmp(table->name, name)) {
-            cache = list2_remove(cache, ptr);    
+            cache = list2_remove(ptr);    
             cache = list2_last(cache);
             break;
         }

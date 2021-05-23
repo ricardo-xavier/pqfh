@@ -253,6 +253,9 @@ void cache_remove(char *name);
 void valida_comando(char *comando, char *tabela);
 bool valida_numero(table_t *tab, char *coluna, char *conteudo, bool real);
 
+void program(char *name);
+void exit_program();
+
 #ifndef MAIN
 extern int funcao;
 #endif

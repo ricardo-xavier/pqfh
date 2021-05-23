@@ -17,7 +17,7 @@
 // insert into tabela_api values('sp05a51', 'planoGerencial');
 //
 
-#define VERSAO "v3.13.0 14/03/2021"
+#define VERSAO "v3.14.0 25/05/2021"
 
 int dbg=-1;
 int dbg_upd=-1;
@@ -51,6 +51,19 @@ extern bool fatal;
 bool in_transaction=false;
 
 list2_t *stlog=NULL;
+
+list2_t *call_stack=NULL;
+
+void program(char *name) {
+    call_stack = list2_append(call_stack, name, strlen(name)+1);        
+}
+
+void exit_program() {
+    if (call_stack == NULL) {
+        return;
+    }
+    call_stack = list2_remove(call_stack);
+}
 
 void commit() {
     funcao = _COMMIT;    
@@ -374,7 +387,7 @@ FILE *erropenbd() {
 
 void errorisam(char *msg, unsigned char *opcode, fcd_t *fcd) {
     FILE *f;
-    char user[257], *u, filename[257];
+    char user[257], *u, filename[257], progname[257];
     short fnlen;
     unsigned short op;
 
@@ -385,6 +398,11 @@ void errorisam(char *msg, unsigned char *opcode, fcd_t *fcd) {
     if ((f = erropen()) == NULL) {
         return;
     }
+    if (call_stack == NULL) {
+        strcpy(progname, "");
+    } else {
+        strcpy(progname, call_stack->buf);
+    }    
     u = getenv("USER");
     if (u == NULL) {
         strcpy(user, "");
@@ -395,14 +413,14 @@ void errorisam(char *msg, unsigned char *opcode, fcd_t *fcd) {
     memcpy(filename, fcd->file_name, fnlen);
     filename[fnlen] = 0;
     op = getshort(opcode);
-    fprintf(f, "%ld [%s] [%s] %04x %c%c\n\n", time(NULL), user, filename, op, fcd->status[0], fcd->status[1]);
+    fprintf(f, "%ld [%s] [%s] [%s] %04x %c%c\n\n", time(NULL), user, progname, filename, op, fcd->status[0], fcd->status[1]);
     fclose(f);
 }
 
 #ifndef ISAM
 void errorbd(char *command, PGresult *res) {
     FILE *f;
-    char user[257], *u;
+    char user[257], *u, progname[257];
 
     if (mode != 'W') {
         return;
@@ -411,25 +429,30 @@ void errorbd(char *command, PGresult *res) {
     if ((f = erropen()) == NULL) {
         return;
     }
+    if (call_stack == NULL) {
+        strcpy(progname, "");
+    } else {
+        strcpy(progname, call_stack->buf);
+    }    
     u = getenv("USER");
     if (u == NULL) {
         strcpy(user, "");
     } else {
         strcpy(user, u);
     }    
-    fprintf(f, "%ld BD [%s]\n%s\n%s\n\n", time(NULL), user, command, PQerrorMessage(conn));
+    fprintf(f, "%ld BD [%s] [%s]\n%s\n%s\n\n", time(NULL), user, progname, command, PQerrorMessage(conn));
     fclose(f);
 
     if ((f = erropenbd()) == NULL) {
         return;
     }
-    fprintf(f, "%ld [%s]\n%s\n%s\n\n", time(NULL), user, command, PQerrorMessage(conn));
+    fprintf(f, "%ld [%s] [%s]\n%s\n%s\n\n", time(NULL), user, progname, command, PQerrorMessage(conn));
     fclose(f);
 }
 
 void warningbd(char *command, char *tabname, char *key, unsigned char status[2]) {
     FILE *f;
-    char user[257], *u;
+    char user[257], *u, progname[257];
 
     if (mode != 'W') {
         return;
@@ -438,19 +461,24 @@ void warningbd(char *command, char *tabname, char *key, unsigned char status[2])
     if ((f = erropen()) == NULL) {
         return;
     }
+    if (call_stack == NULL) {
+        strcpy(progname, "");
+    } else {
+        strcpy(progname, call_stack->buf);
+    }    
     u = getenv("USER");
     if (u == NULL) {
         strcpy(user, "");
     } else {
         strcpy(user, u);
     }    
-    fprintf(f, "%ld BD [%s] %s [%s] [%s] st=%c%c\n\n", time(NULL), user, command, tabname, key, status[0], status[1]);
+    fprintf(f, "%ld BD [%s] [%s] %s [%s] [%s] st=%c%c\n\n", time(NULL), user, progname, command, tabname, key, status[0], status[1]);
     fclose(f);
 
     if ((f = erropenbd()) == NULL) {
         return;
     }
-    fprintf(f, "%ld [%s] %s [%s] [%s] st=%c%c\n\n", time(NULL), user, command, tabname, key, status[0], status[1]);
+    fprintf(f, "%ld [%s] [%s] %s [%s] [%s] st=%c%c\n\n", time(NULL), user, progname, command, tabname, key, status[0], status[1]);
     fclose(f);
 }
 #endif
@@ -492,7 +520,7 @@ void trataHUP(int s) {
     FILE *log114;
     time_t t = time(NULL);
     struct tm *tm = localtime(&t);
-    char *usuario;
+    char *usuario, progname[257];
 
     fprintf(stderr, "SIGHUP\n");
     umask(0);
@@ -501,9 +529,14 @@ void trataHUP(int s) {
     fprintf(log114, "%02d/%02d/%04d %02d:%02d:%02d\n", tm->tm_mday, tm->tm_mon+1, tm->tm_year+1900,
                     tm->tm_hour, tm->tm_min, tm->tm_sec);
 
+    if (call_stack == NULL) {
+        strcpy(progname, "");
+    } else {
+        strcpy(progname, call_stack->buf);
+    }    
     usuario = getenv("USER");
     if (usuario != NULL) {
-        fprintf(log114, "usuario=%s HANGUP\n\n", usuario);
+        fprintf(log114, "usuario=%s programa=%s HANGUP\n\n", usuario, progname);
     } else {
         fprintf(log114, "HANGUP\n\n");
     }        
@@ -519,7 +552,7 @@ void trata114(int s) {
     struct tm *tm = localtime(&t);
     short reclen, fnlen;
     char filename[257], record[MAX_REC_LEN+1];
-    char *usuario;
+    char *usuario, progname[257];
 
     umask(0);
     log114 = fopen("pqfh114.log", "a");
@@ -527,9 +560,14 @@ void trata114(int s) {
     fprintf(log114, "%02d/%02d/%04d %02d:%02d:%02d\n", tm->tm_mday, tm->tm_mon+1, tm->tm_year+1900,
                     tm->tm_hour, tm->tm_min, tm->tm_sec);
 
+    if (call_stack == NULL) {
+        strcpy(progname, "");
+    } else {
+        strcpy(progname, call_stack->buf);
+    }    
     usuario = getenv("USER");
     if (usuario != NULL) {
-        fprintf(log114, "usuario=%s\n", usuario);
+        fprintf(log114, "usuario=%s programa=%s\n", usuario, progname);
     }    
 
     fprintf(log114, "op=%04x\n", op);
@@ -1419,5 +1457,6 @@ void pqfh_split(char *filename) {
 // 3.12.5 - 18/11 - aumento do tamanho do nome das colunas
 // 3.12.6 - 24/11 - mostrar o nome da tabela no warningbd
 // 3.13.0 - 14/03 - commit no sigterm
+// 3.14.0 - 23/05 - call_stack
  
  

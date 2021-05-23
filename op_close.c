@@ -42,7 +42,7 @@ bool op_close(PGconn *conn, fcd_t *fcd) {
         for (ptr=list2_first(weak); ptr!=NULL; ptr=ptr->next) {
             char *buf = (char *) ptr->buf;
             if (!strcmp(buf, tab->name)) {
-                weak = list2_remove(weak, ptr);
+                weak = list2_remove(ptr);
                 break;
             }
         }

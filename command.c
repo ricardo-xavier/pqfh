@@ -37,6 +37,14 @@ void command(PGconn *conn, fcd_t *fcd) {
         table_mode = fcd->record[5];    
     }
 
+    if (!memcmp(fcd->record, "PROGRAM:", 8)) {
+        program((char *) (fcd->record+8));
+    }
+
+    if (!memcmp(fcd->record, "EXIT_PROGRAM", 12)) {
+        exit_program();
+    }
+
     if (!memcmp(fcd->record, "FREE", 4)) {
         table_mode = 'F';
     }

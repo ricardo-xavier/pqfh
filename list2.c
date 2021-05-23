@@ -43,7 +43,7 @@ list2_t *list2_append(list2_t *list, void *buf, int size) {
     return item;
 }
 
-list2_t *list2_remove(list2_t *list, list2_t *item) {
+list2_t *list2_remove(list2_t *item) {
 
     list2_t *ptr;
 
@@ -57,7 +57,7 @@ list2_t *list2_remove(list2_t *list, list2_t *item) {
         ptr = item->prior;
         item->prior->next = NULL;
         item->prior = NULL;
-        list2_remove(NULL, item);
+        list2_remove(item);
         return ptr;
     }
 
@@ -65,7 +65,7 @@ list2_t *list2_remove(list2_t *list, list2_t *item) {
         ptr = item->next;
         item->next->prior = NULL;
         item->next = NULL;
-        list2_remove(NULL, item);
+        list2_remove(item);
         return ptr;
     }
 
@@ -74,7 +74,7 @@ list2_t *list2_remove(list2_t *list, list2_t *item) {
     item->prior->next = item->next;
     item->next = NULL;
     item->prior = NULL;
-    list2_remove(NULL, item);
+    list2_remove(item);
     return ptr;
 
 }
@@ -82,7 +82,7 @@ list2_t *list2_remove(list2_t *list, list2_t *item) {
 list2_t *list2_free(list2_t *list) {
     list = list2_first(list);
     while (list != NULL) {
-        list = list2_remove(list, list);
+        list = list2_remove(list);
     }
     return NULL;
 }
