@@ -33,8 +33,10 @@ void op_read_random(PGconn *conn, fcd_t *fcd, bool with_lock) {
             char filename[257];
             memcpy(filename, (char *) fcd->file_name, fnlen);
             filename[fnlen] = 0;
-            fprintf(flog, "%ld op_read_random [%s] %d\n", time(NULL), filename, (int) fcd->open_mode);
-            fprintf(flog, "%ld status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
+            if (log_table(filename)) {
+                fprintf(flog, "%ld op_read_random [%s] %d\n", time(NULL), filename, (int) fcd->open_mode);
+                fprintf(flog, "%ld status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
+            }    
         }
         return;
     }
@@ -48,7 +50,7 @@ void op_read_random(PGconn *conn, fcd_t *fcd, bool with_lock) {
 
     tab = (table_t *) fileid;
     if (dbg > 0) {
-        fprintf(flog, "%ld op_read_random [%s] lock mode=%d ignore lock=%d\n", time(NULL), tab->name, fcd->lock_mode, fcd->ignore_lock);
+        if (log_table(tab->name)) fprintf(flog, "%ld op_read_random [%s] lock mode=%d ignore lock=%d\n", time(NULL), tab->name, fcd->lock_mode, fcd->ignore_lock);
     }
 
     if (tab->advisory_lock > 0) {
@@ -64,7 +66,7 @@ void op_read_random(PGconn *conn, fcd_t *fcd, bool with_lock) {
     keyid = getshort(fcd->key_id);
     strcpy(kbuf_read, getkbuf(fcd, keyid, tab, &keylen));
     if (dbg > 1) {
-        fprintf(flog, "%ld key %d %d [%s]\n", time(NULL), keyid, keylen, kbuf_read);
+        if (log_table(tab->name)) fprintf(flog, "%ld key %d %d [%s]\n", time(NULL), keyid, keylen, kbuf_read);
     }
     sprintf(stmt_name, "%s_%ld_%d", tab->name, tab->timestamp, keyid);
 
@@ -92,13 +94,13 @@ void op_read_random(PGconn *conn, fcd_t *fcd, bool with_lock) {
                 }
                 PQclear(res);
                 if (dbg > 0) {
-                    fprintf(flog, "%ld advisory_lock(%d,%d)=[%s]\n", time(NULL), tab->oid, atoi(kbuf_read), result);
+                    if (log_table(tab->name)) fprintf(flog, "%ld advisory_lock(%d,%d)=[%s]\n", time(NULL), tab->oid, atoi(kbuf_read), result);
                 }
                 if (result[0] == 'f') {
                     memcpy(fcd->status, ST_LOCKED, 2); 
                     sleep(1);
                     if (dbg > 0) {
-                        fprintf(flog, "%ld status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
+                        if (log_table(tab->name)) fprintf(flog, "%ld status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
                     }
                     return;
                 }
@@ -109,12 +111,12 @@ void op_read_random(PGconn *conn, fcd_t *fcd, bool with_lock) {
         nParams = list2_size(tab->prms_random[keyid]);
 
         if (dbg > 1) {
-            fprintf(flog, "%ld %s\n", time(NULL), sql);
+            if (log_table(tab->name)) fprintf(flog, "%ld %s\n", time(NULL), sql);
         }
 
         res = PQprepare(conn, stmt_name, sql, nParams, NULL);
         if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-            fprintf(flog, "%ld Erro na execucao do comando: %s\n%s\n", time(NULL), PQerrorMessage(conn), sql);
+            if (log_table(tab->name)) fprintf(flog, "%ld Erro na execucao do comando: %s\n%s\n", time(NULL), PQerrorMessage(conn), sql);
             exit(-1);
         }
         PQclear(res);
@@ -158,13 +160,13 @@ void op_read_random(PGconn *conn, fcd_t *fcd, bool with_lock) {
         gettimeofday(&tv3, NULL);
         long tempo1 = ((tv3.tv_sec * 1000000) + tv3.tv_usec) - ((tv1.tv_sec * 1000000) + tv1.tv_usec);
         long tempo2 = ((tv3.tv_sec * 1000000) + tv3.tv_usec) - ((tv2.tv_sec * 1000000) + tv2.tv_usec);
-        fprintf(flog, "%ld op_read_random [%s] tempo=%ld %ld\n", time(NULL), tab->name, tempo1, tempo2);
+        if (log_table(tab->name)) fprintf(flog, "%ld op_read_random [%s] tempo=%ld %ld\n", time(NULL), tab->name, tempo1, tempo2);
     }
 
     if ((PQresultStatus(res) != PGRES_TUPLES_OK) || (PQntuples(res) == 0))  {
         memcpy(fcd->status, ST_REC_NOT_FOUND, 2);
         if (dbg > 0) {
-            fprintf(flog, "%ld %d %s\n", time(NULL), PQresultStatus(res), PQerrorMessage(conn));
+            if (log_table(tab->name)) fprintf(flog, "%ld %d %s\n", time(NULL), PQresultStatus(res), PQerrorMessage(conn));
         }
     } else {
         if (!partial_weak) {
@@ -175,6 +177,6 @@ void op_read_random(PGconn *conn, fcd_t *fcd, bool with_lock) {
     PQclear(res);
 
     if (dbg > 0) {
-        fprintf(flog, "%ld status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
+        if (log_table(tab->name)) fprintf(flog, "%ld status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
     }
 }

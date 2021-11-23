@@ -17,13 +17,14 @@
 // insert into tabela_api values('sp05a51', 'planoGerencial');
 //
 
-#define VERSAO "v3.14.0 25/05/2021"
+#define VERSAO "v3.15.4 22/11/2021"
 
 int dbg=-1;
 int dbg_upd=-1;
 int dbg_times=-1;
 int dbg_cmp=-1;
 int dbg_lock=-1;
+char *dbg_tables=NULL;
 char mode='I';
 bool force_bd;
 char *api=NULL;
@@ -160,15 +161,36 @@ void warning(void *arg, const char *message) {
     }
 }
 
+bool log_fcd(fcd_t *fcd) {
+    char           filename[4097];
+    unsigned short fnlen;
+    if (dbg_tables == NULL) return true;    
+    fnlen = getshort(fcd->file_name_len);
+    if (fnlen == 0) return true;
+    memcpy(filename, (char *) fcd->file_name, fnlen);
+    filename[fnlen] = 0;
+    return log_table(filename);        
+}
+
+bool log_table(char *filename) {
+    char *p, aux[4097], *tabname=filename;
+    if (dbg_tables == NULL || filename == NULL || filename[0] == 0 || filename[0] == ' ') return true;    
+    if ((p = strrchr(filename, '/')) != NULL) {
+        tabname = p+1;    
+    }        
+    sprintf(aux, ",%s,", tabname);
+    return strstr(dbg_tables, aux) != NULL;        
+}
+
 void unlock(fcd_t *fcd) {
     funcao = _UNLOCK;    
     table_t *tab;
-    char sql[257];
+    char sql[4097];
     PGresult *res;
     unsigned int fileid = getint(fcd->file_id);
     tab = (table_t *) fileid;
     if (dbg > 0) {
-        fprintf(flog, "%ld unlock [%s] %d %d\n", time(NULL), tab->name, tab->oid, tab->advisory_lock);
+        if (log_table(tab->name)) fprintf(flog, "%ld unlock [%s] %d %d\n", time(NULL), tab->name, tab->oid, tab->advisory_lock);
     }
     sprintf(sql, "SELECT pg_advisory_unlock(%d, %d)", tab->oid, tab->advisory_lock);
     res = PQexec(conn, sql);
@@ -280,6 +302,13 @@ void get_debug() {
     } else {
         dbg = atoi(env);
     }
+    env = getenv("PQFH_DBG_TABLES");
+    if (env == NULL) {
+        dbg_tables = NULL;
+    } else {
+        dbg_tables = malloc(strlen(env) + 3);
+        sprintf(dbg_tables, ",%s,", env);
+    }        
     env = getenv("PQFH_DBG_UPD");
     if (env == NULL) {
         dbg_upd = 0;
@@ -334,7 +363,7 @@ FILE *erropen() {
     time_t t;
     struct tm *tm;
     int today, tomorow;
-    char filename[257];
+    char filename[4097];
 
     umask(0);
     t = time(NULL);
@@ -359,7 +388,7 @@ FILE *erropenbd() {
     time_t t;
     struct tm *tm;
     int today, tomorow;
-    char filename[257];
+    char filename[4097];
 
     umask(0);
     t = time(NULL);
@@ -387,7 +416,7 @@ FILE *erropenbd() {
 
 void errorisam(char *msg, unsigned char *opcode, fcd_t *fcd) {
     FILE *f;
-    char user[257], *u, filename[257], progname[257];
+    char user[4097], *u, filename[4097], progname[4097];
     short fnlen;
     unsigned short op;
 
@@ -420,7 +449,7 @@ void errorisam(char *msg, unsigned char *opcode, fcd_t *fcd) {
 #ifndef ISAM
 void errorbd(char *command, PGresult *res) {
     FILE *f;
-    char user[257], *u, progname[257];
+    char user[4097], *u, progname[4097];
 
     if (mode != 'W') {
         return;
@@ -452,7 +481,7 @@ void errorbd(char *command, PGresult *res) {
 
 void warningbd(char *command, char *tabname, char *key, unsigned char status[2]) {
     FILE *f;
-    char user[257], *u, progname[257];
+    char user[4097], *u, progname[4097];
 
     if (mode != 'W') {
         return;
@@ -488,7 +517,7 @@ void dbg_status(char *msg, fcd_t *fcd) {
     char aux[MAX_REC_LEN+1];
     memcpy(aux, fcd->record, reclen);
     aux[reclen] = 0;
-    fprintf(flog, "%s st=%c%c [%s] exec=%d\n\n", msg, fcd->status[0], fcd->status[1], aux, executed);
+    if (log_fcd(fcd)) fprintf(flog, "%s st=%c%c [%s] exec=%d\n\n", msg, fcd->status[0], fcd->status[1], aux, executed);
 }
 
 void mostra_tempos() {
@@ -520,7 +549,7 @@ void trataHUP(int s) {
     FILE *log114;
     time_t t = time(NULL);
     struct tm *tm = localtime(&t);
-    char *usuario, progname[257];
+    char *usuario, progname[4097];
 
     fprintf(stderr, "SIGHUP\n");
     umask(0);
@@ -551,8 +580,8 @@ void trata114(int s) {
     time_t t = time(NULL);
     struct tm *tm = localtime(&t);
     short reclen, fnlen;
-    char filename[257], record[MAX_REC_LEN+1];
-    char *usuario, progname[257];
+    char filename[4097], record[MAX_REC_LEN+1];
+    char *usuario, progname[4097];
 
     umask(0);
     log114 = fopen("pqfh114.log", "a");
@@ -593,7 +622,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
 
     struct timeval tv1, tv2;
     short          reclen, fnlen;
-    char           filename[257], record[MAX_REC_LEN+1];
+    char           filename[4097], record[MAX_REC_LEN+1];
     long           tempo;
     unsigned char  open_mode, salva_isam;
     char           st[2];
@@ -622,6 +651,13 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
     fnlen = getshort(fcd->file_name_len);
     memcpy(filename, fcd->file_name, fnlen);
     filename[fnlen] = 0;
+    if (fnlen > 256) {
+        fprintf(stderr, "FNLEN=%d [%s]\n", fnlen, filename);    
+        putshort(fcd->file_name_len, 256);
+        fnlen = getshort(fcd->file_name_len);
+        memcpy(filename, fcd->file_name, fnlen);
+        filename[fnlen] = 0;
+    }    
     op = getshort(opcode);
     salva_isam = 0;
 
@@ -749,7 +785,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
         }
 #endif
         if (dbg > 0 || DBG_UPD) {
-            fprintf(flog, "%ld EXTFH %04x [%s] %d\n", time(NULL), op, filename, fcd->open_mode);
+            if (log_table(filename)) fprintf(flog, "%ld EXTFH %04x [%s] %d\n", time(NULL), op, filename, fcd->open_mode);
             dbg_record(fcd);
         }
         EXTFH(opcode, fcd);
@@ -757,7 +793,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
             errorisam("pqfh", opcode, fcd);    
         }        
         if (dbg > 0 || DBG_UPD) {
-            fprintf(flog, "%ld EXTFH status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
+            if (log_fcd(fcd)) fprintf(flog, "%ld EXTFH status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
         }
         if (op <= OP_OPEN_EXTEND) {
             fcd_open = fcd;
@@ -772,7 +808,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
             dbg_status("ISAM", fcd);
         }
         if ((dbg_lock > 0) && (fcd->status[0] == '9')) {
-            fprintf(flog, "%ld EXTFH %04x [%s] lock: status=%c%c\n", time(NULL), op, filename, fcd->status[0], fcd->status[1]);        
+            if (log_table(filename)) fprintf(flog, "%ld EXTFH %04x [%s] lock: status=%c%c\n", time(NULL), op, filename, fcd->status[0], fcd->status[1]);        
         }        
         if (op == OP_CLOSE) {
             mostra_tempos();
@@ -827,14 +863,14 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
             memcpy(record, fcd->record, reclen);
             putshort(opcode, OP_READ_RANDOM);
             if (dbg > 0) {
-                fprintf(flog, "%ld EXTFH %04x [%s]\n", time(NULL), OP_READ_RANDOM, filename);
+                if (log_table(filename)) fprintf(flog, "%ld EXTFH %04x [%s]\n", time(NULL), OP_READ_RANDOM, filename);
             }
             EXTFH(opcode, fcd);
             if (is_stlog(fcd->status)) {
                 errorisam("pqfh", opcode, fcd);    
             }        
             if (dbg > 0) {
-                fprintf(flog, "%ld EXTFH status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
+                if (log_fcd(fcd)) fprintf(flog, "%ld EXTFH status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
             }
             putshort(opcode, op);
 
@@ -857,7 +893,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
 
         // executa primeiro no ISAM
         if ((dbg > 0) || DBG_UPD) {
-            fprintf(flog, "%ld EXTFH %04x [%s]\n", time(NULL), op, filename);
+            if (log_table(filename)) fprintf(flog, "%ld EXTFH %04x [%s]\n", time(NULL), op, filename);
             dbg_record(fcd);
         }
         EXTFH(opcode, fcd);
@@ -865,7 +901,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
             errorisam("pqfh", opcode, fcd);    
         }        
         if (dbg > 0 || DBG_UPD) {
-            fprintf(flog, "%ld EXTFH status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
+            if (log_fcd(fcd)) fprintf(flog, "%ld EXTFH status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
         }
         gettimeofday(&tv2, NULL);
         tempo = ((tv2.tv_sec * 1000000) + tv2.tv_usec) - ((tv1.tv_sec * 1000000) + tv1.tv_usec);
@@ -930,7 +966,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
                     errorisam("pqfh", opcode, fcd);    
                 }        
                 if (dbg > 0) {
-                    fprintf(flog, "%ld EXTFH status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
+                    if (log_fcd(fcd)) fprintf(flog, "%ld EXTFH status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
                 }
                 break;
             }
@@ -950,7 +986,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
                     // erro no isam
                     // fecha e retorna o erro do isam
                     if (dbg > 0) {
-                        fprintf(flog, "%ld desfaz open %c%c\n", time(NULL), fcd->status[0], fcd->status[1]);
+                        if (log_fcd(fcd)) fprintf(flog, "%ld desfaz open %c%c\n", time(NULL), fcd->status[0], fcd->status[1]);
                     }
                     memcpy(st, fcd->status, 2);
                     op_close(conn, fcd);
@@ -1112,7 +1148,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
                 // erro no update do banco
                 // desfaz o isam
                 if (dbg > 1 || DBG_UPD) {
-                    fprintf(flog, "%ld desfaz rewrite %c%c\n", time(NULL), fcd->status[0], fcd->status[1]);
+                    if (log_fcd(fcd)) fprintf(flog, "%ld desfaz rewrite %c%c\n", time(NULL), fcd->status[0], fcd->status[1]);
                 }
 
                 // salva o registro atual e o status
@@ -1161,7 +1197,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
                 // erro no insert do banco
                 // desfaz o isam
                 if (dbg > 0 || DBG_UPD) {
-                    fprintf(flog, "%ld desfaz write %c%c\n", time(NULL), fcd->status[0], fcd->status[1]);
+                    if (log_fcd(fcd)) fprintf(flog, "%ld desfaz write %c%c\n", time(NULL), fcd->status[0], fcd->status[1]);
                 }
                 memcpy(st, fcd->status, 2);
                 putshort(opcode, OP_DELETE);
@@ -1198,7 +1234,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
                 // erro no delete do banco
                 // desfaz o isam
                 if (dbg > 0 || DBG_UPD) {
-                    fprintf(flog, "%ld desfaz delete %c%c\n", time(NULL), fcd->status[0], fcd->status[1]);
+                    if (log_fcd(fcd)) fprintf(flog, "%ld desfaz delete %c%c\n", time(NULL), fcd->status[0], fcd->status[1]);
                 }
 
                 // salva o registro atual e o status
@@ -1310,7 +1346,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
         dbg_status("", fcd);
     }
     if ((dbg_lock > 0) && (fcd->status[0] == '9')) {
-        fprintf(flog, "%ld %04x [%s] lock: status=%c%c\n", time(NULL), op, filename, fcd->status[0], fcd->status[1]);        
+        if (log_table(filename)) fprintf(flog, "%ld %04x [%s] lock: status=%c%c\n", time(NULL), op, filename, fcd->status[0], fcd->status[1]);        
     }        
 #ifndef ISAM
     pthread_mutex_unlock(&lock);

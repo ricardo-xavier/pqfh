@@ -39,8 +39,10 @@ bool op_write(PGconn *conn, fcd_t *fcd) {
             char filename[257];
             memcpy(filename, (char *) fcd->file_name, fnlen);
             filename[fnlen] = 0;
-            fprintf(flog, "%ld op_write [%s] %d\n", time(NULL), filename, (int) fcd->open_mode);
-            fprintf(flog, "%ld status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
+            if (log_table(filename)) {
+                fprintf(flog, "%ld op_write [%s] %d\n", time(NULL), filename, (int) fcd->open_mode);
+                fprintf(flog, "%ld status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
+            }    
         }
         return false;
     }
@@ -50,7 +52,7 @@ bool op_write(PGconn *conn, fcd_t *fcd) {
     tab = (table_t *) fileid;
     op = OP_WRITE;
     if (dbg > 0 || DBG_UPD) {
-        fprintf(flog, "%ld op_write [%s]\n", time(NULL), tab->name);
+        if (log_table(tab->name)) fprintf(flog, "%ld op_write [%s]\n", time(NULL), tab->name);
         dbg_record(fcd);
     }
 #endif
@@ -61,13 +63,13 @@ bool op_write(PGconn *conn, fcd_t *fcd) {
 
     // verifica se o registro ja existe
     if (dbg > 2) {
-        fprintf(flog, "%ld op_write verifica se o registro existe no banco\n", time(NULL));
+        if (log_table(tab->name)) fprintf(flog, "%ld op_write verifica se o registro existe no banco\n", time(NULL));
     }
     op_read_random(conn, fcd, false);
     if (!memcmp(fcd->status, ST_OK, 2)) {
         memcpy(fcd->status, ST_DUPL_KEY, 2);
         if (dbg > 0 || DBG_UPD) {
-            fprintf(flog, "%ld status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
+            if (log_table(tab->name)) fprintf(flog, "%ld status=%c%c\n\n", time(NULL), fcd->status[0], fcd->status[1]);
         }
         warningbd("write", tab->name, kbuf_read, fcd->status);    
         putshort(fcd->key_id, keyid);
@@ -105,13 +107,13 @@ bool op_write(PGconn *conn, fcd_t *fcd) {
         strcat(sql, ")");
 
         if (dbg > 1) {
-            fprintf(flog, "%ld %s\n", time(NULL), sql);
+            if (log_table(tab->name)) fprintf(flog, "%ld %s\n", time(NULL), sql);
         }
         tab->ins_prepared = true;
 
         res = PQprepare(conn, stmt_name, sql, p, NULL);
         if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-            fprintf(flog, "%ld Erro na execucao do comando: %s\n%s\n", time(NULL), PQerrorMessage(conn), sql);
+            if (log_table(tab->name)) fprintf(flog, "%ld Erro na execucao do comando: %s\n%s\n", time(NULL), PQerrorMessage(conn), sql);
             exit(-1);
         }
         PQclear(res);
@@ -119,7 +121,7 @@ bool op_write(PGconn *conn, fcd_t *fcd) {
     }
 
     if (dbg > 2) {
-        fprintf(flog, "%ld op_write seta parametros para o insert\n", time(NULL));
+        if (log_table(tab->name)) fprintf(flog, "%ld op_write seta parametros para o insert\n", time(NULL));
     }
     // seta os parametros
     p = 0;
@@ -163,7 +165,7 @@ bool op_write(PGconn *conn, fcd_t *fcd) {
         }
 
         if (dbg > 2) {
-            fprintf(flog, "    %d %s %c %d:%d,%d [%s]\n", p, col->name, col->tp, col->offset, col->len, col->dec, tab->bufs[p]);
+            if (log_table(tab->name)) fprintf(flog, "    %d %s %c %d:%d,%d [%s]\n", p, col->name, col->tp, col->offset, col->len, col->dec, tab->bufs[p]);
         }
         p++;
 
@@ -172,7 +174,7 @@ bool op_write(PGconn *conn, fcd_t *fcd) {
 
     // executa o comando
     if (dbg > 2) {
-        fprintf(flog, "%ld op_write executa o insert\n", time(NULL));
+        if (log_table(tab->name)) fprintf(flog, "%ld op_write executa o insert\n", time(NULL));
     }
     res =  PQexecPrepared(conn, stmt_name, p, tab->values, tab->lengths, tab->formats, 0);
     executed = true;
@@ -183,7 +185,7 @@ bool op_write(PGconn *conn, fcd_t *fcd) {
             deadlock_log(PQerrorMessage(conn));
         }
         if (dbg > 0) {
-            fprintf(flog, "%ld %s\n", time(NULL), PQerrorMessage(conn));
+            if (log_table(tab->name)) fprintf(flog, "%ld %s\n", time(NULL), PQerrorMessage(conn));
         }
     } else {
         if (tab->clones != NULL) {
@@ -195,7 +197,7 @@ bool op_write(PGconn *conn, fcd_t *fcd) {
     pending_commits++;
 
     if (dbg > 0 || DBG_UPD) {
-        fprintf(flog, "%ld status=%c%c commits=%d\n\n", time(NULL), fcd->status[0], fcd->status[1], pending_commits);
+        if (log_table(tab->name)) fprintf(flog, "%ld status=%c%c commits=%d\n\n", time(NULL), fcd->status[0], fcd->status[1], pending_commits);
     }
     putshort(fcd->key_id, keyid);
 

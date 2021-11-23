@@ -102,7 +102,7 @@ void getkeys(fcd_t *fcd, table_t *tab) {
     }
     tab->keys = list2_first(tab->keys);
 
-    if (dbg > 2) {
+    if (dbg > 2 && log_table(tab->name)) {
         for (ptr=tab->keys; ptr!=NULL; ptr=ptr->next) {
             _key_t *key = (_key_t *) ptr->buf;
             fprintf(flog, "%ld key %d %d %d\n", time(NULL), key->id, key->ncomps, key->ncols);

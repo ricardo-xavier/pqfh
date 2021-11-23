@@ -87,7 +87,7 @@ bool table_info(PGconn *conn, table_t *table, fcd_t *fcd) {
         // declara o cursor
         sprintf(sql, "declare cursor_columns cursor for  \nselect column_name,data_type,character_maximum_length,numeric_precision,numeric_scale\n    from information_schema.columns\n    where table_name = '%s'\n    order by ordinal_position", table->name);
         if (dbg > 1) {
-            fprintf(flog, "%ld %s\n", time(NULL), sql);
+            if (log_table(table->name)) fprintf(flog, "%ld %s\n", time(NULL), sql);
         }
         res = PQexec(conn, sql);
         if (PQresultStatus(res) != PGRES_COMMAND_OK) {
@@ -131,7 +131,7 @@ bool table_info(PGconn *conn, table_t *table, fcd_t *fcd) {
             }
 
             if (dbg > 2) {
-                fprintf(flog, "    %d %d %s %c %d\n", i, offset, col.name, col.tp, col.len);
+                if (log_table(table->name)) fprintf(flog, "    %d %d %s %c %d\n", i, offset, col.name, col.tp, col.len);
             }
 
             PQclear(res);
@@ -211,7 +211,7 @@ char *get_schema(PGconn *conn, char *table) {
     // declara o cursor
     sprintf(sql, "declare cursor_tables cursor for  \nselect table_schema\n    from information_schema.tables\n    where table_name = '%s'", table);
     if (dbg > 1) {
-        fprintf(flog, "%ld %s\n", time(NULL), sql);
+        if (log_table(table)) fprintf(flog, "%ld %s\n", time(NULL), sql);
     }
     res = PQexec(conn, sql);
     if (PQresultStatus(res) != PGRES_COMMAND_OK) {
@@ -331,7 +331,7 @@ bool tabela_convertida(char *tabela) {
         char aux[33];
         memcpy(aux, fcd01.record, strlen(tabela));
         aux[strlen(tabela)] = 0;
-        fprintf(flog, "%ld %s [%s] %c %c [%s] [%c]\n", time(NULL), fcd01.file_name, tabela, fcd01.status[0], fcd01.status[1], aux, fcd01.record[26]);
+        if (log_table(tabela)) fprintf(flog, "%ld %s [%s] %c %c [%s] [%c]\n", time(NULL), fcd01.file_name, tabela, fcd01.status[0], fcd01.status[1], aux, fcd01.record[26]);
     }
 
     return (fcd01.status[0] == '0') && (fcd01.status[1] == '0') && !memcmp(fcd01.record, tabela, strlen(tabela))
@@ -431,7 +431,7 @@ bool nome_dicionario(char *tabela, char *nome) {
         prefixo[4] = 0;
     }    
     if (dbg > 2) {
-        fprintf(flog, "%ld prefixo [%s]\n", time(NULL), prefixo);
+        if (log_table(tabela)) fprintf(flog, "%ld prefixo [%s]\n", time(NULL), prefixo);
     }
 
     memset(fcd02.record, 0, 256);
@@ -451,7 +451,7 @@ bool nome_dicionario(char *tabela, char *nome) {
         if ((p = strchr(nome, ' ')) != NULL) *p=0;
     }
     if (dbg > 2) {
-        fprintf(flog, "%ld %s dicionario [%s] %c %c [%s]\n", time(NULL), fcd02.file_name, tabela, fcd02.status[0], fcd02.status[1], nome);
+        if (log_table(tabela)) fprintf(flog, "%ld %s dicionario [%s] %c %c [%s]\n", time(NULL), fcd02.file_name, tabela, fcd02.status[0], fcd02.status[1], nome);
     }
     return ret;
     

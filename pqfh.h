@@ -255,6 +255,8 @@ bool valida_numero(table_t *tab, char *coluna, char *conteudo, bool real);
 
 void program(char *name);
 void exit_program();
+bool log_fcd(fcd_t *fcd);
+bool log_table(char *filename);
 
 #ifndef MAIN
 extern int funcao;

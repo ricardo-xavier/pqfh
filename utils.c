@@ -25,11 +25,11 @@ void deallocate(PGconn *conn, table_t *tab) {
         if (tab->read_prepared[k]) {
             tab->read_prepared[k] = false;
             sprintf(sql, "deallocate %s_%ld_%d", tab->name, tab->timestamp, k);
-            if (dbg > 1) {
+            if (dbg > 1 && log_table(tab->name)) {
                 fprintf(flog, "%ld %s\n", time(NULL), sql);
             }
             res = PQexec(conn, sql);
-            if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+            if (PQresultStatus(res) != PGRES_COMMAND_OK && log_table(tab->name)) {
                 fprintf(flog, "%ld Erro na execucao do comando: %s\n%s\n", time(NULL), PQerrorMessage(conn), sql);
             }
             PQclear(res);
@@ -39,11 +39,11 @@ void deallocate(PGconn *conn, table_t *tab) {
     if (tab->ins_prepared) {
         tab->ins_prepared = false;
         sprintf(sql, "deallocate %s_%ld_ins", tab->name, tab->timestamp);
-        if (dbg > 1) {
+        if (dbg > 1 && log_table(tab->name)) {
             fprintf(flog, "%ld %s\n", time(NULL), sql);
         }
         res = PQexec(conn, sql);
-        if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+        if (PQresultStatus(res) != PGRES_COMMAND_OK && log_table(tab->name)) {
             fprintf(flog, "%ld Erro na execucao do comando: %s\n%s\n", time(NULL), PQerrorMessage(conn), sql);
         }
         PQclear(res);
@@ -52,11 +52,11 @@ void deallocate(PGconn *conn, table_t *tab) {
     if (tab->upd_prepared) {
         tab->upd_prepared = false;
         sprintf(sql, "deallocate %s_%ld_upd", tab->name, tab->timestamp);
-        if (dbg > 1) {
+        if (dbg > 1 && log_table(tab->name)) {
             fprintf(flog, "%ld %s\n", time(NULL), sql);
         }
         res = PQexec(conn, sql);
-        if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+        if (PQresultStatus(res) != PGRES_COMMAND_OK && log_table(tab->name)) {
             fprintf(flog, "%ld Erro na execucao do comando: %s\n%s\n", time(NULL), PQerrorMessage(conn), sql);
         }
         PQclear(res);
@@ -65,11 +65,11 @@ void deallocate(PGconn *conn, table_t *tab) {
     if (tab->del_prepared) {
         tab->del_prepared = false;
         sprintf(sql, "deallocate %s_%ld_del", tab->name, tab->timestamp);
-        if (dbg > 1) {
+        if (dbg > 1 && log_table(tab->name)) {
             fprintf(flog, "%ld %s\n", time(NULL), sql);
         }
         res = PQexec(conn, sql);
-        if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+        if (PQresultStatus(res) != PGRES_COMMAND_OK && log_table(tab->name)) {
             fprintf(flog, "%ld Erro na execucao do comando: %s\n%s\n", time(NULL), PQerrorMessage(conn), sql);
         }
         PQclear(res);
@@ -86,11 +86,11 @@ void close_cursor(PGconn *conn, table_t *tab) {
 
     tab->cursor = false;
     sprintf(sql, "close cursor_%s_%ld", tab->name, tab->timestamp);
-    if (dbg > 1) {
+    if (dbg > 1 && log_table(tab->name)) {
         fprintf(flog, "%ld %s\n", time(NULL), sql);
     }
     res = PQexec(conn, sql);
-    if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+    if (PQresultStatus(res) != PGRES_COMMAND_OK && log_table(tab->name)) {
         fprintf(flog, "%ld Erro na execucao do comando: %s\n%s\n", time(NULL), PQerrorMessage(conn), sql);
     }
     PQclear(res);
@@ -100,7 +100,7 @@ void close_cursor(PGconn *conn, table_t *tab) {
 extern int dbg_upd;
 
 void dbg_record(fcd_t *fcd) {
-    if (dbg_upd > 0) {
+    if (dbg_upd > 0 && log_fcd(fcd)) {
         char tmp[MAX_REC_LEN+1];
         short reclen;
         reclen = getshort(fcd->rec_len);

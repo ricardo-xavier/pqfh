@@ -16,7 +16,7 @@ void pq2cob(table_t *tab, PGresult *res, unsigned char *record, unsigned short r
 
         strcpy(aux, PQgetvalue(res, 0, c));
         len = strlen(aux);
-        if (dbg > 2) {
+        if (dbg > 2 && log_table(tab->name)) {
             fprintf(flog, "    %d %d %s %c %d,%d [%s]\n", c, offset, col->name, col->tp, col->len, col->dec, aux);
         }
 

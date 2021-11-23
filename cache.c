@@ -33,15 +33,17 @@ table_t *cache_get(char *name) {
                 int i = 0;
                 for (ptr=table->columns; ptr!=NULL; ptr=ptr->next) {
                     column_t *col = (column_t *) ptr->buf;    
-                    fprintf(flog, "    %d %d %s %c %d\n", i, offset, col->name, col->tp, col->len);
+                    if (log_table(table->name)) fprintf(flog, "    %d %d %s %c %d\n", i, offset, col->name, col->tp, col->len);
                     offset += col->len;
                     i++;
                 }    
                 for (ptr=table->keys; ptr!=NULL; ptr=ptr->next) {
                     _key_t *key = (_key_t *) ptr->buf;
-                    fprintf(flog, "%ld key %d %d %d\n", time(NULL), key->id, key->ncomps, key->ncols);
-                    for (int c=0; c<key->ncols; c++) {
-                        fprintf(flog, "    %s\n", key->columns[c]->name);
+                    if (log_table(table->name)) {
+                        fprintf(flog, "%ld key %d %d %d\n", time(NULL), key->id, key->ncomps, key->ncols);
+                        for (int c=0; c<key->ncols; c++) {
+                            fprintf(flog, "    %s\n", key->columns[c]->name);
+                        }    
                     }
                 }
             }
