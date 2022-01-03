@@ -84,7 +84,7 @@ void op_next_prev(PGconn *conn, fcd_t *fcd, char dir) {
     }
     tab->restart = 0;
 
-    sprintf(sql, "fetch next in cursor_%s_%ld", tab->name, tab->timestamp);
+    sprintf(sql, "fetch next in cursor_%s_%s", tab->name, tab->timestamp);
     if (dbg > 1) {
         if (log_table(tab->name)) fprintf(flog, "%ld %s\n", time(NULL), sql);
     }

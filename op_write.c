@@ -76,7 +76,7 @@ bool op_write(PGconn *conn, fcd_t *fcd) {
         return false;
     }
 
-    sprintf(stmt_name, "%s_%ld_ins", tab->name, tab->timestamp);
+    sprintf(stmt_name, "%s_%s_ins", tab->name, tab->timestamp);
 
     // prepara o comando se ainda nao tiver preparado
     if (!tab->ins_prepared) {

@@ -17,7 +17,7 @@
 // insert into tabela_api values('sp05a51', 'planoGerencial');
 //
 
-#define VERSAO "v3.15.4 22/11/2021"
+#define VERSAO "v3.15.8 03/01/2022"
 
 int dbg=-1;
 int dbg_upd=-1;
@@ -652,7 +652,6 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
     memcpy(filename, fcd->file_name, fnlen);
     filename[fnlen] = 0;
     if (fnlen > 256) {
-        fprintf(stderr, "FNLEN=%d [%s]\n", fnlen, filename);    
         putshort(fcd->file_name_len, 256);
         fnlen = getshort(fcd->file_name_len);
         memcpy(filename, fcd->file_name, fnlen);

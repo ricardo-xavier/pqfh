@@ -44,7 +44,7 @@ typedef struct {
     list2_t *clones;
     bool    cursor;
     int     advisory_lock;
-    time_t  timestamp;
+    char    timestamp[33];
 
     const char *values[MAX_COLS];
     int        formats[MAX_COLS];

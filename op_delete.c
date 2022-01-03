@@ -65,7 +65,7 @@ void op_delete(PGconn *conn, fcd_t *fcd) {
     if (dbg > 1) {
         if (log_table(tab->name)) fprintf(flog, "%ld key %d %d [%s]\n", time(NULL), 0, keylen, kbuf);
     }
-    sprintf(stmt_name, "%s_%ld_del", tab->name, tab->timestamp);
+    sprintf(stmt_name, "%s_%s_del", tab->name, tab->timestamp);
 
     // prepara o comando se ainda nao tiver preparado
     if (!tab->del_prepared) {

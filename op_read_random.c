@@ -68,7 +68,7 @@ void op_read_random(PGconn *conn, fcd_t *fcd, bool with_lock) {
     if (dbg > 1) {
         if (log_table(tab->name)) fprintf(flog, "%ld key %d %d [%s]\n", time(NULL), keyid, keylen, kbuf_read);
     }
-    sprintf(stmt_name, "%s_%ld_%d", tab->name, tab->timestamp, keyid);
+    sprintf(stmt_name, "%s_%s_%d", tab->name, tab->timestamp, keyid);
 
     // prepara o comando se ainda nao tiver preparado
     if (!tab->read_prepared[keyid]) {

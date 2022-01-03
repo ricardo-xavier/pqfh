@@ -8,6 +8,25 @@ extern bool partial_weak;
 int partial_key=0;
 bool force_partial=false;
 
+unsigned char BUF[4097], *pbuf;
+
+unsigned char *escape(unsigned char *buf) {
+    char *p = strchr((char *) buf, '\'');
+    if (p == NULL) {
+        pbuf = buf;    
+        return pbuf;
+    }    
+    pbuf = BUF;
+    for (p=(char *) buf; p!=NULL; p++) {
+        *pbuf++ = *p;
+        if (*p == '\'') {
+            *pbuf++ = *p;
+        }    
+    }
+    *pbuf = 0;
+    return pbuf;
+}
+
 void getkeys(fcd_t *fcd, table_t *tab) {
     funcao = _GETKEYS;
     unsigned short nkeys;
@@ -152,7 +171,7 @@ void adiciona_comp(unsigned char *record, _key_t key, int c, char *_op, char *wh
         if (col->tp == 'n') {
             sprintf(aux, "%s %s %s", col->name, op, buf);
         } else {
-            sprintf(aux, "%s %s '%s'", col->name, op, buf);
+            sprintf(aux, "%s %s '%s'", col->name, op, escape(buf));
         }
         strcat(where, aux);
         strcat(order, col->name);
@@ -178,7 +197,7 @@ void adiciona_comp(unsigned char *record, _key_t key, int c, char *_op, char *wh
         if (col->tp == 'n') {
             sprintf(aux, "%s %s %s and ", col->name, op, buf);
         } else {
-            sprintf(aux, "%s %s '%s' and ", col->name, op, buf);
+            sprintf(aux, "%s %s '%s' and ", col->name, op, escape(buf));
         }
         strcat(where, aux);
         strcat(order, col->name);
@@ -190,7 +209,8 @@ void adiciona_comp(unsigned char *record, _key_t key, int c, char *_op, char *wh
     if (col->tp == 'n') {
         sprintf(aux, "%s %c %s or ( %s = %s and ( ", col->name, op[0], buf, col->name, buf);
     } else {
-        sprintf(aux, "%s %c '%s' or ( %s = '%s' and ( ", col->name, op[0], buf, col->name, buf);
+        escape(buf);    
+        sprintf(aux, "%s %c '%s' or ( %s = '%s' and ( ", col->name, op[0], pbuf, col->name, pbuf);
     }
     strcat(where, aux);
     strcat(order, col->name);
@@ -340,4 +360,3 @@ char *getkbuf(fcd_t *fcd, unsigned short keyid,  table_t *tab, unsigned short *k
     *keylen = offset;
     return kbuf;
 }
-

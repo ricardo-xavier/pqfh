@@ -99,7 +99,7 @@ void op_start(PGconn *conn, fcd_t *fcd, char *op) {
     } else {
         getwhere(fcd->record, tab, keyid, op, where, order);
     }
-    sprintf(sql, "declare cursor_%s_%ld cursor with hold for\n  select * from %s.%s\n    where %s order by %s", 
+    sprintf(sql, "declare cursor_%s_%s cursor with hold for\n  select * from %s.%s\n    where %s order by %s", 
         tab->name, tab->timestamp,  tab->schema, tab->name, where, order);
 
     if (dbg > 1) {

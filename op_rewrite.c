@@ -95,7 +95,7 @@ bool op_rewrite(PGconn *conn, fcd_t *fcd) {
     if (dbg > 1) {
         if (log_table(tab->name)) fprintf(flog, "%ld key %d %d [%s]\n", time(NULL), 0, keylen, kbuf);
     }
-    sprintf(stmt_name, "%s_%ld_upd", tab->name, tab->timestamp);
+    sprintf(stmt_name, "%s_%s_upd", tab->name, tab->timestamp);
 
     // prepara o comando se ainda nao tiver preparado
     if (!tab->upd_prepared) {
@@ -122,7 +122,7 @@ bool op_rewrite(PGconn *conn, fcd_t *fcd) {
             strcat(sql, aux);
         }
 
-        getwhere_prepared(tab, keyid, where, p, 'u');
+        getwhere_prepared(tab, 0, where, p, 'u');
         strcat(sql, "where ");
         strcat(sql, where);
         p += list2_size(tab->prms_rewrite);

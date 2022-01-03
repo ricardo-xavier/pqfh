@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <sys/time.h>
 #include "pqfh.h"
 
 extern int dbg;
@@ -16,6 +17,7 @@ bool op_open(PGconn *conn, fcd_t *fcd, unsigned short opcode) {
     unsigned short fnlen;
     unsigned int   fileid;
     int            k, a;
+    struct timeval tv;
 
     fcd_open = fcd;
     fnlen = getshort(fcd->file_name_len);
@@ -64,7 +66,8 @@ bool op_open(PGconn *conn, fcd_t *fcd, unsigned short opcode) {
     tab->clones = NULL;
     tab->cursor = false;
     tab->advisory_lock = 0;
-    tab->timestamp = time(NULL);
+    gettimeofday(&tv, NULL);
+    sprintf(tab->timestamp, "%ld_%ld", time(NULL), tv.tv_usec);
     tab->first = false;
     tab->num_apis = 0;
     for (a=0; a<MAX_APIS; a++) {
