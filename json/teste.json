@@ -1,0 +1,47 @@
+[
+  {
+    "_id": "649b56ea2aeb334a29df5dde",
+    "index": 0,
+    "guid": "ccdb8efb-937c-4859-ae89-41d9d54a7e03",
+    "isActive": true,
+    "balance": "$3,908.08",
+    "picture": "http://placehold.it/32x32",
+    "age": 22,
+    "eyeColor": "blue",
+    "name": "Cox Dudley",
+    "gender": "male",
+    "company": "AVENETRO",
+    "email": "coxdudley@avenetro.com",
+    "phone": "+1 (828) 425-2540",
+    "address": "445 Clermont Avenue, Nicut, Federated States Of Micronesia, 9931",
+    "about": "Ipsum ea qui eu ullamco eiusmod labore et ea exercitation qui ea mollit. Aliqua officia pariatur veniam deserunt amet dolor. Deserunt eu consectetur commodo eu mollit aute ut ut elit non nulla irure. Aute fugiat cupidatat id Lorem. Laborum et eu est sint sit enim velit magna. Adipisicing ipsum non officia minim Lorem qui proident irure et. Cupidatat aliquip ad do nostrud.\r\n",
+    "registered": "2022-07-30T09:59:06 +03:00",
+    "latitude": 69.821031,
+    "longitude": 14.286469,
+    "tags": [
+      "eiusmod",
+      "voluptate",
+      "ad",
+      "consectetur",
+      "eiusmod",
+      "sunt",
+      "Lorem"
+    ],
+    "friends": [
+      {
+        "id": 0,
+        "name": "Sharp Justice"
+      },
+      {
+        "id": 1,
+        "name": "Cherie Estrada"
+      },
+      {
+        "id": 2,
+        "name": "Santana Hall"
+      }
+    ],
+    "greeting": "Hello, Cox Dudley! You have 6 unread messages.",
+    "favoriteFruit": "strawberry"
+  }
+]
