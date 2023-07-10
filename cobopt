@@ -1,0 +1,2 @@
+-C nolist
+set GCC_LIB=/usr/lib/gcc/i586-slackware-linux/5.3.0
