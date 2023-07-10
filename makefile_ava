@@ -10,6 +10,7 @@ clean:
 	rm -f pqfh $(OBJS)
 
 pqfh: $(OBJS)
+	export COBOPT=/u/sist/Ricardo/git/pqfh/cobopt
 	$(COB) $(OBJS) -o pqfh -lpq -lpthread -L /usr/lib/java/jre/lib/i386/client -ljvm
 
 .c.o: .c
