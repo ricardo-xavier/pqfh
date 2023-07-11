@@ -7,7 +7,7 @@ clean:
 	rm -f json $(OBJS)
 
 json: $(OBJS)
-	$(CC) $(OBJS) -o json
+	$(CC) $(OBJS) ../list2.o -o json
 
 .c.o: .c
 	$(CC) -c $<
