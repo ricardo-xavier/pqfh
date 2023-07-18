@@ -28,6 +28,10 @@ list2_t *list2_append(list2_t *list, void *buf, int size) {
 
     list = list2_last(list);
 
+    if (size == 0) {
+        size = strlen(buf) + 1;
+    }
+
     item = (list2_t *) malloc(sizeof(list2_t));
     item->buf = malloc(size);
     memcpy(item->buf, buf, size);
