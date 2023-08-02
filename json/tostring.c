@@ -31,6 +31,9 @@ list2_t *appendObject(list2_t *lines, jelement_t element, char comma) {
             case TP_ARRAY:
                 lines = appendArray(lines, *child, ptr->next == NULL ? ' ' : ',');
                 break;
+            case TP_OBJECT:
+                lines = appendObject(lines, *child, ptr->next == NULL ? ' ' : ',');
+                break;
             default:
                 fprintf(stderr, "ERR appendObject tp=%c\n", child->tp);
                 exit(-1);
@@ -62,6 +65,11 @@ list2_t *appendArray(list2_t *lines, jelement_t element, char comma) {
                 sprintf(buf, "%s\"%s\"%c", tab(level), child->value, ptr->next == NULL ? ' ' : ','); 
                 lines = list2_append(lines, buf, strlen(buf)+1);
                 break;
+            case TP_NUMBER:
+            case TP_BOOL:
+                sprintf(buf, "%s%s%c", tab(level), child->value, ptr->next == NULL ? ' ' : ','); 
+                lines = list2_append(lines, buf, strlen(buf)+1);
+                break;
             default:
                 fprintf(stderr, "ERR appendArray tp=%c\n", child->tp);
                 exit(-1);
@@ -83,6 +91,8 @@ char *tostring(int dbg, jelement_t root) {
     level = 0;
     if (root.tp == TP_ARRAY) {
         lines = appendArray(lines, root, ' ');
+    } else {
+        lines = appendObject(lines, root, ' ');
     }
 
     for (ptr = list2_first(lines); ptr != NULL; ptr = ptr->next) {

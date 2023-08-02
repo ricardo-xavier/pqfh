@@ -22,7 +22,7 @@ list2_t *lex(char *json, int dbg) {
             if (ch == '\n') {
                 lin++;
             }
-            if (st != TOK_STRING) {
+            if (st != TOK_STRING && st != TOK_NUMBER) {
                 continue;
             }
         }
@@ -77,6 +77,9 @@ list2_t *lex(char *json, int dbg) {
 
             case TOK_STRING:
                 if (ch == '"') {
+                    if ((i > 0) && (json[i-1] == '\\')) {
+                        break;
+                    }
                     st = addToken(tokens, TOK_STRING, json, &start, i, lin);
                 }
                 break;
@@ -84,6 +87,7 @@ list2_t *lex(char *json, int dbg) {
             case TOK_NUMBER:
                 if (!isdigit(ch) && (ch != '.')) {
                     st = addToken(tokens, TOK_NUMBER, json, &start, i, lin);
+                    i--;
                 }
                 break;
         }
