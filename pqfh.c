@@ -17,7 +17,7 @@
 // insert into tabela_api values('sp05a51', 'planoGerencial');
 //
 
-#define VERSAO "v3.15.8 03/01/2022"
+#define VERSAO "v3.16.0 20/08/2023"
 
 int dbg=-1;
 int dbg_upd=-1;
@@ -775,7 +775,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
         pqfh_commit();
     }        
 
-    if (((mode == 'I') || (mode == 'W') || (fcd->isam == 'S')) && memcmp(filename, "pqfh", 4)) {
+    if (((mode == 'I') || (mode == 'W') || (fcd->isam == 'S')) && memcmp(filename, "pqfh", 4) && memcmp(filename, "JSON:", 5)) {
 #ifdef API
         unsigned int fileid = getint(fcd->file_id);
         table_t *tab;
@@ -845,7 +845,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
         }    
     }
 
-    if ((mode == 'W') && (fcd->isam == 'S') && strcmp(filename, "pqfh")) {
+    if ((mode == 'W') && (fcd->isam == 'S') && strcmp(filename, "pqfh") && memcmp(filename, "JSON:", 5)) {
         if (dbg_cmp > 0) {
             dbg_status("ISAM", fcd);
         }
@@ -853,7 +853,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
     }        
 
 #ifndef ISAM
-    if ((mode == 'A') && (fcd->isam != 'S') && strcmp(filename, "pqfh")
+    if ((mode == 'A') && (fcd->isam != 'S') && strcmp(filename, "pqfh") && memcmp(filename, "JSON:", 5)
             && ((op == OP_WRITE) || (op == OP_REWRITE) || (op == OP_DELETE))) {
 
         if (op != OP_WRITE) {
@@ -1493,5 +1493,6 @@ void pqfh_split(char *filename) {
 // 3.12.6 - 24/11 - mostrar o nome da tabela no warningbd
 // 3.13.0 - 14/03 - commit no sigterm
 // 3.14.0 - 23/05 - call_stack
+// 3.16.0 - 20/08 - json
  
  
