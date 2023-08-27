@@ -7,16 +7,19 @@ list2_t *parse_array(list2_t *ptr, int dbg, jelement_t *element);
 list2_t *parse_object(list2_t *ptr, int dbg, jelement_t *element);
 void err(char *msg, token_t *tok);
 
-void parse(char *json, int dbg, jelement_t *root) {
+bool ok;
+
+bool parse(char *json, int dbg, jelement_t *root) {
     list2_t *tokens;
     list2_t *ptr;
 
     tokens = lex(json, dbg);
     if (tokens == NULL) {
-        return;
+        return false;
     }
     tokens = list2_first(tokens);
 
+    ok = true;
     if (dbg > 1) {
         for (ptr = tokens; ptr != NULL; ptr = ptr->next) {
             token_t *tok = (token_t *) ptr->buf;
@@ -32,6 +35,7 @@ void parse(char *json, int dbg, jelement_t *root) {
     } else {
         err("ERR expected [|{", tok);
     }
+    return ok;
 }
 
 list2_t *parse_array(list2_t *ptr, int dbg, jelement_t *element) {
@@ -127,5 +131,5 @@ list2_t *parse_object(list2_t *ptr, int dbg, jelement_t *element) {
 
 void err(char *msg, token_t *tok) {
     fprintf(stderr, "%s lin=%d tp=%d buf=[%s]\n", msg, tok->lin, tok->tp, tok->buf);
-    exit(-1);
+    ok = false;
 }

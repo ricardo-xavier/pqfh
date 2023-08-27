@@ -3,18 +3,18 @@
 #include <errno.h>
 #include <sys/stat.h>
 
-void load(char *filename, char **buf) {
+bool load(char *filename, char **buf) {
     struct stat statbuf;
     FILE *f;
     int ofs, n, remaining;
 
     if (stat(filename, &statbuf) == -1) {
         fprintf(stderr, "ERR #%d stat %s\n", errno, filename);
-        return;
+        return false;
     }
     if ((f = fopen(filename, "r")) == NULL) {
         fprintf(stderr, "ERR #%d fopen %s\n", errno, filename);
-        return;
+        return false;
     }
     remaining = (int) statbuf.st_size;
     *buf = (char *) malloc(remaining+1);
@@ -26,4 +26,5 @@ void load(char *filename, char **buf) {
     }
     (*buf)[ofs] = 0;
     fclose(f);
+    return true;
 }

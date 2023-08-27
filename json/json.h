@@ -33,9 +33,9 @@ typedef struct jelement_s {
 
 char *tab(int n);
 bool isWhiteSpace(char ch);
-void load(char *filename, char **buf);
+bool load(char *filename, char **buf);
 list2_t *lex(char *json, int dbg);
-void parse(char *json, int dbg, jelement_t *root);
+bool parse(char *json, int dbg, jelement_t *root);
 char *tostring(int dbg, jelement_t root);
 
 #endif

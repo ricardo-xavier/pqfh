@@ -1,0 +1,902 @@
+[
+    {
+        "name": "Dashboard",
+        "icon": "dashboard",
+        "entidade": "dashboard",
+        "position": 1,
+        "produtos": [1, 2, 7, 3],
+        "subMenusProdutos": {
+            "1": [0, 1, 2]
+        },
+        "subItems": [
+            {
+                "name": "Cadastro de Dashboard",
+                "route": "/basicos/dashboard",
+                "position": 1,
+                "CYChildName": "dashboard-basicos",
+                "entidade": "dashboard",
+                "produtos": [1, 7],
+                "subMenusProdutos": {
+                    "1": [0]
+                }
+            }
+        ]
+    },
+    {
+        "name": "Administração de Empresas e Filiais",
+        "route": "/admin-parceiro-scanntech",
+        "position": 1,
+        "icon": "business",
+        "produtos": [9],
+        "CYChildName": "administracao-empresas-filiais",
+        "entidade": "administracao-empresas-filiais"
+    },
+    {
+        "name": "Assinaturas",
+        "icon": "person_pin",
+        "produtos": [0],
+        "subItems": [
+            {
+                "name": "Módulos",
+                "route": "/admin/assinatura/modulo",
+                "position": 1,
+                "entidade": "modulo",
+                "CYChildName": "modulos"
+            },
+            {
+                "name": "Serviços",
+                "route": "/admin/assinatura/servico",
+                "position": 2,
+                "entidade": "servico",
+                "CYChildName": "servicos"
+            },
+            {
+                "entidade": "assinatura",
+                "name": "Contas",
+                "route": "/admin/assinatura/conta",
+                "position": 3,
+                "CYChildName": "conta"
+            },
+            {
+                "name": "Parceiros de Integração",
+                "route": "/admin/assinatura/parceirosIntegracao",
+                "position": 4,
+                "entidade": "parceiro",
+                "CYChildName": "cadastro-parceiros-integracao"
+            }
+        ],
+        "position": 2,
+        "CYParentName": "assinaturas"
+    },
+    {
+        "name": "Importações",
+        "icon": "import_export",
+        "produtos": [0],
+        "entidade": "importacoes_admin",
+        "subItems": [
+            {
+                "name": "Importar IBPT",
+                "route": "/admin/importacoes/importar-ibpt",
+                "position": 1,
+                "CYChildName": "importar-ibpt"
+            },
+            {
+                "name": "Importar NCM",
+                "route": "/admin/importacoes/importar-ncm",
+                "position": 1,
+                "CYChildName": "importar-ncm"
+            },
+            {
+                "name": "Importar CEST",
+                "route": "/admin/importacoes/importar-cest",
+                "position": 1,
+                "CYChildName": "importar-cest"
+            },
+            {
+                "name": "Importar CFOP",
+                "route": "/admin/importacoes/importar-cfop",
+                "position": 4,
+                "CYChildName": "importar-cfop"
+            }
+        ],
+        "position": 1,
+        "CYParentName": "importacoes"
+    },
+    {
+        "name": "Ferramentas",
+        "icon": "settings",
+        "produtos": [0],
+        "subItems": [
+            {
+                "name": "Limpar dados Integral",
+                "route": "/admin/limpar-dados-integral",
+                "position": 1
+            },
+            {
+                "name": "Limpar Base QAS",
+                "route": "/admin/limpar-dados-qas",
+                "position": 1,
+                "hideProduction": true,
+                "onlyQas": true
+            },
+            {
+                "name": "Converter NF-e Processada para Saída",
+                "route": "/admin/nfe-processada-para-saida",
+                "position": 2
+            },
+            {
+                "name": "Criar Saída de NF-e Processada",
+                "route": "/admin/nfe-processada-para-saida-duplicada",
+                "position": 3
+            },
+            {
+                "name": "Log de importação",
+                "route": "/integracoes/log-importacao",
+                "position": 4
+            }
+        ]
+    },
+    {
+        "name": "Aplicativo",
+        "icon": "apps",
+        "route": "/aplicativo/aplicativo-usuario",
+        "produtos": [],
+        "subMenusProdutos": {
+            "1": [1]
+        }
+    },
+    {
+        "name": "Pessoas",
+        "icon": "person_pin",
+        "produtos": [1, 3, 5],
+        "subItems": [
+            {
+                "name": "Empresas",
+                "route": "/pessoas/empresas",
+                "onlyAdmin": true,
+                "position": 1,
+                "CYChildName": "empresas",
+                "produtos": [1, 3, 5],
+                "entidade": "filial"
+            },
+            {
+                "name": "Grupos de Empresa",
+                "route": "/pessoas/grupos",
+                "position": 2,
+                "CYChildName": "grupos",
+                "produtos": [1],
+                "subMenusProdutos": {
+                    "1": [0]
+                },
+                "entidade": "grupoempresa"
+            },
+            {
+                "name": "Clientes",
+                "route": [
+                    "/pessoas/entidade/clientes",
+                    {
+                        "tipo": "cliente"
+                    }
+                ],
+                "position": 3,
+                "CYChildName": "clientes",
+                "produtos": [1, 5],
+                "subMenusProdutos": {
+                    "1": [1]
+                },
+                "entidade": "pessoa"
+            },
+            {
+                "name": "Fornecedores",
+                "route": [
+                    "/pessoas/entidade/fornecedores",
+                    {
+                        "tipo": "fornecedor"
+                    }
+                ],
+                "position": 5,
+                "CYChildName": "fornecedores",
+                "produtos": [1],
+                "subMenusProdutos": {
+                    "1": [1]
+                },
+                "entidade": "pessoa"
+            },
+            {
+                "name": "Transportadoras",
+                "route": [
+                    "/pessoas/entidade/transportadoras",
+                    {
+                        "tipo": "transportadora"
+                    }
+                ],
+                "position": 6,
+                "CYChildName": "transportadoras",
+                "produtos": [1],
+                "subMenusProdutos": {
+                    "1": [1]
+                },
+                "entidade": "pessoa"
+            },
+            {
+                "name": "Vendedores",
+                "route": [
+                    "/pessoas/entidade/vendedores",
+                    {
+                        "tipo": "vendedor"
+                    }
+                ],
+                "position": 7,
+                "CYChildName": "vendedores",
+                "produtos": [1, 5],
+                "subMenusProdutos": {
+                    "1": [1]
+                },
+                "entidade": "pessoa"
+            },
+            {
+                "name": "Compradores",
+                "route": [
+                    "/pessoas/entidade/compradores",
+                    {
+                        "tipo": "comprador"
+                    }
+                ],
+                "position": 8,
+                "CYChildName": "compradores",
+                "produtos": [1],
+                "subMenusProdutos": {
+                    "1": [1]
+                },
+                "entidade": "pessoa"
+            },
+            {
+                "name": "Contadores",
+                "route": [
+                    "/pessoas/entidade/contadores",
+                    {
+                        "tipo": "contador"
+                    }
+                ],
+                "position": 9,
+                "CYChildName": "contadores",
+                "produtos": [1],
+                "subMenusProdutos": {
+                    "1": [0]
+                },
+                "entidade": "pessoa"
+            },
+            {
+                "name": "Administradoras de Cartões",
+                "route": [
+                    "/pessoas/entidade/administradorasCartoes",
+                    {
+                        "tipo": "administradoraCartao"
+                    }
+                ],
+                "position": 10,
+                "CYChildName": "administradoras-cartoes",
+                "produtos": [1],
+                "subMenusProdutos": {
+                    "1": [0]
+                },
+                "entidade": "pessoa"
+            },
+            {
+                "name": "Operadores de Caixa",
+                "route": [
+                    "/pessoas/entidade/operadoresPDV",
+                    {
+                        "tipo": "operadorPDV"
+                    }
+                ],
+                "position": 11,
+                "CYChildName": "operadores-caixa",
+                "produtos": [1, 5],
+                "subMenusProdutos": {
+                    "1": [1]
+                },
+                "entidade": "pessoa"
+            }
+        ],
+        "position": 2,
+        "CYParentName": "pessoas"
+    },
+    {
+        "name": "Fiscal",
+        "icon": "face",
+        "produtos": [1, 2, 3],
+        "subMenusProdutos": {
+            "1": [0, 1]
+        },
+        "subItems": [
+            {
+                "icon": "monetization_on",
+                "name": "Geração Arquivo SPED",
+                "route": "/exportacoes-fiscais/exportar-sped",
+                "position": 1,
+                "CYChildName": "exportar-sped",
+                "produtos": [1, 3],
+                "subMenusProdutos": {
+                    "1": [1]
+                }
+            }
+        ],
+        "position": 6,
+        "CYParentName": "fiscal"
+    },
+    {
+        "name": "Home Page",
+        "route": "/novoPortal/home",
+        "position": 0,
+        "icon": "home",
+        "produtos": [2],
+        "CYChildName": "home",
+        "entidade": "noticias",
+        "force": true
+    },
+    {
+        "name": "Informações das Empresas",
+        "icon": "account_balance",
+        "produtos": [2, 4],
+        "entidade": "informacoes-empresas",
+        "subItems": [
+            {
+                "name": "Empresas",
+                "route": [
+                    "/informacoes-empresas/empresas",
+                    {
+                        "informacoes": true
+                    }
+                ],
+                "position": 1,
+                "CYChildName": "empresas",
+                "produtos": [2, 4]
+            },
+            {
+                "name": "Grupos de Empresa",
+                "route": [
+                    "/informacoes-empresas/grupos",
+                    {
+                        "informacoes": true
+                    }
+                ],
+                "position": 2,
+                "CYChildName": "grupos",
+                "produtos": [4]
+            }
+        ],
+        "position": 1,
+        "CYParentName": "informacoes-empresas"
+    },
+    {
+        "name": "Cadastro de Notícias",
+        "route": "/admin/cadastro-noticias",
+        "position": 2,
+        "icon": "add_alert",
+        "produtos": [0],
+        "entidade": "noticias",
+        "CYChildName": "cadastro-noticias"
+    },
+    {
+        "name": "Cadastro de Parceiros",
+        "route": "/admin/cadastro-parceiros",
+        "icon": "work",
+        "position": 3,
+        "produtos": [0],
+        "entidade": "parceiro",
+        "CYChildName": "cadastro-parceiros"
+    },
+    {
+        "name": "Meus Produtos",
+        "route": "/novoPortal/meus-produtos",
+        "position": 5,
+        "icon": "view_module",
+        "produtos": [2],
+        "entidade": "assinatura",
+        "CYChildName": "meus-produtos"
+    },
+    {
+        "name": "Parceiros",
+        "route": "/novoPortal/parceiro",
+        "position": 4,
+        "icon": "work",
+        "produtos": [2],
+        "entidade": "parceiro",
+        "CYChildName": "parceiro"
+    },
+    {
+        "name": "Manutenção de Células",
+        "route": "/admin/manutencao-celula",
+        "position": 5,
+        "icon": "view_module",
+        "produtos": [0],
+        "entidade": "celula",
+        "CYChildName": "manutencao-celula"
+    },
+    {
+        "name": "Atendimento",
+        "route": "/novoPortal/atendimento",
+        "position": 10,
+        "icon": "chat",
+        "produtos": [2],
+        "entidade": "atendimento",
+        "CYChildName": "atendimento"
+    },
+    {
+        "name": "Histórico de Chats",
+        "route": "/novoPortal/chats",
+        "position": 9,
+        "icon": "history",
+        "produtos": [2],
+        "entidade": "atendimento",
+        "CYChildName": "chats"
+    },
+    {
+        "name": "Atendimentos Agendados",
+        "route": [
+            "/novoPortal/protocolo/agendados",
+            {
+                "tipo": "agendados"
+            }
+        ],
+        "entidade": "atendimento",
+        "icon": "contact_phone",
+        "position": 14,
+        "produtos": [2],
+        "CYChildName": "agendados"
+    },
+    {
+        "name": "Meus Protocolos",
+        "route": [
+            "/novoPortal/protocolo/protocolos",
+            {
+                "tipo": "protocolos"
+            }
+        ],
+        "position": 13,
+        "icon": "list_alt",
+        "produtos": [2],
+        "entidade": "atendimento",
+        "CYChildName": "protocolos"
+    },
+    {
+        "name": "Atualizações",
+        "route": "/novoPortal/atualizacao",
+        "position": 7,
+        "icon": "system_update",
+        "produtos": [0, 2],
+        "entidade": "atualizacao",
+        "CYChildName": "atualizacao"
+    },
+    {
+        "name": "Base de Conhecimento",
+        "route": "/novoPortal/base-conhecimento",
+        "position": 8,
+        "icon": "contact_support",
+        "produtos": [2],
+        "CYChildName": "base-conhecimento"
+    },
+    {
+        "name": "Info Varejo",
+        "route": "/novoPortal/info-varejo",
+        "position": 6,
+        "icon": "info",
+        "produtos": [2],
+        "CYChildName": "info-varejo"
+    },
+    {
+        "name": "Farol de Preços",
+        "icon": "monetization_on",
+        "produtos": [8],
+        "position": 1,
+        "route": "/farolDePrecos/painel"
+    },
+    {
+        "name": "Relatórios",
+        "icon": "equalizer",
+        "produtos": [8],
+        "entidade": "relatorios-farol",
+        "subItems": [
+            {
+                "name": "Últimas Compras",
+                "route": "/farolDePrecos/relatorios-farol/relatorio-ultimas-compras",
+                "position": 1,
+                "CYChildName": "ultimas-compras"
+            }
+        ],
+        "position": 2,
+        "CYParentName": "relatorios"
+    },
+    {
+        "name": "Relatórios",
+        "route": "/relatorios",
+        "icon": "equalizer",
+        "produtos": [3, 5, 7],
+        "entidade": "relatorios",
+        "position": 22,
+        "CYParentName": "relatorios"
+    },
+    {
+        "name": "Financeiro",
+        "icon": "markunread_mailbox",
+        "route": [
+            "/relatorios/financeiro",
+            {
+                "aba": "0"
+            }
+        ],
+        "produtos": [1],
+        "subMenusProdutos": {
+            "1": [2]
+        },
+        "entidade": "relatorios-financeiro",
+        "position": 23,
+        "CYParentName": "relatorios-financeiro"
+    },
+    {
+        "name": "Fiscal",
+        "icon": "face",
+        "route": [
+            "/relatorios/fiscal",
+            {
+                "aba": "1"
+            }
+        ],
+        "produtos": [1],
+        "subMenusProdutos": {
+            "1": [2]
+        },
+        "entidade": "relatorios-fiscal",
+        "position": 24,
+        "CYParentName": "relatorios-fiscal"
+    },
+    {
+        "name": "Compras",
+        "icon": "local_mall",
+        "route": [
+            "/relatorios/compras",
+            {
+                "aba": "2"
+            }
+        ],
+        "produtos": [1],
+        "subMenusProdutos": {
+            "1": [2]
+        },
+        "entidade": "relatorios-compras",
+        "position": 25,
+        "CYParentName": "relatorios-compras"
+    },
+    {
+        "name": "Vendas",
+        "icon": "store",
+        "route": [
+            "/relatorios/vendas",
+            {
+                "aba": "3"
+            }
+        ],
+        "produtos": [1],
+        "subMenusProdutos": {
+            "1": [2]
+        },
+        "entidade": "relatorios-vendas",
+        "position": 26,
+        "CYParentName": "relatorios-vendas"
+    },
+    {
+        "name": "Fale Conosco",
+        "icon": "contact_mail",
+        "route": [
+            "/novoPortal/contato/fale-conosco",
+            {
+                "tipo": "fale-conosco"
+            }
+        ],
+        "entidade": "atendimento",
+        "position": 11,
+        "produtos": [2, 8],
+        "CYChildName": "fale-conosco"
+    },
+    {
+        "name": "Fale com a Presidência",
+        "route": [
+            "/novoPortal/contato/fale-conosco-presidencia",
+            {
+                "tipo": "fale-conosco-presidencia"
+            }
+        ],
+        "icon": "contacts",
+        "position": 12,
+        "produtos": [2],
+        "entidade": "atendimento",
+        "CYChildName": "fale-conosco-presidencia"
+    },
+    {
+        "name": "Configurações",
+        "icon": "settings",
+        "subItems": [
+            {
+                "name": "Alertas NF-e",
+                "route": "/novo-nfe/configuracoes/alertas-nfe",
+                "position": 1,
+                "entidade": "nfealertas",
+                "CYChildName": "alertas-nfe"
+            },
+            {
+                "name": "NF-e",
+                "route": "/novo-nfe/configuracoes/nfe",
+                "position": 2,
+                "entidade": "nfeconfiguracao",
+                "CYChildName": "nfe"
+            },
+            {
+                "name": "Certificado NF-e",
+                "route": "/novo-nfe/configuracoes/certificado-digital",
+                "position": 2,
+                "entidade": "certificadodigital",
+                "CYChildName": "nfe"
+            }
+        ],
+        "produtos": [4],
+        "position": 2,
+        "CYChildName": "configuracoes"
+    },
+    {
+        "name": "Notas Fiscais",
+        "icon": "library_books",
+        "subItems": [
+            {
+                "name": "Notas Processadas",
+                "route": "/novo-nfe/notas-fiscais/nfe-processadas",
+                "position": 1,
+                "entidade": "nfeprocessadas",
+                "CYChildName": "nfe-processadas"
+            },
+            {
+                "name": "Manifestação",
+                "route": "/novo-nfe/notas-fiscais/nfe-manifestacao",
+                "position": 2,
+                "entidade": "nfemanifestacao",
+                "CYChildName": "nfe-manifestacao"
+            },
+            {
+                "name": "Inutilizações",
+                "route": "/novo-nfe/notas-fiscais/inutilizacao",
+                "position": 1,
+                "entidade": "inutilizacao",
+                "CYChildName": "inutilizacao"
+            }
+        ],
+        "produtos": [4],
+        "position": 3,
+        "CYChildName": "nfe"
+    },
+    {
+        "name": "Reinf",
+        "icon": "chrome_reader_mode",
+        "entidade": "reinf",
+        "subItems": [
+            {
+                "name": "Eventos",
+                "route": "/novo-nfe/reinf/eventos",
+                "position": 1,
+                "CYChildName": "reinf-eventos"
+            },
+            {
+                "name": "Notas",
+                "route": "/novo-nfe/reinf/notas",
+                "position": 1,
+                "CYChildName": "reinf-notas"
+            }
+        ],
+        "produtos": [4],
+        "position": 4,
+        "CYChildName": "reinf"
+    },
+    {
+        "name": "Status Sefaz",
+        "icon": "settings_remote",
+        "entidade": "nfeprocessadas",
+        "subItems": [
+            {
+                "name": "Produção NF-e",
+                "route": "/novo-nfe/status-sefaz/producao-nfe",
+                "position": 1,
+                "CYChildName": "producao-nfe"
+            },
+            {
+                "name": "Produção NFC-e",
+                "route": "/novo-nfe/status-sefaz/producao-nfce",
+                "position": 2,
+                "CYChildName": "producao-nfce"
+            },
+            {
+                "name": "Homologação NF-e",
+                "route": "/novo-nfe/status-sefaz/homologacao-nfe",
+                "position": 3,
+                "CYChildName": "homologacao-nfe"
+            }
+        ],
+        "produtos": [4],
+        "position": 5,
+        "CYChildName": "status-sefaz"
+    },
+    {
+        "name": "Importações e exportações",
+        "icon": "sync",
+        "subItems": [
+            {
+                "name": "Exportar Xml Nfe",
+                "route": "/novo-nfe/importacao-exportacao/exportar-xml-nfe",
+                "position": 1,
+                "entidade": "exportarxml",
+                "CYChildName": "exportar-xml-nfe",
+                "produtos": [4]
+            },
+            {
+                "name": "Sincronização de PDVs/Supervisor(es)",
+                "route": "/novo-nfe/importacao-exportacao/sincronizar-pdv",
+                "position": 2,
+                "entidade": "dispositivo",
+                "CYChildName": "sincronizar-pdv",
+                "produtos": [1, 5]
+            },
+            {
+                "name": "Exportar dados Balança",
+                "route": [
+                    "/novo-nfe/importacao-exportacao/dispositivo/balanca",
+                    {
+                        "tipo": "balanca"
+                    }
+                ],
+                "entidade": "dispositivo",
+                "position": 3,
+                "produtos": [1, 5],
+                "CYChildName": "balanca"
+            },
+            {
+                "name": "Exportar dados Terminal",
+                "route": [
+                    "/novo-nfe/importacao-exportacao/dispositivo/terminal",
+                    {
+                        "tipo": "terminal"
+                    }
+                ],
+                "position": 4,
+                "produtos": [1, 5],
+                "entidade": "dispositivo",
+                "CYChildName": "terminal"
+            },
+            {
+                "name": "Conversão de dados",
+                "route": "/novo-nfe/importacao-exportacao/conversao-dados",
+                "position": 5,
+                "CYChildName": "conversao-dados",
+                "entidade": "importacao",
+                "produtos": [1, 5],
+                "subMenusProdutos": {
+                    "1": [1]
+                }
+            }
+        ],
+        "produtos": [1, 4, 5],
+        "subMenusProdutos": {
+            "1": [1]
+        },
+        "position": 4,
+        "CYChildName": "importacao-exportacao"
+    },
+    {
+        "name": "Gestão de Pendências",
+        "icon": "assignment_turned_in",
+        "produtos": [4],
+        "position": 5,
+        "entidade": "pendencias",
+        "CYChildName": "pendencias",
+        "route": "/novo-nfe/pendencias"
+    },
+    {
+        "name": "Dashboard",
+        "route": "/cotacao/dashboard-cotacao",
+        "position": 0,
+        "icon": "dashboard",
+        "produtos": [10, 11],
+        "CYChildName": "dashboard-cotacao",
+        "entidade": "dashboard"
+    },
+    {
+        "name": "Cotações",
+        "route": "/cotacao/cotacoes",
+        "position": 1,
+        "icon": "business",
+        "produtos": [10],
+        "CYChildName": "cotacoes",
+        "entidade": "cotacao"
+    },
+    {
+        "name": "Cotação Fornecedor",
+        "route": "/cotacao/cotacao-fornecedor",
+        "position": 2,
+        "icon": "ballot",
+        "hideProduction": true,
+        "produtos": [11],
+        "CYChildName": "cotacao-fornecedor",
+        "entidade": "cotacao-fornecedor"
+    },
+    {
+        "name": "Fornecedores",
+        "route": "/cotacao/fornecedor-Cotacao",
+        "position": 3,
+        "icon": "person_pin",
+        "produtos": [11],
+        "CYChildName": "fornecedor-Cotacao",
+        "entidade": "fornecedor-cotacao"
+    },
+    {
+        "name": "Acesso",
+        "icon": "vpn_key",
+        "subItems": [
+            {
+                "name": "Usuário",
+                "route": "/auth/usuario",
+                "onlyAdmin": true,
+                "position": 0,
+                "CYChildName": "usuario",
+                "entidade": "usuario"
+            },
+            {
+                "name": "Perfil de Usuário",
+                "route": "/auth/perfil",
+                "onlyAdmin": true,
+                "position": 1,
+                "entidade": "perfil",
+                "CYChildName": "perfil"
+            }
+        ],
+        "produtos": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 12],
+        "subMenusProdutos": {
+            "1": [0]
+        },
+        "position": 7,
+        "CYParentName": "acesso"
+    },
+    {
+        "name": "Comandos",
+        "icon": "build",
+        "route": "/admin/comandos",
+        "produtos": [0],
+        "position": 999,
+        "CYParentName": "comandos"
+    },
+    {
+        "name": "Importação de Dados",
+        "icon": "import_export",
+        "subItems": [
+            {
+                "name": "Importação Gestor",
+                "route": "/admin/importacao-de-dados/gestor",
+                "position": 1,
+                "CYChildName": "importacao-dados-gestor"
+            },
+            {
+                "name": "Importação NovoERP",
+                "route": "/admin/importacao-de-dados/novoerp",
+                "position": 2,
+                "CYChildName": "importacao-dados-novoerp"
+            }
+        ],
+        "produtos": [0],
+        "position": 999,
+        "CYParentName": "importacao-dados"
+    },
+    {
+        "name": "Conteúdo de Ajuda",
+        "icon": "help_center",
+        "route": "/admin/conteudo-ajuda",
+        "produtos": [0],
+        "position": 1000,
+        "CYParentName": "help"
+    }
+]
