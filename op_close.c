@@ -11,6 +11,12 @@ bool op_close(PGconn *conn, fcd_t *fcd) {
     table_t      *tab;
     char tabname[4097];
 
+            short fnlen = getshort(fcd->file_name_len);
+            char filename[257];
+            memcpy(filename, (char *) fcd->file_name, fnlen);
+            filename[fnlen] = 0;
+
+fprintf(stderr, "OP_CLOSE %d [%s]\n", fcd->open_mode, filename);
     if (fcd->open_mode == 128) {
         memcpy(fcd->status, ST_ALREADY_CLOSED, 2);
         if (dbg > 0) {

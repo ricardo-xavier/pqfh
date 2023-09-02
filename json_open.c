@@ -5,10 +5,10 @@
 
 bool json_open(char *filename, fcd_t *fcd) {
     char *json = NULL;
-    jelement_t root;
+    jelement_t *root;
     int dbg = 0;    
 
-    fprintf(stderr, "********************* TODO json_open [%s]\n", filename);
+    fprintf(stderr, "********************* JSON json_open [%s]\n", filename);
     if (!load(filename+5, &json)) {
         if (json != NULL) {
             free(json);
@@ -17,14 +17,18 @@ bool json_open(char *filename, fcd_t *fcd) {
         return false;
     } 
 
-    memset(&root, 0, sizeof(jelement_t));
-    if (!parse(json, dbg, &root)) {
+    root = malloc(sizeof(jelement_t))
+    memset(root, 0, sizeof(jelement_t));
+    if (!parse(json, dbg, root)) {
         if (json != NULL) {
+            free(root);
             free(json);
         }
         memcpy(fcd->status, ST_ERROR, 2);
         return false;
     }
+
+    memcpy(fcd->root, root, 4);
     free(json);
     json = tostring(dbg, root);
     printf("%s\n", json);

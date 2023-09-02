@@ -136,7 +136,7 @@ typedef struct {
     unsigned char mode;             /* 83 */
     unsigned char filler_9[9];      /* 84 */
     unsigned char ignore_lock;      /* 93 */
-    unsigned char filler_10[4];     /* 94 */
+    unsigned char root[4];          /* 94 */
     unsigned char sign;             /* 98 */
     unsigned char isam;             /* 99 */
 } fcd_t;
