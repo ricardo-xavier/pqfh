@@ -47,8 +47,10 @@ void json_start(char *filename, fcd_t *fcd) {
             }
         }
         if (p == NULL) {
-            return;
+            break;
         }
         key = start; 
     }
+    putint(fcd->json_ptr, (int) root);
+    putshort(fcd->json_ptr+4, 0);
 }
