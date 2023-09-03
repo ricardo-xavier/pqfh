@@ -10,7 +10,7 @@ void json_next(char *filename, fcd_t *fcd) {
     short idx, i;
 
     parent = (jelement_t *) getint(fcd->json_ptr);
-    idx = getshort(fcd->json_idx);
+    idx = getshort(fcd->json_ptr+4);
     if (dbg > 0) {
         if (parent != NULL) {
             fprintf(stderr, "********************* JSON next [%s] %c [%s] %d\n", 
@@ -34,7 +34,7 @@ fprintf(stderr, "i=%d %d\n", i, idx);
                 child->name != NULL ? child->name : "NULL",
                 child->value != NULL ? child->value : "NULL");
         }
-        putshort(fcd->json_idx, ++idx);
+        putshort(fcd->json_ptr+4, ++idx);
         memcpy(fcd->status, ST_OK, 2);
         break;
     }

@@ -27,6 +27,6 @@ fprintf(stderr, "teste1\n");
             break;
     }
 fprintf(stderr, "teste2\n");
-short idx = getshort(fcd->json_idx);
+short idx = getshort(fcd->json_ptr+4);
 fprintf(stderr, "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX %d\n", idx);
 }

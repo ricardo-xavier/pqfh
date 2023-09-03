@@ -127,7 +127,7 @@ typedef struct {
     unsigned char curr_rec_len[2];  /* 48 */
     unsigned char min_rec_len[2];   /* 50 */
     unsigned char key_id[2];        /* 52 */
-    unsigned char json_idx[2];      /* 54 */
+    unsigned char filler_7[2];      /* 54 */
     unsigned char *record;          /* 56 */
     unsigned char *file_name;       /* 60 */
     unsigned char *kdb;             /* 64 */
