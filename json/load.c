@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <sys/stat.h>
+#include "json.h"
 
 bool load(char *filename, char **buf) {
     struct stat statbuf;

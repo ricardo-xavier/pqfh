@@ -81,7 +81,7 @@ bool op_open(PGconn *conn, fcd_t *fcd, unsigned short opcode) {
     putint(fcd->file_id, fileid);
 
 #ifndef ISAM
-    if (strcmp(tab->name, "pqfh") && memcmp(tab->name, "JSON:", 5)) {
+    if (strcmp(tab->name, "pqfh")) {
         if (table_info(conn, tab, fcd)) {
             fcd->open_mode = opcode - 0xfa00;
             if (opcode == OP_OPEN_OUTPUT) {
@@ -106,9 +106,6 @@ bool op_open(PGconn *conn, fcd_t *fcd, unsigned short opcode) {
 #endif
         fcd->open_mode = opcode - 0xfa00;
         memcpy(fcd->status, ST_OK, 2);
-        if (!memcmp(tab->name, "JSON:", 5)) {
-            json_open(tab->name, fcd);
-        }
 
 #ifndef ISAM
     }

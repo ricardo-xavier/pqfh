@@ -1,12 +1,13 @@
-#include "pqfh.h"
-#include "json/json.h"
 #include <stdlib.h>
 #include <string.h>
+#include "pqfh.h"
+#include "json/json.h"
 
-bool json_open(char *filename, fcd_t *fcd) {
+extern int dbg;
+
+void json_open(char *filename, fcd_t *fcd) {
     char *json = NULL;
     jelement_t *root;
-    int dbg = 0;    
 
     fprintf(stderr, "********************* JSON json_open [%s]\n", filename);
     if (!load(filename+5, &json)) {
@@ -14,10 +15,10 @@ bool json_open(char *filename, fcd_t *fcd) {
             free(json);
         }
         memcpy(fcd->status, ST_ERROR, 2);
-        return false;
+        return;
     } 
 
-    root = malloc(sizeof(jelement_t))
+    root = malloc(sizeof(jelement_t));
     memset(root, 0, sizeof(jelement_t));
     if (!parse(json, dbg, root)) {
         if (json != NULL) {
@@ -25,14 +26,10 @@ bool json_open(char *filename, fcd_t *fcd) {
             free(json);
         }
         memcpy(fcd->status, ST_ERROR, 2);
-        return false;
+        return;
     }
 
     memcpy(fcd->root, root, 4);
     free(json);
-    json = tostring(dbg, root);
-    printf("%s\n", json);
-    free(json);    
     memcpy(fcd->status, ST_OK, 2);
-    return true;
 }

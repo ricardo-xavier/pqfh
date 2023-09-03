@@ -660,6 +660,11 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
     op = getshort(opcode);
     salva_isam = 0;
 
+    if (fnlen > 5 && !memcmp(filename. "JSON:", 5)) {
+        op_json(filename+5, op, fcd);
+        return;
+    }
+
     if ((op >= OP_OPEN_INPUT) && (op <= OP_OPEN_EXTEND)) {
         if (fcd->open_mode == 128) {
             fcd->mode = table_mode;
@@ -775,7 +780,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
         pqfh_commit();
     }        
 
-    if (((mode == 'I') || (mode == 'W') || (fcd->isam == 'S')) && memcmp(filename, "pqfh", 4) && memcmp(filename, "JSON:", 5)) {
+    if (((mode == 'I') || (mode == 'W') || (fcd->isam == 'S')) && memcmp(filename, "pqfh", 4)) {
 #ifdef API
         unsigned int fileid = getint(fcd->file_id);
         table_t *tab;
@@ -845,7 +850,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
         }    
     }
 
-    if ((mode == 'W') && (fcd->isam == 'S') && strcmp(filename, "pqfh") && memcmp(filename, "JSON:", 5)) {
+    if ((mode == 'W') && (fcd->isam == 'S') && strcmp(filename, "pqfh")) {
         if (dbg_cmp > 0) {
             dbg_status("ISAM", fcd);
         }
@@ -853,7 +858,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
     }        
 
 #ifndef ISAM
-    if ((mode == 'A') && (fcd->isam != 'S') && strcmp(filename, "pqfh") && memcmp(filename, "JSON:", 5)
+    if ((mode == 'A') && (fcd->isam != 'S') && strcmp(filename, "pqfh")
             && ((op == OP_WRITE) || (op == OP_REWRITE) || (op == OP_DELETE))) {
 
         if (op != OP_WRITE) {

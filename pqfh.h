@@ -258,7 +258,9 @@ void exit_program();
 bool log_fcd(fcd_t *fcd);
 bool log_table(char *filename);
 
-bool json_open(char *filename, fcd_t *fcd);
+void op_json(char *filename, unsigned short opcode, fcd_t *fcd);
+void json_open(char *filename, fcd_t *fcd);
+void json_close(char *filename, fcd_t *fcd);
 
 #ifndef MAIN
 extern int funcao;
