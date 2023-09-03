@@ -36,4 +36,10 @@ void json_open(char *filename, fcd_t *fcd) {
     putshort(fcd->json_ptr+4, 0);
     free(json);
     memcpy(fcd->status, ST_OK, 2);
+
+    if (dbg > 1) {
+        json = tostring(dbg, *root);
+        printf("%s\n", json);
+        free(json);    
+    }
 }
