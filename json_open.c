@@ -9,7 +9,9 @@ void json_open(char *filename, fcd_t *fcd) {
     char *json = NULL;
     jelement_t *root;
 
-    fprintf(stderr, "********************* JSON json_open [%s]\n", filename);
+    if (dbg > 0) {
+        fprintf(stderr, "********************* JSON open [%s]\n", filename);
+    }
     if (!load(filename, &json)) {
         if (json != NULL) {
             free(json);

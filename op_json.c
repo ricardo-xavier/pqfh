@@ -15,6 +15,12 @@ void op_json(char *filename, unsigned short opcode, fcd_t *fcd) {
         case OP_OPEN_INPUT:
             json_open(filename, fcd);
             break;
+        case OP_START_EQ:
+            json_start(filename, fcd);
+            break;
+        case OP_READ_NEXT:
+            json_next(filename, fcd);
+            break;
         case OP_CLOSE:
             json_close(filename, fcd);
             break;

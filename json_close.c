@@ -9,9 +9,14 @@ void json_close(char *filename, fcd_t *fcd) {
     char *json = NULL;
     jelement_t *root;
 
-    fprintf(stderr, "********************* JSON json_close [%s]\n", filename);
+    if (dbg > 0) {
+        fprintf(stderr, "********************* JSON close [%s]\n", filename);
+    }
     root = (jelement_t *) getint(fcd->root);
-    json = tostring(dbg, *root);
-    printf("%s\n", json);
-    free(json);    
+    if (dbg > 1) {
+        json = tostring(dbg, *root);
+        printf("%s\n", json);
+        free(json);    
+    }
+    free(root);
 }
