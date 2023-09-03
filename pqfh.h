@@ -117,7 +117,7 @@ typedef struct {
     unsigned char file_name_len[2]; /* 11 */
     unsigned char filler_3[11];     /* 13 */
     unsigned char lock_mode;        /* 24 */
-    unsigned char filler_4[8];      /* 25 */
+    unsigned char json_ptr[8];      /* 25 */
     unsigned char fs_type;          /* 33 */
     unsigned char file_format;      /* 34 */
     unsigned char filler_5[3];      /* 35 */
@@ -127,7 +127,7 @@ typedef struct {
     unsigned char curr_rec_len[2];  /* 48 */
     unsigned char min_rec_len[2];   /* 50 */
     unsigned char key_id[2];        /* 52 */
-    unsigned char filler_7[2];      /* 54 */
+    unsigned char json_idx[2];      /* 54 */
     unsigned char *record;          /* 56 */
     unsigned char *file_name;       /* 60 */
     unsigned char *kdb;             /* 64 */
@@ -136,7 +136,7 @@ typedef struct {
     unsigned char mode;             /* 83 */
     unsigned char filler_9[9];      /* 84 */
     unsigned char ignore_lock;      /* 93 */
-    unsigned char root[4];          /* 94 */
+    unsigned char json_root[4];     /* 94 */
     unsigned char sign;             /* 98 */
     unsigned char isam;             /* 99 */
 } fcd_t;
@@ -261,6 +261,8 @@ bool log_table(char *filename);
 void op_json(char *filename, unsigned short opcode, fcd_t *fcd);
 void json_open(char *filename, fcd_t *fcd);
 void json_close(char *filename, fcd_t *fcd);
+void json_start(char *filename, fcd_t *fcd);
+void json_next(char *filename, fcd_t *fcd);
 
 #ifndef MAIN
 extern int funcao;

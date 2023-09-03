@@ -6,17 +6,16 @@
 extern int dbg;
 
 void json_start(char *filename, fcd_t *fcd) {
-    char *json = NULL;
-    jelement_t *root;
+    //jelement_t *root;
     short reclen;
     char record[MAX_REC_LEN+1];
     char *p;
 
-    short reclen = getshort(fcd->rec_len);
+    reclen = getshort(fcd->rec_len);
     memcpy(record, fcd->record, reclen);
     record[reclen] = 0;
     if ((p = strchr(record, ' ')) != NULL) *p = 0;
 
     fprintf(stderr, "********************* JSON start [%s] [%s]\n", filename, record);
-    root = (jelement_t *) getint(fcd->root);
+    //root = (jelement_t *) getint(fcd->json_root);
 }

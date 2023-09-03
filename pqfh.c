@@ -17,7 +17,7 @@
 // insert into tabela_api values('sp05a51', 'planoGerencial');
 //
 
-#define VERSAO "v3.16.0 20/08/2023"
+#define VERSAO "v3.16.0 03/09/2023"
 
 int dbg=-1;
 int dbg_upd=-1;
@@ -1498,6 +1498,6 @@ void pqfh_split(char *filename) {
 // 3.12.6 - 24/11 - mostrar o nome da tabela no warningbd
 // 3.13.0 - 14/03 - commit no sigterm
 // 3.14.0 - 23/05 - call_stack
-// 3.16.0 - 20/08 - json
+// 3.16.0 - 03/09 - json
  
  

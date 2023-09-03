@@ -12,7 +12,7 @@ void json_close(char *filename, fcd_t *fcd) {
     if (dbg > 0) {
         fprintf(stderr, "********************* JSON close [%s]\n", filename);
     }
-    root = (jelement_t *) getint(fcd->root);
+    root = (jelement_t *) getint(fcd->json_root);
     if (dbg > 1) {
         json = tostring(dbg, *root);
         printf("%s\n", json);
