@@ -660,7 +660,7 @@ void pqfh(unsigned char *opcode, fcd_t *fcd) {
     op = getshort(opcode);
     salva_isam = 0;
 
-    if (fnlen > 5 && !memcmp(filename. "JSON:", 5)) {
+    if (fnlen > 5 && !memcmp(filename, "JSON:", 5)) {
         op_json(filename+5, op, fcd);
         return;
     }
