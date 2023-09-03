@@ -18,9 +18,10 @@ void json_next(char *filename, fcd_t *fcd) {
         }
     }
     i = 0;
+    memcpy(fcd->status, ST_EOF, 2);
     for (list2_t *ptr = list2_first(parent->children); ptr != NULL; ptr = ptr->next) {
+fprintf(stderr, "i=%d %d\n", i, idx);
         if (i > idx) {
-            memcpy(fcd->status, ST_EOF, 2);
             break;
         }
         if (i < idx) {
