@@ -33,7 +33,9 @@ void json_open(char *filename, fcd_t *fcd) {
 
     putint(fcd->json_root, (int) root);
     putint(fcd->json_ptr, (int) root);
-    putshort(fcd->json_idx, (short) 0);
+    putshort(fcd->json_idx, 0);
+short idx = getshort(fcd->json_idx);
+fprintf(stderr, "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX %d\n", idx);
     free(json);
     memcpy(fcd->status, ST_OK, 2);
 }

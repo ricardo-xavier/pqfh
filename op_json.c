@@ -11,6 +11,7 @@ void op_json(char *filename, unsigned short opcode, fcd_t *fcd) {
     if ((p = strchr(filename, ' ')) != NULL) {
         *p = 0;
     }
+fprintf(stderr, "teste1\n");
     switch (opcode) {
         case OP_OPEN_INPUT:
             json_open(filename, fcd);
@@ -25,4 +26,5 @@ void op_json(char *filename, unsigned short opcode, fcd_t *fcd) {
             json_close(filename, fcd);
             break;
     }
+fprintf(stderr, "teste2\n");
 }
