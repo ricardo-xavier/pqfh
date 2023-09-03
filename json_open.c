@@ -10,7 +10,7 @@ void json_open(char *filename, fcd_t *fcd) {
     jelement_t *root;
 
     fprintf(stderr, "********************* JSON json_open [%s]\n", filename);
-    if (!load(filename+5, &json)) {
+    if (!load(filename, &json)) {
         if (json != NULL) {
             free(json);
         }
@@ -29,7 +29,7 @@ void json_open(char *filename, fcd_t *fcd) {
         return;
     }
 
-    memcpy(fcd->root, root, 4);
+    putint(fcd->root, (int) root);
     free(json);
     memcpy(fcd->status, ST_OK, 2);
 }

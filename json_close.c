@@ -10,7 +10,7 @@ void json_close(char *filename, fcd_t *fcd) {
     jelement_t *root;
 
     fprintf(stderr, "********************* JSON json_close [%s]\n", filename);
-    memcpy(root, fcd->root, 4);
+    root = (jelement_t *) getint(fcd->root);
     json = tostring(dbg, *root);
     printf("%s\n", json);
     free(json);    
