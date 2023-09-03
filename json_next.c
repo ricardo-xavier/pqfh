@@ -20,7 +20,6 @@ void json_next(char *filename, fcd_t *fcd) {
     i = 0;
     memcpy(fcd->status, ST_EOF, 2);
     for (list2_t *ptr = list2_first(parent->children); ptr != NULL; ptr = ptr->next) {
-fprintf(stderr, "i=%d %d\n", i, idx);
         if (i > idx) {
             break;
         }
@@ -36,6 +35,19 @@ fprintf(stderr, "i=%d %d\n", i, idx);
         }
         putshort(fcd->json_ptr+4, ++idx);
         memcpy(fcd->status, ST_OK, 2);
+        fcd->record[100] = child->tp;
+        memset(fcd->record+101, ' ', 50);
+        if (child->name != NULL) {
+            memcpy(fcd->record+101, child->name, strlen(child->name)); 
+        } else {
+            memcpy(fcd->record+101, "NULL", 4);
+        }
+        memset(fcd->record+151, ' ', 250);
+        if (child->value != NULL) {
+            memcpy(fcd->record+151, child->value, strlen(child->value)); 
+        } else {
+            memcpy(fcd->record+151, "NULL", 4);
+        }
         break;
     }
 }
