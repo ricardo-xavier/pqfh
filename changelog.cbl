@@ -6,7 +6,6 @@
        WORKING-STORAGE SECTION.
 
        PROCEDURE DIVISION.
-           call 'create_changelog_function'
            call 'create_changelog_table'
 
       *    adicionar tabelas aqui     

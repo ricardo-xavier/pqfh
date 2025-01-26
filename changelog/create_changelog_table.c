@@ -5,6 +5,10 @@ extern PGconn *conn;
 extern void execcmd_or_exit(char *cmd);
 
 void create_changelog_table() {
+    if (conn == NULL) {
+        dbconnect();
+    }
+
     char *sql = "select table_name from information_schema.tables where table_name = 'changelog'";
     PGresult *res = PQexec(conn, sql);
     if ((PQresultStatus(res) == PGRES_TUPLES_OK) && (PQntuples(res) == 1)) {
