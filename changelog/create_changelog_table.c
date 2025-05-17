@@ -21,11 +21,11 @@ void create_changelog_table() {
 	    status char(10) not null, \n \
 	    id serial not null, \n \
 	    timestamp timestamp not null, \n \
-	    table_name varchar(40), \n \
+	    table_name varchar(40) not null, \n \
 	    action varchar(10), \n \
 	    old_data text, \n \
 	    new_data text, \n \
-	    primary key(status, id) \n \
+	    primary key(status, table_name, id) \n \
 	    );");
 }
 

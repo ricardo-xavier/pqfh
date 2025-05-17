@@ -17,7 +17,7 @@
 // insert into tabela_api values('sp05a51', 'planoGerencial');
 //
 
-#define VERSAO "v5.0.0 05/01/2025"
+#define VERSAO "v4.1.0 04/05/2025"
 
 int dbg=-1;
 int dbg_upd=-1;
@@ -1499,4 +1499,5 @@ void pqfh_split(char *filename) {
 // 3.13.0 - 14/03 - commit no sigterm
 // 3.14.0 - 23/05 - call_stack
 // 3.16.0 - 03/09 - json
-// 5.0.0  - 05/01 - changelog
+// 4.0.0  - 05/01 - changelog
+// 4.1.0  - 04/05 - apply changelog

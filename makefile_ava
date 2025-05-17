@@ -2,7 +2,7 @@
 CC = gcc -m32 -I/usr/include/postgresql -Wall -Werror -DPQFH -I/usr/java/jdk1.8.0_144/include -I/usr/java/jdk1.8.0_144/include/linux -I/u/cobol/include -DIGNORELOCK
 COB = /u/cobol/bin/cob -m ixfile=pqfh
 COB = /u/cobol/bin/cob
-OBJS = pqfh.o list2.o meta.o fhtypes.o op_open.o op_close.o op_start.o kdb.o op_next_prev.o op_read_random.o pq2cob.o op_rewrite.o op_write.o op_delete.o create_table.o replicator.o utils.o command.o libcobolpost.o javacall.o copy_table.o load_table.o libcobolpost_pqfh.o cmp_table.o cmp_isam.o memfh_cbl.o memfh.o memfh_idx.o delete_file.o cache.o validador.o op_json.o json_open.o json_close.o json_start.o json_next.o json/parser.o json/load.o json/lex.o json/utils.o json/tostring.o changelog/create_changelog_function.o changelog/create_changelog_table.o changelog/add_changelog_trigger.o changelog/dbutils.o
+OBJS = pqfh.o list2.o meta.o fhtypes.o op_open.o op_close.o op_start.o kdb.o op_next_prev.o op_read_random.o pq2cob.o op_rewrite.o op_write.o op_delete.o create_table.o replicator.o utils.o command.o libcobolpost.o javacall.o copy_table.o load_table.o libcobolpost_pqfh.o cmp_table.o cmp_isam.o memfh_cbl.o memfh.o memfh_idx.o delete_file.o cache.o validador.o op_json.o json_open.o json_close.o json_start.o json_next.o json/parser.o json/load.o json/lex.o json/utils.o json/tostring.o changelog/create_changelog_function.o changelog/create_changelog_table.o changelog/add_changelog_trigger.o changelog/dbutils.o changelog/apply_changelog.c
 
 all: pqfh
 
@@ -48,4 +48,7 @@ changelog/add_changelog_trigger.o: changelog/add_changelog_trigger.c
 
 changelog/dbutils.o: changelog/dbutils.c
 	cd changelog && $(CC) -c -w dbutils.c
+
+changelog/apply_changelog.o: changelog/apply_changelog.c
+	cd changelog && $(CC) -c -w apply_changelog.c
 
