@@ -9,8 +9,8 @@ extern FILE *flog;
 extern int dbg;
 
 void apply_changelog() {
-    PGresult *res;
-    char     sql[257], action[33];
+    PGresult *res, *res2;
+    char     sql[257], id[33], action[33], new_status[33];
     fcd_t    fcd;
     list2_t  *ptr;
     column_t *col;
@@ -24,6 +24,12 @@ void apply_changelog() {
     if (dbg > 0) {
         fprintf(flog, "%s.%s %s\n", tab_open->schema, tab_open->name, fcd_open->file_name);
     }
+
+    res = PQexec(conn, "BEGIN");
+    if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+        fprintf(flog, "%s\n%s\n", "BEGIN", PQerrorMessage(conn));        
+    }        
+    PQclear(res);
 
     sprintf(sql, "declare cursor_columns cursor for select * from changelog where status='PENDING' and table_name='%s' order by id", tab_open->name);
     res = PQexec(conn, sql);
@@ -39,6 +45,7 @@ void apply_changelog() {
             PQclear(res);
             break;
         }
+        strcpy(id, PQgetvalue(res, 0, 1));
         strcpy(action, PQgetvalue(res, 0, 4));
         if (dbg > 0) {
             fprintf(flog, "%d %s\n", i, action);
@@ -63,9 +70,9 @@ void apply_changelog() {
             if (p2 != NULL) {
                 p1 = p2 + 1;
             }
-            if (!strcmp(col->name, "sp0103desc")) {
-                sprintf(aux, "%-35s", "TESTE_CHANGELOG");
-            }    
+            //if (!strcmp(col->name, "sp0103desc")) {
+                //sprintf(aux, "%-35s", "TESTE_CHANGELOG");
+            //}    
             if (dbg > 1) {
                 fprintf(flog, "    %d %d %s %c %d,%d [%s]\n", 
                     c, offset, col->name, col->tp, col->len, col->dec, aux);
@@ -119,11 +126,32 @@ void apply_changelog() {
             fprintf(flog, "[%s]\n", aux);
         }
         EXTFH(opcode, &fcd);
-        if (dbg > 1) {
+        if (dbg > 0) {
             fprintf(flog, "status=%c%c %d\n", fcd.status[0], fcd.status[1], fcd.status[1]);
         }
+
+        if (fcd.status[0] == '0') {
+            strcpy(new_status, "SUCCESS");    
+        } else {
+            sprintf(new_status, "ERROR_%c_%d", fcd.status[0], fcd.status[1]);    
+        }        
+        sprintf(sql, "update changelog set status='%s' where status='PENDING' and table_name='%s' and id=%s", new_status, tab_open->name, id);
+        res2 = PQexec(conn, sql);
+        if (dbg > 0) {
+            fprintf(flog, "%s\n", sql);    
+        }
+        if (PQresultStatus(res2) != PGRES_COMMAND_OK) {
+            fprintf(flog, "%s\n%s\n", sql, PQerrorMessage(conn));        
+        }        
+        PQclear(res2);
     }
 
     res = PQexec(conn, "CLOSE cursor_columns");
+    PQclear(res);
+
+    res = PQexec(conn, "COMMIT");
+    if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+        fprintf(flog, "%s\n%s\n", "COMMIT", PQerrorMessage(conn));        
+    }        
     PQclear(res);
 }
