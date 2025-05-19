@@ -3,24 +3,35 @@
 #include <string.h>
 
 extern table_t *tab_open;
+extern fcd_t *fcd_open;
 extern PGconn *conn;
+extern FILE *flog;
+extern int dbg;
 
 void apply_changelog() {
-    PGresult   *res;
-    char       sql[257], action[33];
+    PGresult *res;
+    char     sql[257], action[33];
+    fcd_t    fcd;
+    list2_t  *ptr;
+    column_t *col;
+    int      c=0, offset=0, len, colno;
+    char     aux[MAX_REC_LEN+1], *p1, *p2, *p;
+    unsigned char opcode[2];
 
-    printf("apply_changelog\n");     
     if (tab_open == NULL) {
         return;
     }        
-    printf("%s\n", tab_open->name);
+    if (dbg > 0) {
+        fprintf(flog, "%s.%s %s\n", tab_open->schema, tab_open->name, fcd_open->file_name);
+    }
 
     sprintf(sql, "declare cursor_columns cursor for select * from changelog where status='PENDING' and table_name='%s' order by id", tab_open->name);
     res = PQexec(conn, sql);
     if (PQresultStatus(res) != PGRES_COMMAND_OK) {
-        return; //TODO
+        return;
     }
     PQclear(res);
+    memcpy(&fcd, fcd_open, sizeof(fcd_t));
 
     for (int i=0;;i++) {
         res = PQexec(conn, "fetch next in cursor_columns");
@@ -29,16 +40,90 @@ void apply_changelog() {
             break;
         }
         strcpy(action, PQgetvalue(res, 0, 4));
-        printf("%d %s\n", i, action);
-    }    
+        if (dbg > 0) {
+            fprintf(flog, "%d %s\n", i, action);
+        }    
+        colno = strcmp(action, "delete") ? 6 : 5;
+        p1 = PQgetvalue(res, 0, colno);
+
+        short reclen = getshort(fcd.rec_len);
+        memset(fcd.record, 0, reclen);
+        c = 0;
+        offset = 0;
+
+        for (ptr=tab_open->columns; ptr!=NULL; ptr=ptr->next) {
+            col = (column_t *) ptr->buf;
+
+            p2 = strchr(p1, '|');
+            if (p2 != NULL) {
+                *p2 = 0;
+            }
+            strcpy(aux, p1);
+            len = strlen(aux);
+            if (p2 != NULL) {
+                p1 = p2 + 1;
+            }
+            if (!strcmp(col->name, "sp0103desc")) {
+                sprintf(aux, "%-35s", "TESTE_CHANGELOG");
+            }    
+            if (dbg > 1) {
+                fprintf(flog, "    %d %d %s %c %d,%d [%s]\n", 
+                    c, offset, col->name, col->tp, col->len, col->dec, aux);
+            }
+
+            switch (col->tp) {
+
+                case 'n':
+                    p = aux;
+                    if (aux[0] == '-') {
+                        p++;
+                        len--;
+                    }
+                    if (col->dec == 0) {
+                        memset(fcd.record + offset, '0', col->len - len);
+                        memcpy(fcd.record + offset + (col->len - len), p, len);
+                    } else {
+                        if (len > 0) {    
+                            memset(fcd.record + offset, '0', col->len - len + 1);
+                            memcpy(fcd.record + offset + (col->len - len + 1), p, len - col->dec - 1);
+                            memcpy(fcd.record + offset + (col->len - len + 1) + (len - col->dec - 1), p + len - col->dec, col->dec);
+                        } else {
+                            memset(fcd.record + offset, '0', col->len + col->dec);
+                        }        
+                    }
+                    if (p != aux) {
+                        fcd.record[offset + col->len - 1] |= 0x40;
+                    }
+                    break;
+
+                default:
+                    memcpy(fcd.record + offset, aux, len);
+                    memset(fcd.record + offset + len, ' ', col->len - len);
+                    break;
+            }
+
+            c++;
+            offset += col->len;
+        }
+
+        if (!strcmp(action, "insert")) {
+            putshort(opcode, OP_WRITE);
+        } else if (!strcmp(action, "update")) {
+            putshort(opcode, OP_REWRITE);
+        } else {
+            putshort(opcode, OP_DELETE);
+        }        
+        if (dbg > 1) {
+            memcpy(aux, fcd.record, reclen);
+            aux[reclen] = 0;
+            fprintf(flog, "[%s]\n", aux);
+        }
+        EXTFH(opcode, &fcd);
+        if (dbg > 1) {
+            fprintf(flog, "status=%c%c %d\n", fcd.status[0], fcd.status[1], fcd.status[1]);
+        }
+    }
 
     res = PQexec(conn, "CLOSE cursor_columns");
     PQclear(res);
 }
-    //char name[MAX_NAME_LEN+1];
-    //char tp;
-    //int len;
-    //int dec;
-    //int offset;
-    //bool pk;
-    //int p;

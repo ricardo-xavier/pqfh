@@ -21,10 +21,8 @@
        77      status01-a04   pic xx.
 
        PROCEDURE DIVISION.
-           open input sp01a03
+           open i-o sp01a03
            call 'apply_changelog'
            close sp01a03
-
-      *    call 'apply_changelog'
 
            stop run.
