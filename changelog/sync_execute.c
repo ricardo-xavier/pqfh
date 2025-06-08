@@ -1,0 +1,184 @@
+#include "../pqfh.h"
+#include <libpq-fe.h>
+#include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
+
+extern list2_t *sync_tables;
+extern list2_t *sync_fcds;
+extern PGconn *conn;
+extern FILE *flog;
+extern int dbg;
+
+void sync_execute() {
+    PGresult *res, *res2;
+    char     sql[257], id[33], tabname[33], action[33], new_status[33];
+    fcd_t    *fcd;
+    table_t  *tab;
+    list2_t  *ptr, *ptrt;
+    short    fnlen;
+    char     filename[257];
+    column_t *col;
+    int      c=0, offset=0, len, colno;
+    char     aux[MAX_REC_LEN+1], *p1, *p2, *p;
+    unsigned char opcode[2];
+
+    sync_tables = list2_first(sync_tables);
+
+    for (;;) {
+        res = PQexec(conn, "BEGIN");
+        if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+            fprintf(flog, "%s\n%s\n", "BEGIN", PQerrorMessage(conn));        
+        }        
+        PQclear(res);
+
+        strcpy(sql, "declare cursor_columns cursor for select * from changelog where status='PENDING' order by id");
+        res = PQexec(conn, sql);
+        if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+            return;
+        }
+        PQclear(res);
+
+        for (int i=0;;i++) {
+            res = PQexec(conn, "fetch next in cursor_columns");
+            if ((PQresultStatus(res) != PGRES_TUPLES_OK) || (PQntuples(res) == 0)) {
+                PQclear(res);
+                break;
+            }
+            strcpy(id, PQgetvalue(res, 0, 1));
+            strcpy(tabname, PQgetvalue(res, 0, 3));
+            strcpy(action, PQgetvalue(res, 0, 4));
+            if (dbg > 0) {
+                fprintf(flog, "%d %s %s\n", i, action, tabname);
+            }    
+
+            bool found = false;
+            for (ptr=sync_fcds, ptrt=sync_tables; ptr!=NULL; ptr=ptr->next, ptrt=ptrt->next) {
+                fcd = (fcd_t *) ptr->buf;    
+                tab = (table_t *) ptrt->buf;    
+                fnlen = getshort(fcd->file_name_len);
+                memcpy(filename, fcd->file_name, fnlen);
+                filename[fnlen] = 0;
+                if ((p = strchr(filename, ' ')) != NULL) *p = 0;
+                if ((p = strrchr(filename, '/')) != NULL) p++;
+                else p = filename;
+                if (!strcmp(p, tabname)) {
+                    found = true;    
+                    break;
+                }    
+            }    
+            if (!found) {
+                fprintf(flog, "sync execute TABLE NOT FOUND [%s]\n", tabname);
+                continue;
+            }    
+            if (dbg > 0) {
+                fprintf(flog, "sync execute [%s]\n", filename);
+            }
+
+            colno = strcmp(action, "delete") ? 6 : 5;
+            p1 = PQgetvalue(res, 0, colno);
+
+            short reclen = getshort(fcd->rec_len);
+            memset(fcd->record, 0, reclen);
+            c = 0;
+            offset = 0;
+
+            for (ptr=tab->columns; ptr!=NULL; ptr=ptr->next) {
+                col = (column_t *) ptr->buf;
+
+                p2 = strchr(p1, '|');
+                if (p2 != NULL) {
+                    *p2 = 0;
+                }
+                strcpy(aux, p1);
+                len = strlen(aux);
+                if (p2 != NULL) {
+                    p1 = p2 + 1;
+                }
+                //if (!strcmp(col->name, "sp0103desc")) {
+                    //sprintf(aux, "%-35s", "TESTE_CHANGELOG");
+                //}    
+                if (dbg > 1) {
+                    fprintf(flog, "    %d %d %s %c %d,%d [%s]\n", 
+                        c, offset, col->name, col->tp, col->len, col->dec, aux);
+                }
+
+                switch (col->tp) {
+
+                    case 'n':
+                        p = aux;
+                        if (aux[0] == '-') {
+                            p++;
+                            len--;
+                        }
+                        if (col->dec == 0) {
+                            memset(fcd->record + offset, '0', col->len - len);
+                            memcpy(fcd->record + offset + (col->len - len), p, len);
+                        } else {
+                            if (len > 0) {    
+                                memset(fcd->record + offset, '0', col->len - len + 1);
+                                memcpy(fcd->record + offset + (col->len - len + 1), p, len - col->dec - 1);
+                                memcpy(fcd->record + offset + (col->len - len + 1) + (len - col->dec - 1), p + len - col->dec, col->dec);
+                            } else {
+                                memset(fcd->record + offset, '0', col->len + col->dec);
+                            }        
+                        }
+                        if (p != aux) {
+                            fcd->record[offset + col->len - 1] |= 0x40;
+                        }
+                        break;
+
+                    default:
+                        memcpy(fcd->record + offset, aux, len);
+                        memset(fcd->record + offset + len, ' ', col->len - len);
+                        break;
+                }
+
+                c++;
+                offset += col->len;
+            }
+
+            if (!strcmp(action, "insert")) {
+                putshort(opcode, OP_WRITE);
+            } else if (!strcmp(action, "update")) {
+                putshort(opcode, OP_REWRITE);
+            } else {
+                putshort(opcode, OP_DELETE);
+            }        
+            if (dbg > 1) {
+                memcpy(aux, fcd->record, reclen);
+                aux[reclen] = 0;
+                fprintf(flog, "[%s]\n", aux);
+            }
+            EXTFH(opcode, fcd);
+            if (dbg > 0) {
+                fprintf(flog, "status=%c%c %d\n", fcd->status[0], fcd->status[1], fcd->status[1]);
+            }
+
+            if (fcd->status[0] == '0') {
+                strcpy(new_status, "SUCCESS");    
+            } else {
+                sprintf(new_status, "ERROR_%c_%d", fcd->status[0], fcd->status[1]);    
+            }        
+            sprintf(sql, "update changelog set status='%s' where status='PENDING' and table_name='%s' and id=%s", new_status, tab->name, id);
+            res2 = PQexec(conn, sql);
+            if (dbg > 0) {
+                fprintf(flog, "%s\n", sql);    
+            }
+            if (PQresultStatus(res2) != PGRES_COMMAND_OK) {
+                fprintf(flog, "%s\n%s\n", sql, PQerrorMessage(conn));        
+            }        
+            PQclear(res2);
+        }
+
+        res = PQexec(conn, "CLOSE cursor_columns");
+        PQclear(res);
+
+        res = PQexec(conn, "COMMIT");
+        if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+            fprintf(flog, "%s\n%s\n", "COMMIT", PQerrorMessage(conn));        
+        }        
+        PQclear(res);
+        sleep(5);
+    }    
+}

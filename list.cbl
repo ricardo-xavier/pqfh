@@ -18,14 +18,14 @@
        INICIO.
            open input sp01a03
            move 'TESTE-CHANGELOG' to sp0103desc 
-           move 'CERVEJA LTA ANTARC 350ML'
-                to sp0103desc
+      *    move 'CERVEJA LTA ANTARC 350ML'
+      *         to sp0103desc
            move zeros to sp0103chave
            start sp01a03 key is >= sp0103key3
            read sp01a03 next ignore lock
            perform until status01-a03 <> '00'  
-              or sp0103desc <> 'CERVEJA LTA ANTARC 350ML'
-      *       or sp0103desc <> 'TESTE-CHANGELOG'     
+      *       or sp0103desc <> 'CERVEJA LTA ANTARC 350ML'
+              or sp0103desc <> 'TESTE-CHANGELOG'     
               display sp0103chave
               read sp01a03 next ignore lock
            end-perform           

@@ -1,6 +1,8 @@
 #include "../pqfh.h"
 #include <libpq-fe.h>
 #include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
 
 extern table_t *tab_open;
 extern fcd_t *fcd_open;
@@ -17,10 +19,37 @@ void apply_changelog() {
     int      c=0, offset=0, len, colno;
     char     aux[MAX_REC_LEN+1], *p1, *p2, *p;
     unsigned char opcode[2];
+    PGnotify *notify;
 
     if (tab_open == NULL) {
         return;
     }        
+    fprintf(flog, "listen pqfhchannel\n");
+    PQsetnonblocking(conn, 0);
+    while (1) {
+        PQexec(conn, "BEGIN");
+        int n = PQisnonblocking(conn);
+        fprintf(flog, "listen %d\n", n);
+        res = PQexec(conn, "LISTEN PQFHCHANNEL");
+        if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+            fprintf(flog, "%s\n%s\n", "LISTEN", PQerrorMessage(conn));        
+        }        
+        PQclear(res);
+        fprintf(flog, "consume\n");
+        //PQconsumeInput(conn);
+        while ((notify = PQnotifies(conn)) != NULL) {
+            fprintf(flog, "received\n");
+            fprintf(flog, "ASYNC NOTIFY of '%s' from backend pid '%d' received\n",
+                notify->relname, notify->be_pid);
+            free(notify);
+        }
+        fprintf(flog, "sleep\n");
+        sleep(3);
+        PQexec(conn, "COMMIT");
+    }
+    fprintf(flog, "finish\n");   
+    PQfinish(conn);
+
     if (dbg > 0) {
         fprintf(flog, "%s.%s %s\n", tab_open->schema, tab_open->name, fcd_open->file_name);
     }
